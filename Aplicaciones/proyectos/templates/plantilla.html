@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento de Hábitos de Estudio </title>
+    <!--Importado jquery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+
+    <!--implementacion de cdn de boobstrp-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!--implementacion de izitoad-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js" integrity="sha512-Zq9o+E00xhhR/7vJ49mxFNJ0KQw1E1TMWkPTxrWcnpfEFDEXgUiwJHIKit93EW/XxE31HSI5GEOW06G6BF1AtA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.css" integrity="sha512-DIW4FkYTOxjCqRt7oS9BFO+nVOwDL4bzukDyDtMO7crjUZhwpyrWBFroq+IqRe6VnJkTpRAS6nhDvf0w+wHmxg==" crossorigin="anonymous" referrerpolicy="no-referrer" /> 
+ 
+    
+    <!--implementacion de jquery validate-->
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.js"></script>
+
+  </head>
+<body>
+
+
+
+    {% block contenido %}
+
+    {% endblock %}
+<br>
+<br>
+
+
+
+<!--verificacion y mostrando mensajes-->
+
+{% if messages %}
+    {% for mesajeConfirmacion in messages %}
+        <script>
+            // Verifica si el tag del mensaje es "success"
+            if ("{{ mesajeConfirmacion.tags }}" === "success") {
+                iziToast.success({
+                    title: 'CONFIRMACIÓN',
+                    message: "{{ mesajeConfirmacion }}", // Corregido: "messages" a "message"
+                    position: 'topRight'
+                });
+            }
+        </script>
+    {% endfor %}
+{% endif %}
+
+
+
+
+
+    <script>
+      jQuery.validator.addMethod("letras", function(value, element) {            
+          return this.optional(element) || /^[A-Za-zÁÉÍÓÚÑáéíóúñ ]*$/.test(value);
+         
+        }, "Este campo solo acepta letras"); 
+  </script>
+  
+</body>
+</html>
+

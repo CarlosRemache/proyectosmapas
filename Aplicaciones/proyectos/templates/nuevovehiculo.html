@@ -1,0 +1,84 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<style>
+    form {
+        max-width: 450px;
+        margin: 40px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    label { font-weight: bold; }
+    select, input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    button {
+        width: 48%;
+        padding: 10px;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+    }
+
+
+    .btn-cancelar {
+        background-color: #ccc;
+        color: #333;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: inline-block;
+    }
+
+    .btn-cancelar:hover {
+        background-color: #999;
+    }
+
+
+</style>
+
+<form action="/guardarvehiculo/" method="post">
+    <h3 style="text-align:center;">Agregar Vehículo</h3>
+    {% csrf_token %}
+    <label>Usuario:</label>
+    <select name="usuario" required>
+        <option value="{{ usuario.id_usuario }}">{{ usuario.correo_usuario }}</option>
+    </select>
+
+    <label>Tipo de Vehículo:</label>
+    <select name="txt_tipo_vehiculo" required>
+        <option value="PRIVADO">PRIVADO</option>
+        <option value="TAXI">TAXI</option>
+        <option value="MOTOCICLETA">MOTOCICLETA</option>
+        <option value="CAMION">CAMION</option>
+    </select>
+
+    <label>Tipo de Combustible:</label>
+    <select name="txt_tipo_combustible" required>
+        <option value="EXTRA">EXTRA</option>
+        <option value="DIESEL">DIESEL</option>
+        <option value="SUPER">SUPER</option>
+    </select>
+
+    <label>Matricula:</label>
+    <input type="text" name="txt_matricula" required>
+
+    <label>Modelo:</label>
+    <input type="text" name="txt_modelo">
+
+    <div style="display:flex; justify-content:space-between;">
+        <button type="submit">Guardar</button>
+        <a href="/inicio/" class="btn-cancelar">Cancelar</a>
+    </div>
+</form>
+
+{% endblock %}

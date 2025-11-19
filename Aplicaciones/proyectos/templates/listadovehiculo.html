@@ -1,0 +1,119 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<style>
+    body {
+        background-color: #000;
+    }
+
+    .vehiculo-card {
+        max-width: 380px;
+        margin: 40px auto;
+        background-color: #2b2b2b;
+        padding: 25px;
+        border-radius: 20px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.7);
+    }
+
+    .barra {
+        width: 250px;
+        height: 18px;
+        background-color: #444;
+        margin: 5px auto 15px auto;
+        border-radius: 10px;
+    }
+
+    .titulo {
+        font-size: 16px;
+        color: #ccc;
+        margin-bottom: 20px;
+        text-transform: uppercase;
+    }
+
+    .texto {
+        font-size: 15px;
+        color: #c5c5c5;
+        margin-bottom: 10px;
+    }
+
+    .texto b {
+        color: white;
+    }
+
+    .btn-editar {
+        display: inline-block;
+        margin-top: 15px;
+        background-color: #00b330ff;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .btn-editar:hover {
+        background-color: #009e29;
+    }
+
+    .btn-menu {
+        display: block;
+        margin: 40px auto 0;
+        background-color: #00b330ff;
+        color: white;
+        padding: 12px 25px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: bold;
+        width: 150px;
+        text-align: center;
+    }
+
+    .btn-menu:hover {
+        background-color: #009e29;
+    }
+</style>
+
+
+{% for v in vehiculos %}
+<div class="vehiculo-card">
+    
+    <div class="barra"></div>
+
+    <div class="titulo">Vehículo registrado</div>
+
+    <div class="texto">
+        Usuario:<br>
+        <b>{{ v.usuario.correo_usuario }}</b>
+    </div>
+
+    <div class="texto">
+        Tipo de Vehículo:<br>
+        <b>{{ v.tipovehiculo_vehiculo }}</b>
+    </div>
+
+    <div class="texto">
+        Tipo de Combustible:<br>
+        <b>{{ v.tipocombustible_vehiculo }}</b>
+    </div>
+
+    <div class="texto">
+        Matrícula:<br>
+        <b>{{ v.matricula_vehiculo }}</b>
+    </div>
+
+    <div class="texto">
+        Modelo:<br>
+        <b>{{ v.modelo_vehiculo }}</b>
+    </div>
+
+    <a href="/editarvehiculo/{{ v.id_vehiculo }}" class="btn-editar">Editar Vehículo</a>
+    <a href="/eliminarvehiculo/{{ v.id_vehiculo }}" class="btn-editar">Eliminar Vehículo</a>
+    <a class="btn-menu" href="/inicio/">Menú</a>
+
+</div>
+{% endfor %}
+
+{% endblock %}

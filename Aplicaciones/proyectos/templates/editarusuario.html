@@ -1,0 +1,128 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<style>
+    body {
+        background-color: #000;
+    }
+
+    .form-container {
+        max-width: 380px;
+        margin: 80px auto;
+        background-color: #2b2b2b;
+        padding: 30px;
+        border-radius: 20px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.7);
+        font-family: Arial, sans-serif;
+    }
+
+    .barra {
+        width: 250px;
+        height: 18px;
+        background-color: #444;
+        margin: 10px auto 20px auto;
+        border-radius: 10px;
+    }
+
+    h3 {
+        color: white;
+        margin-bottom: 20px;
+        font-size: 20px;
+    }
+
+    label {
+        display: block;
+        text-align: left;
+        font-weight: bold;
+        margin-top: 12px;
+        color: #ddd;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border: none;
+        border-radius: 8px;
+        background-color: #444;
+        color: white;
+    }
+
+    input::placeholder {
+        color: #aaa;
+    }
+
+    .btn-container {
+        margin-top: 25px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .btn-save {
+        background-color: #0ccb3a;
+        color: white;
+        padding: 12px;
+        border-radius: 10px;
+        font-weight: bold;
+        cursor: pointer;
+        border: none;
+        font-size: 16px;
+    }
+
+    .btn-save:hover {
+        background-color: #0aa330;
+    }
+
+    .btn-cancel {
+        background-color: #0ccb3a;
+        padding: 12px;
+        border-radius: 10px;
+        text-align: center;
+        display: block;
+        font-weight: bold;
+        color: white;
+        font-size: 16px;
+        text-decoration: none;
+    }
+
+    .btn-cancel:hover {
+        background-color: #0aa330;
+    }
+</style>
+
+<div class="form-container">
+
+    <div class="barra"></div>
+
+    <h3>Editar Perfil</h3>
+
+    <form action="/procesareditarusuario/" method="post">
+        {% csrf_token %}
+
+        <input type="hidden" name="id_usuario" value="{{ usuario.id_usuario }}">
+
+        <label>Nombres:</label>
+        <input type="text" name="txt_nombre" value="{{ usuario.nombre_usuario }}" required>
+
+        <label>Apellidos:</label>
+        <input type="text" name="txt_apellido" value="{{ usuario.apellido_usuario }}" required>
+
+        <label>Correo:</label>
+        <input type="email" name="txt_correo" value="{{ usuario.correo_usuario }}" required>
+
+        <label>Nueva Contraseña (opcional):</label>
+        <input type="password" name="txt_contrasena">
+
+        <div class="btn-container">
+            <button type="submit" class="btn-save">Guardar</button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

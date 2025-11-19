@@ -1,0 +1,76 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<style>
+    .login-container {
+        max-width: 400px;
+        margin: 60px auto;
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        font-family: Arial, sans-serif;
+    }
+
+    .login-container h3 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .login-container label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+    }
+
+    .login-container input[type="email"],
+    .login-container input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border: 1px solid #221f1fff;
+        font-size: 14px;
+    }
+
+    .login-container button {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        background-color: #007BFF;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .login-container button:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+<div class="login-container">
+    <h3>Iniciar sesión</h3>
+
+    <form action="{% url 'login' %}" method="post">
+        {% csrf_token %}
+
+        <label for="correo">Correo:</label>
+        <input type="email" name="correo" id="correo" required>
+
+        <label for="contrasena">Contraseña:</label>
+        <input type="password" name="contrasena" id="contrasena" required>
+
+        <button type="submit">Ingresar</button>
+        <br>
+        <br>
+         <div class="enlace-extra"style="text-align: center" >
+        <a href="/nuevousuario/">Crear nueva cuenta</a>
+    </div>
+    </form>
+</div>
+
+{% endblock %}

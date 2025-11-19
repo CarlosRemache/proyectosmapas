@@ -1,0 +1,88 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<style>
+    .formulario-editar {
+        width: 50%;
+        margin: 30px auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+    }
+
+    label { font-weight: bold; }
+    select, input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    button {
+        padding: 10px 20px;
+        border-radius: 5px;
+        border: none;
+        background: #28a745;
+        color: white;
+        cursor: pointer;
+    }
+        .btn-cancelar {
+        display: inline-block;
+        background: #35dc7dff;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        margin-left: 10px;
+    }
+
+    .btn-cancelar:hover {
+        opacity: .8;
+    }
+
+    button:hover { opacity: .8; }
+</style>
+
+<form action="/procesareditarvehiculo/" method="post" class="formulario-editar">
+    {% csrf_token %}
+    <h3 style="text-align:center;">Editar Vehículo</h3>
+
+    <input type="hidden" name="id" value="{{ vehiculo.id_vehiculo }}">
+
+    <label>Usuario:</label>
+    <select name="usuario">
+    <option value="{{ usuarios.id_usuario }}">
+        {{ usuarios.correo_usuario }}
+    </option>
+</select>
+
+
+    <label>Tipo Vehículo:</label>
+    <select name="txt_tipo_vehiculo">
+        <option value="PRIVADO" {% if vehiculo.tipovehiculo_vehiculo == "PRIVADO" %}selected{% endif %}>PRIVADO</option>
+        <option value="TAXI" {% if vehiculo.tipovehiculo_vehiculo == "TAXI" %}selected{% endif %}>TAXI</option>
+        <option value="MOTOCICLETA" {% if vehiculo.tipovehiculo_vehiculo == "MOTOCICLETA" %}selected{% endif %}>MOTOCICLETA</option>
+        <option value="CAMION" {% if vehiculo.tipovehiculo_vehiculo == "CAMION" %}selected{% endif %}>CAMION</option>
+    </select>
+
+    <label>Tipo Combustible:</label>
+    <select name="txt_tipo_combustible">
+        <option value="EXTRA" {% if vehiculo.tipocombustible_vehiculo == "EXTRA" %}selected{% endif %}>EXTRA</option>
+        <option value="DIESEL" {% if vehiculo.tipocombustible_vehiculo == "DIESEL" %}selected{% endif %}>DIESEL</option>
+        <option value="SUPER" {% if vehiculo.tipocombustible_vehiculo == "SUPER" %}selected{% endif %}>SUPER</option>
+    </select>
+
+    <label>Matrícula:</label>
+    <input type="text" name="txt_matricula" value="{{ vehiculo.matricula_vehiculo }}">
+
+    <label>Modelo:</label>
+    <input type="text" name="txt_modelo" value="{{ vehiculo.modelo_vehiculo }}">
+
+    <button type="submit">Guardar Cambios</button>
+    <a href="/listadovehiculo/" class="btn-cancelar">Cancelar</a>
+</form>
+
+{% endblock %}

@@ -1,0 +1,175 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>localizacion de autos</title>
+     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+ 
+     <style>
+      body {
+          padding: 0;
+          margin: 0;
+      }
+      html, body, #map {
+          height: 100%;
+          width: 100vw;
+      }
+
+
+      #btnUbicacion {
+        position: absolute;
+        top: 220px;
+        left: 15px;
+        z-index: 1000;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
+
+      #btnUbicacion:hover {
+        background-color: #0056b3;
+      }
+
+      .leaflet-top.leaflet-left {
+        top: 100px;
+      }
+
+     </style>
+ 
+  </head>
+  <body>
+
+    <nav class="navbar navbar-dark bg-dark fixed-top">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#"></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDarkNavbar" aria-controls="offcanvasDarkNavbar" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="offcanvas offcanvas-end text-bg-dark" tabindex="-1" id="offcanvasDarkNavbar" aria-labelledby="offcanvasDarkNavbarLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="offcanvasDarkNavbarLabel">Menú</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="/perfilusuario/">Perfil</a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Navegacion
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                  <li><a class="dropdown-item" href="/nuevovehiculo/">Agregar Navegacion</a></li>
+                  <li><a class="dropdown-item" href="/listadovehiculo/">Ver Navegacion</a></li>
+                </ul>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Historial</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/logout/">Cerrar Sesión</a>
+              </li>
+            </ul>
+            <form class="d-flex mt-3" role="search">
+              <input class="form-control me-2" type="search" placeholder="¿Adonde vas?" aria-label="Search"/>
+              <button class="btn btn-success" type="submit">Buscar</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+
+    
+
+  <button id="btnUbicacion">Activar ubicación</button>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    <script>
+      // Inicializa el mapa
+      const map = L.map('map').setView([-0.9333, -78.6167], 15);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+
+      // Ícono personalizado
+      const phoneIcon = L.icon({
+        iconUrl: '{% static "img/punto.png" %}',
+        iconSize: [35, 35],
+        iconAnchor: [17, 17]
+      });
+
+      let phoneMarker = null;
+
+      // === WebSocket ===
+      const socket = new WebSocket((window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/ubicacion/');
+
+      // Recibir coordenadas desde el servidor
+      socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const coords = [data.latitud, data.longitud];
+
+        if (!phoneMarker) {
+          phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);
+        } else {
+          phoneMarker.setLatLng(coords);
+        }
+        map.panTo(coords);
+      };
+
+      socket.onclose = function(e) {
+        console.error('Conexión WebSocket cerrada inesperadamente');
+      };
+
+      
+      // Enviar coordenadas al servidor (desde el teléfono)
+      function mostrarUbicacionTiempoReal() {
+        if ("geolocation" in navigator) {
+          navigator.geolocation.watchPosition((pos) => {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            console.log(" Coordenadas enviadas:", lat, lon);
+            
+            socket.send(JSON.stringify({ latitud: lat, longitud: lon }));
+          }, (error) => {
+            alert("Error al obtener ubicación: " + error.message);
+          }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+
+          const boton = document.getElementById("btnUbicacion");
+          boton.disabled = true;
+          boton.textContent = "Ubicación activada";
+          boton.style.backgroundColor = "#28a745";
+        } else {
+          alert("Tu navegador no soporta geolocalización.");
+        }
+      }
+
+
+
+
+      document.getElementById("btnUbicacion")
+              .addEventListener("click", mostrarUbicacionTiempoReal);
+    </script>
+  </body>
+</html>
+
+
+
+{% endblock %}
+

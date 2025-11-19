@@ -1,0 +1,79 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<style>
+    body {
+        background-color: #000;
+    }
+
+    .card-container {
+        max-width: 380px;
+        margin: 80px auto;
+        background-color: #2b2b2b;
+        padding: 25px;
+        border-radius: 20px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.7);
+    }
+
+    .barra {
+        width: 250px;
+        height: 18px;
+        background-color: #444;
+        margin: 10px auto;
+        border-radius: 10px;
+    }
+
+    .titulo-puntos {
+        margin-top: 10px;
+        font-size: 14px;
+        color: #ccc;
+    }
+
+    .usuario-texto {
+        margin-top: 15px;
+        font-size: 15px;
+        color: #c5c5c5;
+    }
+
+    .btn-editar {
+        display: inline-block;
+        margin-top: 20px;
+        background-color: #00b330ff;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .btn-editar:hover {
+        background-color: #b1b5b271;
+    }
+</style>
+
+<div class="card-container">
+    <div class="barra"></div>
+
+    <div class="titulo-puntos">PERFIL</div>
+
+    <div class="usuario-texto">
+        Nombre:<br>
+        <b>{{ usuario.nombre_usuario }}</b><br>
+        <br>
+        Apellido:<br>
+        <b> {{ usuario.apellido_usuario }}</b><br>
+        <br>
+        Correo:<br>
+        <b>{{ usuario.correo_usuario }}</b><br>
+    </div>
+
+    <!-- BOTÓN EDITAR SU PROPIO PERFIL -->
+    <b><a class="btn-editar" href="/editarusuario/{{ usuario.id_usuario }}">Editar Perfil</a></b>
+    <br>
+    <a class="btn-editar" href="/inicio/"> Menú</a>
+</div>
+
+{% endblock %}
