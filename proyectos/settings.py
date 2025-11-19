@@ -121,10 +121,14 @@ CHANNEL_LAYERS = {
 
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='postgresql://postgres:postgres@localhost:5432/mysite',
-        conn_max_age=600
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'mapasdb_3p1i',
+        'USER': 'mapasdb_3p1i_user',
+        'PASSWORD': '1I1INWdbcMFM65b0YmNBj89vAKKEjluw',
+        'HOST': 'dpg-d4f33lchg0os738mgt90-a',
+        'PORT': '5432',
+    }
 }
 
 # Password validation
