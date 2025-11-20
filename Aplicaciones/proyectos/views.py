@@ -29,10 +29,6 @@ def login_usuario(request):
 
 
 
-
-
-
-
 #sirve para cerrar la cesion 
 def logout_usuario(request):
     request.session.flush()
@@ -104,10 +100,10 @@ def perfilusuario(request):
 # Vehiculo
 
 def nuevovehiculo(request):
-    id_usuario = request.session.get('usuario_id')  #obtiene el usuario que se inicio secion
-    usuario = Usuario.objects.get(id_usuario=id_usuario) #Busca en la base de datos al usuario
-    return render(request, 'nuevovehiculo.html', {'usuario': usuario})#envia al usuario a la pagina 
-
+    id_usuario = request.session.get('usuario_id')
+    usuario = Usuario.objects.get(id_usuario=id_usuario)
+    tiene_vehiculo = Vehiculo.objects.filter(usuario=usuario).exists()  
+    return render(request, 'nuevovehiculo.html', {'usuario': usuario,'tiene_vehiculo': tiene_vehiculo  })
 
 
 
@@ -130,9 +126,17 @@ def guardarvehiculo(request):
     return redirect('/listadovehiculo')
 
 
+
+
 def listadovehiculo(request):
-    vehiculos = Vehiculo.objects.all()
-    return render(request, 'listadovehiculo.html', {'vehiculos': vehiculos})
+    id_usuario = request.session.get('usuario_id')
+    usuario = Usuario.objects.get(id_usuario=id_usuario)
+
+    # Obtener SOLO el vehículo del usuario
+    vehiculo = Vehiculo.objects.filter(usuario=usuario).first()
+
+    return render(request, 'listadovehiculo.html', {'vehiculo': vehiculo})
+
 
 
 def eliminarvehiculo(request, id):

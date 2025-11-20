@@ -77,43 +77,48 @@
 </style>
 
 
-{% for v in vehiculos %}
+
 <div class="vehiculo-card">
-    
+
     <div class="barra"></div>
 
-    <div class="titulo">Vehículo registrado</div>
+    <div class="titulo">Vehículo Registrado</div>
 
     <div class="texto">
-        Usuario:<br>
-        <b>{{ v.usuario.correo_usuario }}</b>
+        <b>Usuario:</b>
+        <br>
+        {{ vehiculo.usuario.correo_usuario }}
     </div>
 
     <div class="texto">
-        Tipo de Vehículo:<br>
-        <b>{{ v.tipovehiculo_vehiculo }}</b>
+        <b>Tipo de Vehículo:</b>
+        <br>
+        {{ vehiculo.tipovehiculo_vehiculo }}
     </div>
 
     <div class="texto">
-        Tipo de Combustible:<br>
-        <b>{{ v.tipocombustible_vehiculo }}</b>
+        <b>Tipo de Combustible:</b>
+        <br>
+        {{ vehiculo.tipocombustible_vehiculo }}
     </div>
 
     <div class="texto">
-        Matrícula:<br>
-        <b>{{ v.matricula_vehiculo }}</b>
+        <b>Matrícula:</b>
+        <br>
+        {{ vehiculo.matricula_vehiculo }}
     </div>
 
     <div class="texto">
-        Modelo:<br>
-        <b>{{ v.modelo_vehiculo }}</b>
+        <b>Modelo:</b>
+        <br>
+        {{ vehiculo.modelo_vehiculo }}
     </div>
 
-    <a href="/editarvehiculo/{{ v.id_vehiculo }}" class="btn-editar">Editar Vehículo</a>
-    <a href="/eliminarvehiculo/{{ v.id_vehiculo }}" class="btn-editar">Eliminar Vehículo</a>
+    <a href="/editarvehiculo/{{ vehiculo.id_vehiculo }}" class="btn-editar">Editar Vehículo</a>
+    <a href="/eliminarvehiculo/{{ vehiculo.id_vehiculo }}" class="btn-editar">Eliminar Vehículo</a>
+
     <a class="btn-menu" href="/inicio/">Menú</a>
 
 </div>
-{% endfor %}
 
 {% endblock %}

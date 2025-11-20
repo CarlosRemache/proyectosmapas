@@ -57,20 +57,24 @@
 <div class="card-container">
     <div class="barra"></div>
 
-    <div class="titulo-puntos">PERFIL</div>
+    <b><div class="titulo-puntos"> VER PERFIL</div></b>
 
     <div class="usuario-texto">
-        Nombre:<br>
-        <b>{{ usuario.nombre_usuario }}</b><br>
+        <b>Nombre:</b>
         <br>
-        Apellido:<br>
-        <b> {{ usuario.apellido_usuario }}</b><br>
+        {{ usuario.nombre_usuario }}
         <br>
-        Correo:<br>
-        <b>{{ usuario.correo_usuario }}</b><br>
+        <br>
+        <b>Apellido:</b>
+        <br>
+        {{ usuario.apellido_usuario }}
+        <br>
+        <br>        
+        <b>Correo:</b>
+        <br>
+        {{ usuario.correo_usuario }}
     </div>
 
-    <!-- BOTÓN EDITAR SU PROPIO PERFIL -->
     <b><a class="btn-editar" href="/editarusuario/{{ usuario.id_usuario }}">Editar Perfil</a></b>
     <br>
     <a class="btn-editar" href="/inicio/"> Menú</a>
