@@ -34,3 +34,20 @@ class UbicacionVehiculo(models.Model):
     def __str__(self):
         return f"{self.latitud}, {self.longitud} ({self.fecha_hora})"
 
+
+
+class Lugarguardado(models.Model):
+    id_Lugarguardado=models.AutoField(primary_key=True)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="Lugarguardados")
+    nombre_Lugarguardado = models.CharField(max_length=100)  # Ej: "Parque La Laguna"
+    latitud_Lugarguardado = models.FloatField()
+    longitud_Lugarguardado = models.FloatField()
+    fecha_guardado = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+            return f"{self.nombre_Lugarguardado} ({self.latitud_Lugarguardado}, {self.longitud_Lugarguardado})"
+
+
+
+
+

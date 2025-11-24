@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Usuario, Vehiculo
+from .models import Usuario, Vehiculo, Lugarguardado
 from django.utils.timezone import now
-
+import requests
 
 def login_usuario(request):
     #validar el inicio de cesion de usuario
@@ -164,3 +164,79 @@ def procesareditarvehiculo(request):
 
     messages.success(request, "Vehículo editado exitosamente")
     return redirect('/listadovehiculo')
+
+#---------------------------------------------------------------------------------------------------------------
+# buscarlugares
+
+
+def buscarlugares(request):
+    query = request.GET.get("q", "") 
+
+    resultados = []
+
+    usuario_id = request.session.get("usuario_id")
+
+    if usuario_id is None:
+        messages.error(request, "Debes iniciar sesión")
+        return redirect("login")
+
+    historial = Lugarguardado.objects.filter(usuario=usuario_id).order_by('-fecha_guardado')
+    
+    if query:
+        url = "https://nominatim.openstreetmap.org/search" 
+        params = {
+            "q": query, 
+            "format": "json", 
+            "addressdetails": 1, 
+            "limit": 15, 
+            "viewbox": "-78.7000,-0.8000,-78.5000,-1.0500",  
+            "bounded": 1,  
+        }
+
+        r = requests.get(url, params=params, headers={"User-Agent": "tuapp"})
+        resultados = r.json()
+
+    return render(request, "buscarlugares.html", {
+        "query": query,
+        "resultados": resultados,
+        "historial": historial,
+    })
+
+
+
+
+def ver_lugar(request, lat, lon):
+    nombre = request.GET.get("nombre", "Ubicación seleccionada")
+    return render(request, "ver_lugar.html", {
+        "lat": lat,
+        "lon": lon,
+        "nombre": nombre
+    })
+
+
+
+
+
+def guardar_lugar(request, lat, lon, nombre):
+    usuario_id = request.session.get("usuario_id")
+    usuario = Usuario.objects.get(id_usuario=usuario_id)
+    Lugarguardado.objects.create(
+        usuario=usuario,
+        nombre_Lugarguardado=nombre,
+        latitud_Lugarguardado=float(lat),
+        longitud_Lugarguardado=float(lon)
+    )
+    messages.success(request, "Lugar guardado con exito")
+    return redirect("ver_lugar", lat=lat, lon=lon)
+
+
+
+
+
+def eliminar_lugar(request, id):
+    usuario_id = request.session.get("usuario_id")
+    lugar = Lugarguardado.objects.get(id_Lugarguardado=id, usuario=usuario_id)
+    lugar.delete()
+    messages.success(request,"habito eliminado")
+    return redirect("buscarlugares")
+

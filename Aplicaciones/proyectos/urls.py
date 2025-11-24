@@ -24,6 +24,12 @@ urlpatterns = [
     path('procesareditarvehiculo/', views.procesareditarvehiculo),
 
 
+    path("buscarlugares/", views.buscarlugares, name="buscarlugares"),
+    path("lugar/<str:lat>/<str:lon>/", views.ver_lugar, name="ver_lugar"),
+    path("guardar_lugar/<str:lat>/<str:lon>/<path:nombre>/",views.guardar_lugar,name="guardar_lugar"),
+    path("eliminar_lugar/<int:id>/", views.eliminar_lugar, name="eliminar_lugar"),
+
+
 
 
 ]

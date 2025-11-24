@@ -1,0 +1,226 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<style>
+    body {
+        background-color: #000 !important;
+    }
+
+    .buscar-container {
+        max-width: 700px;
+        margin: 100px auto;
+        background-color: #222;
+        padding: 30px;
+        border-radius: 20px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.7);
+        font-family: Arial, sans-serif;
+    }
+
+    .barra {
+        width: 260px;
+        height: 18px;
+        background-color: #444;
+        margin: 0 auto 25px auto;
+        border-radius: 10px;
+    }
+
+    h3 {
+        font-size: 22px;
+        margin-bottom: 25px;
+        color: white;
+    }
+
+    /* Contenedor input + botón */
+    .buscador-flex {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+    }
+
+    .input-buscar {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 12px;
+        background-color: #444;
+        color: #fff;
+        font-size: 16px;
+    }
+
+    .input-buscar::placeholder {
+        color: #aaa;
+    }
+
+    .btn-buscar {
+        width: 120px;
+        padding: 10px;
+        background-color: #00d13a;
+        color: white;
+        font-weight: bold;
+        border-radius: 12px;
+        border: none;
+        cursor: pointer;
+        font-size: 15px;
+    }
+
+    .btn-buscar:hover {
+        background-color: #00aa30;
+    }
+
+    /* RESULTADOS DENTRO DE LA MISMA CAJA */
+    .resultados-box {
+        background-color: #1b1b1b;
+        padding: 15px;
+        border-radius: 15px;
+        margin-top: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        text-align: left;
+    }
+
+    .resultado-item {
+        background-color: #333;
+        padding: 12px;
+        border-radius: 15px;
+        margin-bottom: 10px;
+        color: #fff;
+        text-decoration: none;
+        display: block;
+        font-size: 14px;
+        transition: 0.2s;
+        border: 1px solid #3a3a3a;
+    }
+
+    .resultado-item:hover {
+        background-color: #444;
+        transform: scale(1.02);
+    }
+
+    hr {
+        border: 0;
+        height: 6px;
+        background-color: #ffffffff;
+        border-radius: 5px;
+        margin: 25px 0;
+    }
+
+
+    .titulo-historial {
+        color: white;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+
+    .resultados-box {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .resultado-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(0,0,0,0.3);
+        padding: 12px 15px;
+        border-radius: 8px;
+        border: 1px solid #444;
+        margin-bottom: 12px;
+    }
+
+    .guardado-por {
+        color: #00ff00;
+        font-weight: bold;
+    }
+
+    .fecha-label {
+        color: #aaa;
+    }
+
+    .no-historial {
+        color: white;
+        text-align: center;
+        margin-top: 15px;
+    }
+
+    .btn-eliminar {
+        padding: 6px 10px !important;
+        border-radius: 5px;
+        text-decoration: none;
+    }
+
+
+
+
+</style>
+
+
+
+<div class="buscar-container">
+    <div class="barra"></div>
+
+    <h3>Buscar lugares</h3>
+
+    <form method="get">
+        <div class="buscador-flex">
+            <input type="search"
+                   name="q"
+                   class="input-buscar"
+                   value="{{ query }}"
+                   required>
+            <button type="submit" class="btn-buscar">Buscar</button>
+        </div>
+    </form> 
+
+    {% if resultados %}
+        <div class="resultados-box">
+
+            <h5 style="color:white; margin-bottom:15px;">Resultados encontrados:</h5>
+
+            {% for r in resultados %} 
+                <a href="/lugar/{{ r.lat }}/{{ r.lon }}/?nombre={{ r.display_name|urlencode }}" 
+                class="resultado-item">
+                {{ r.display_name }}
+                </a>
+            {% endfor %}
+
+        </div>
+    {% endif %}
+    <hr>
+        {% if historial %}
+            <h4 class="titulo-historial">Historial de lugares guardados</h4>
+
+            <div class="resultados-box">
+                {% for item in historial %}
+                    <div class="resultado-item">
+                        <div>
+                            <b>{{ item.nombre_Lugarguardado }}</b><br>
+                            <span class="guardado-por">Guardado por:</span> 
+                                {{ item.usuario.nombre_usuario }} {{ item.usuario.apellido_usuario }} <br>
+                            <span class="fecha-label">Fecha:</span> 
+                                {{ item.fecha_guardado|date:"Y-m-d H:i" }}
+                        </div>
+
+                        <a href="{% url 'eliminar_lugar' item.id_Lugarguardado %}" 
+                        class="btn btn-danger btn-sm btn-eliminar"
+                        onclick="confirmarEliminacion(event, '{% url 'eliminar_lugar' item.id_Lugarguardado %}');">
+                        Eliminar
+                        </a>
+
+                    </div>
+                {% endfor %}
+            </div>
+
+        {% else %}
+            <p class="no-historial">No hay lugares guardados aún.</p>
+        {% endif %}
+
+
+</div>
+
+{% endblock %}
+
+
+
+

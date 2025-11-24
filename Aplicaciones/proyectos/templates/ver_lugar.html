@@ -1,0 +1,124 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <style>
+        body {
+        background-color: #000 !important;
+        padding: 0;
+        margin: 0;
+        font-family: Arial, sans-serif;
+        }
+
+        .card-mapa {
+            width: 90%;
+            max-width: 700px;
+            background-color: #222;
+            margin: 40px auto;
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 15px;
+        }
+
+        .tarjeta-info {
+                background-color: #1b1b1b;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 3px 15px rgba(255, 255, 255, 1);
+            }
+
+            .titulo {
+                font-size: 18px;
+                font-weight: bold;
+                margin-bottom: 10px;
+                color: white;
+            }
+
+            .info {
+                color: white;
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+
+            .btn-rutas {
+                display: block;
+                width: 100%;
+                background: #00b330ff;
+                padding: 14px;
+                text-align: center;
+                color: white;
+                font-weight: bold;
+                border-radius: 30px;
+                font-size: 16px;
+                text-decoration: none;
+                transition: 0.2s;
+            }
+
+            .btn-rutas:hover {
+                background: #00b330ff;
+            }
+
+
+
+    </style>
+</head>
+
+<body>
+    <div class="card-mapa">
+        <div class="titulo">
+            <h3 style="text-align:center; margin-bottom:15px;">
+                Ubicación 
+            </h3>
+        </div>
+    <div id="map"></div>
+        <br>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        const lat = {{ lat }};
+        const lon = {{ lon }};
+
+        const map = L.map("map").setView([lat, lon], 15);
+
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        L.marker([lat,lon]).addTo(map)
+        .bindPopup('Ubicacion seleccionada:')
+        .openPopup();
+
+        setTimeout(() => map.invalidateSize(), 300);
+    </script>
+
+        <div class="tarjeta-info">
+            <a href="#" class="btn-rutas">Ver rutas</a>
+            <br>
+            <a href="/guardar_lugar/{{ lat }}/{{ lon }}/{{ nombre|urlencode }}/"
+                class="btn-rutas">
+                Guardar lugar
+            </a>
+        </div>
+</div>
+
+</body>
+</html>
+
+{% endblock %}
