@@ -39,7 +39,7 @@ class UbicacionVehiculo(models.Model):
 class Lugarguardado(models.Model):
     id_Lugarguardado=models.AutoField(primary_key=True)
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="Lugarguardados")
-    nombre_Lugarguardado = models.CharField(max_length=100)  # Ej: "Parque La Laguna"
+    nombre_Lugarguardado = models.CharField(max_length=100) 
     latitud_Lugarguardado = models.FloatField()
     longitud_Lugarguardado = models.FloatField()
     fecha_guardado = models.DateTimeField(default=timezone.now)
