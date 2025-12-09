@@ -43,8 +43,9 @@ if RENDER_EXTERNAL_HOSTNAME:
 
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://proyectosmapas.onrender.com',
+    'https://proyectosmapas1.onrender.com',
 ]
+
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
