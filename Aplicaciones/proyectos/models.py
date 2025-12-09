@@ -23,6 +23,7 @@ class Vehiculo(models.Model):
 
 
 
+#punto de inicio
 class UbicacionVehiculo(models.Model):
     id_ubicacion=models.AutoField(primary_key=True)
     vehiculo = models.ForeignKey(Vehiculo, on_delete=models.CASCADE, related_name="UbicacionVehiculos")
@@ -35,7 +36,7 @@ class UbicacionVehiculo(models.Model):
         return f"{self.latitud}, {self.longitud} ({self.fecha_hora})"
 
 
-
+#punto 
 class Lugarguardado(models.Model):
     id_Lugarguardado=models.AutoField(primary_key=True)
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="Lugarguardados")
