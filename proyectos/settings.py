@@ -119,14 +119,15 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+#postgresql://mapadb_grhm_user:SWQa6FGhLZB8TCBrkPfm105UW6GidhfT@dpg-d4rr0q75r7bs73f0b3ig-a/mapadb_grhm
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'mapasdb_3p1i',
-        'USER': 'mapasdb_3p1i_user',
-        'PASSWORD': '1I1INWdbcMFM65b0YmNBj89vAKKEjluw',
-        'HOST': 'dpg-d4f33lchg0os738mgt90-a',
+        'NAME': 'mapadb_grhm',
+        'USER': 'mapadb_grhm_user',
+        'PASSWORD': 'SWQa6FGhLZB8TCBrkPfm105UW6GidhfT',
+        'HOST': 'dpg-d4rr0q75r7bs73f0b3ig-a',
         'PORT': '5432',
     }
 }
