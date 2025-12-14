@@ -1,7 +1,7 @@
 import json
 import math
 from django.core.management.base import BaseCommand
-from Aplicaciones.carros2.models import NodoMapa, TramoVial
+from Aplicaciones.proyectos.models import NodoMapa, TramoVial
 
 
 def haversine_km(lat1, lon1, lat2, lon2):

@@ -1,6 +1,6 @@
 import json
 from django.core.management.base import BaseCommand
-from Aplicaciones.carros2.models import NodoMapa # cambia 'rutas' por el nombre de tu app si es otro
+from Aplicaciones.proyectos.models import NodoMapa # cambia 'rutas' por el nombre de tu app si es otro
 
 
 class Command(BaseCommand):
