@@ -1,0 +1,188 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<style>
+    body {
+        background-color: #000 !important;
+    }
+
+    .buscar-container {
+        max-width: 700px;
+        margin: 100px auto;
+        background-color: #222;
+        padding: 30px;
+        border-radius: 20px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.7);
+        font-family: Arial, sans-serif;
+    }
+
+    .barra {
+        width: 260px;
+        height: 18px;
+        background-color: #444;
+        margin: 0 auto 25px auto;
+        border-radius: 10px;
+    }
+
+    h3 {
+        font-size: 22px;
+        margin-bottom: 25px;
+        color: white;
+    }
+
+    .resultados-box {
+        width: 100%;
+        padding: 10px;
+        background-color: #1b1b1b;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        text-align: left;
+        margin-top: 10px;
+    }
+
+    .resultado-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(0,0,0,0.3);
+        padding: 12px 15px;
+        border-radius: 8px;
+        border: 1px solid #444;
+        margin-bottom: 12px;
+        color: #fff;
+        font-size: 14px;
+    }
+
+    .guardado-por {
+        color: #00ff00;
+        font-weight: bold;
+    }
+
+    .fecha-label {
+        color: #aaa;
+        font-size: 12px;
+    }
+
+    .no-historial {
+        color: white;
+        text-align: center;
+        margin-top: 15px;
+    }
+
+    .btn-eliminar {
+        padding: 6px 10px;
+        border-radius: 5px;
+        background-color: #ff4444;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 13px;
+    }
+
+    .btn-eliminar:hover {
+        background-color: #cc0000;
+    }
+
+        
+    .acciones-rutas{
+        margin-top:18px;
+        display:flex;
+        gap:12px;
+        justify-content:space-between;
+    }
+
+
+        .btn-accion{
+            flex:1;
+            text-align:center;
+            padding:12px 0;
+            border-radius:30px;
+            font-weight:bold;
+            font-size:16px;
+            text-decoration:none;
+            border:none;
+            cursor:pointer;
+            transition:0.15s;
+        }
+
+        .btn-cancelar{
+            background:#111;
+            color:#00e53a;
+            border:2px solid #00e53a;
+            box-shadow:0 3px 10px rgba(28, 130, 16, 0.5);
+        }
+
+        .btn-cancelar:hover{
+            background:#191919;
+        }
+
+
+
+
+</style>
+
+
+<div class="buscar-container">
+
+    <div class="barra"></div>
+        <div class="acciones-rutas">
+            <!-- Ajusta las URLs a lo que necesites -->
+            <a href="/inicio/" class="btn-accion btn-cancelar">Regresar</a>            
+        </div>
+    <br>
+    <h3>Historial de rutas</h3>
+
+    {% if rutas %}
+        <div class="resultados-box">
+            {% for r in rutas %}
+                <div class="resultado-item">
+                    <div>
+                        <div class="guardado-por">
+                            {{ r.get_tipo_display }} &nbsp;–&nbsp;
+                            Viaje {{ r.viaje.id_viaje }}
+                        </div>
+
+                        <div>
+                            Distancia: {{ r.distancia_km|floatformat:2 }} km   |
+                            Tiempo: {{ r.tiempo_min|floatformat:1 }} min
+                        </div>
+
+                        {% if r.consumo_litros %}
+                        <div>
+                            Combustible: {{ r.consumo_litros|floatformat:2 }} L
+                        </div>
+                        {% endif %}
+
+                        {% if r.costo_estimado %}
+                        <div>
+                            Costo estimado: $ {{ r.costo_estimado|floatformat:2 }}
+                        </div>
+                        {% endif %}
+
+                        <div class="fecha-label">
+                            Fecha: {{ r.viaje.fecha_creacion|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <form method="post" action="{% url 'eliminar_ruta_historial' r.id_ruta_opcion %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-eliminar">
+                                Eliminar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="no-historial">Todavía no tienes rutas guardadas.</p>
+    {% endif %}
+
+</div>
+
+{% endblock %}

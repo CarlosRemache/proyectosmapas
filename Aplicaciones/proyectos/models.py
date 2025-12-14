@@ -52,3 +52,94 @@ class Lugarguardado(models.Model):
 
 
 
+
+class NodoMapa(models.Model):
+    id_nodo = models.BigIntegerField(primary_key=True)
+    nombre = models.CharField(max_length=200)   # Ej: "Parque La Laguna"
+    latitud = models.FloatField()
+    longitud = models.FloatField()
+    tipo = models.CharField(
+        max_length=50,
+        choices=[
+            ('INTERSECCION', 'Intersección'),
+            ('PUNTO_INTERES', 'Punto de interés'),
+            ('PARROQUIA', 'Parroquia'),
+        ],
+        default='INTERSECCION'
+    )
+
+    def __str__(self):
+        return self.nombre
+
+
+
+class TramoVial(models.Model):
+    id_tramo = models.AutoField(primary_key=True)
+    origen = models.ForeignKey(NodoMapa, on_delete=models.CASCADE, related_name='tramos_salida')
+    destino = models.ForeignKey(NodoMapa, on_delete=models.CASCADE, related_name='tramos_llegada')
+    distancia_km = models.FloatField()         
+    tiempo_base_min = models.FloatField()      
+    tipo_via = models.CharField(
+        max_length=50,
+        choices=[
+            ('URBANA', 'Urbana'),
+            ('RURAL', 'Rural'),
+            ('PRINCIPAL', 'Principal'),
+            ('SECUNDARIA', 'Secundaria'),
+        ],
+        blank=True
+    )
+
+    def __str__(self):
+        return f"{self.origen} -> {self.destino}"
+
+
+
+
+
+# me permite guardar en la navegacion origen- destino
+class Viaje(models.Model):
+    id_viaje = models.AutoField(primary_key=True)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="viajes")
+    vehiculo = models.ForeignKey(Vehiculo, on_delete=models.CASCADE, related_name="viajes")
+    origen = models.ForeignKey(UbicacionVehiculo, on_delete=models.CASCADE)
+    destino = models.ForeignKey(Lugarguardado, on_delete=models.CASCADE)
+    fecha_creacion = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"Viaje {self.id_viaje} - {self.usuario.nombre_usuario}"
+
+
+
+
+
+
+#ruta calculada por cada viaje
+class RutaOpcion(models.Model):
+    id_ruta_opcion = models.AutoField(primary_key=True)
+    viaje = models.ForeignKey(Viaje, on_delete=models.CASCADE, related_name="opciones")
+    TIPO_CHOICES = [('OPTIMA', 'Óptima'),('LARGA', 'Larga'),('SEGURA', 'Segura'),]
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
+    tiempo_min = models.FloatField()
+    distancia_km = models.FloatField()
+    consumo_litros = models.FloatField(null=True, blank=True)
+    costo_estimado = models.FloatField(null=True, blank=True)
+
+
+    def __str__(self):
+        return f"Viaje {self.viaje.id_viaje} "
+
+
+
+
+
+
+class PrecioCombustible(models.Model):
+    TIPO_CHOICES = [('EXTRA', 'EXTRA'),('DIESEL', 'DIESEL'),('SUPER', 'SUPER'),('ECOPAIS', 'ECOPAIS'),]
+    id_precio = models.AutoField(primary_key=True)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    precio_por_litro = models.FloatField()  
+
+    def __str__(self):
+        return f"{self.tipo} - {self.precio_por_litro} USD/L"
+

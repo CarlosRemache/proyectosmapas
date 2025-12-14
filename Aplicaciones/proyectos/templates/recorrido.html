@@ -1,0 +1,264 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet"href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body {
+            background-color: #000 !important;
+            padding: 0;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Tarjeta contenedora del mapa + info */
+        .card-mapa {
+            width: 90%;
+            max-width: 900px;
+            background-color: #222;
+            margin: 30px auto;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+
+        #mapa {
+            height: 600px;
+            width: 100%;
+            border-radius: 15px;
+        }
+
+        .titulo-mapa {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .acciones-rutas{
+            margin-top:18px;
+            display:flex;
+            gap:12px;
+            justify-content:space-between;
+        }
+
+        .btn-accion{
+            flex:1;
+            text-align:center;
+            padding:12px 0;
+            border-radius:30px;
+            font-weight:bold;
+            font-size:16px;
+            text-decoration:none;
+            border:none;
+            cursor:pointer;
+            transition:0.15s;
+        }
+
+        .btn-cancelar{
+            background:#111;
+            color:#00e53a;
+            border:2px solid #00e53a;
+            box-shadow:0 3px 10px rgba(0,0,0,0.5);
+        }
+
+        .btn-cancelar:hover{
+            background:#191919;
+        }
+
+        .btn-ir{
+            background:#00e53a;
+            color:#fff;
+            box-shadow:0 4px 14px rgba(0,229,58,0.55);
+        }
+
+        .btn-ir:hover{
+            background:#00c732;
+        }
+    </style>
+  </head>
+  <body>
+
+
+<div class="card-mapa">
+
+    <div class="titulo-mapa">
+        <h3>Recorrido del Auto</h3>
+    </div>
+
+    <div id="mapa"></div>
+
+    <div class="tarjeta-info" id="opciones-rutas">
+
+        <div class="acciones-rutas">
+            <a href="/inicio/" class="btn-accion btn-cancelar">Detener</a>
+            <button id="btnUbicacionRecorrido" type="button" class="btn-accion btn-ir">
+                Activar
+            </button>
+            
+        </div>
+
+    </div>
+
+</div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+
+        const map = L.map('mapa').setView([-0.9333, -78.6167], 15);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const iconOrigen = L.icon({
+            iconUrl: '{% static "img/punto.png" %}',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+        });
+
+        const iconDestino = L.icon({
+            iconUrl: '{% static "img/puntorojo.png" %}',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+        });
+
+        const origen = JSON.parse('{{ origen_real|escapejs }}');
+        const destino = JSON.parse('{{ destino_real|escapejs }}');
+
+
+
+        const markerDestino = L.marker(
+            [destino.latitud, destino.longitud],
+            { icon: iconDestino }
+        ).addTo(map);
+        markerDestino.bindPopup(`Destino: ${destino.nombre}`);
+
+        const bounds = L.latLngBounds(
+            [origen.latitud, origen.longitud],
+            [destino.latitud, destino.longitud]
+        );
+        map.fitBounds(bounds, { padding: [50, 50] });
+
+
+        const rutas = JSON.parse('{{ rutas_js|escapejs }}');   
+        const colorRuta = '{{ color_ruta }}';
+
+        if (rutas.length > 0) {
+            const coords = rutas[0];
+            const poly = L.polyline(coords, { color: colorRuta, weight: 6 }).addTo(map);
+            map.fitBounds(poly.getBounds(), { padding: [50, 50] });
+        }
+
+        // Pequeño fix por si el mapa se corta
+        setTimeout(() => map.invalidateSize(), 300);
+
+
+
+        const phoneIcon = L.icon({
+            iconUrl: '{% static "img/punto.png" %}',
+            iconSize: [35, 35],
+            iconAnchor: [17, 17]
+        });
+
+        let phoneMarker = null;
+
+        // Misma URL de WebSocket 
+        const socket = new WebSocket(
+            (window.location.protocol === 'https:' ? 'wss://' : 'ws://') +
+            window.location.host +
+            '/ws/ubicacion/'
+        );
+
+        // Cuando el servidor envía nuevas coordenadas
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const coords = [data.latitud, data.longitud];
+
+            if (!phoneMarker) {
+                phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);
+            } else {
+                phoneMarker.setLatLng(coords);
+            }
+            map.panTo(coords);
+        };
+
+        socket.onclose = function(e) {
+            console.error('Conexión WebSocket cerrada inesperadamente');
+        };
+
+
+
+        function mostrarUbicacionTiempoRealRecorrido() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.watchPosition((pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+
+                    console.log("Coordenadas enviadas (recorrido):", lat, lon);
+
+                    if (!window.ubicacionGuardadaRecorrido) {
+                        // Primera vez: guardar en BD
+                        socket.send(JSON.stringify({
+                            latitud: lat,
+                            longitud: lon,
+                            vehiculo_id: {{ vehiculo.id_vehiculo|default:0 }},
+                            guardar: true
+                        }));
+                        window.ubicacionGuardadaRecorrido = true;
+                    } else {
+                        // Luego solo actualizar
+                        socket.send(JSON.stringify({
+                            latitud: lat,
+                            longitud: lon,
+                            guardar: false
+                        }));
+                    }
+                }, (error) => {
+                    alert("Error al obtener ubicación: " + error.message);
+                }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+
+                const boton = document.getElementById("btnUbicacionRecorrido");
+                boton.disabled = true;
+                boton.textContent = "Activado";
+                boton.style.backgroundColor = "#28a745";
+
+
+                localStorage.setItem("ubicacion_activa", "1");
+            } else {
+                alert("Tu navegador no soporta geolocalización.");
+            }
+        }
+
+
+        document.getElementById("btnUbicacionRecorrido")
+                .addEventListener("click", function (e) {
+                    e.preventDefault();  
+                    mostrarUbicacionTiempoRealRecorrido();
+                });
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const boton = document.getElementById("btnUbicacionRecorrido");
+            const estado = localStorage.getItem("ubicacion_activa");
+
+            if (estado === "1") {
+                boton.disabled = true;
+                boton.textContent = "Activado";
+                boton.style.backgroundColor = "#28a745";
+                mostrarUbicacionTiempoRealRecorrido();
+            }
+        });
+    </script>
+
+  </body>
+</html>
+
+
+{% endblock %}

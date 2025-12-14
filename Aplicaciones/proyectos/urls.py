@@ -1,6 +1,7 @@
 #URLS especificas de la aplicacion
 from django.urls import path
 from.import views
+from Aplicaciones.proyectos import views
 
 urlpatterns = [
     # Login como inicio
@@ -31,6 +32,11 @@ urlpatterns = [
 
 
 
-
+    path('rutas/', views.rutas),
+    path("api/ruta-optima/", views.api_ruta_optima, name="api_ruta_optima"),
+    path('recorrido/', views.recorrido),
+    path('historial/', views.historial, name='historial'),
+    path('historial/eliminar/<int:id_ruta>/', views.eliminar_ruta_historial, name='eliminar_ruta_historial'),
+ 
 ]
 

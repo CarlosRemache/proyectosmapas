@@ -1,0 +1,287 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+    body {
+        background-color: #000 !important;
+        padding: 0;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    /* Tarjeta contenedora del mapa + info */
+    .card-mapa {
+        width: 90%;
+        max-width: 900px;
+        background-color: #222;
+        margin: 30px auto;
+        padding: 20px;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+
+    #mapa {
+        height: 400px;
+        width: 100%;
+        border-radius: 15px;
+    }
+
+    .titulo-mapa {
+        text-align: center;
+        margin-bottom: 10px;
+        color: #fff;
+    }
+
+    /* Contenedor de las tarjetas de rutas */
+    .tarjeta-info {
+        background-color: #1b1b1b;
+        border-radius: 12px;
+        padding: 15px;
+        margin-top: 20px;
+        box-shadow: 0 3px 15px rgba(255, 255, 255, 0.08);
+    }
+
+    .tarjeta-ruta {
+        border-radius: 12px;
+        padding: 15px 18px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+        background-color: #101010;
+        color: #fff;
+    }
+
+    .tarjeta-ruta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .tarjeta-ruta h3 {
+        margin: 0 0 5px 0;
+        font-size: 18px;
+    }
+
+    .tarjeta-ruta p {
+        margin: 2px 0;
+        font-size: 14px;
+        opacity: 0.9;
+    }
+
+    .pill-tipo {
+        margin-top: 6px;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    .pill-optima { color: #00aaff; }
+    .pill-larga { color: #ff8800; }
+    .pill-segura { color: #00ff88; }
+
+    .acciones-rutas{
+        margin-top:18px;
+        display:flex;
+        gap:12px;
+        justify-content:space-between;
+    }
+
+    .btn-accion{
+        flex:1;
+        text-align:center;
+        padding:12px 0;
+        border-radius:30px;
+        font-weight:bold;
+        font-size:16px;
+        text-decoration:none;
+        border:none;
+        cursor:pointer;
+        transition:0.15s;
+    }
+
+    .btn-cancelar{
+        background:#111;
+        color:#00e53a;
+        border:2px solid #00e53a;
+        box-shadow:0 3px 10px rgba(0,0,0,0.5);
+    }
+
+    .btn-cancelar:hover{
+        background:#191919;
+    }
+
+    .btn-ir{
+        background:#00e53a;
+        color:#fff;
+        box-shadow:0 4px 14px rgba(0,229,58,0.55);
+    }
+
+    .btn-ir:hover{
+        background:#00c732;
+    }
+
+
+    .texto-arriba {
+    position: relative; /* Define el contexto de posicionamiento */
+    top: -70px;         /* Mueve el elemento 20 píxeles hacia arriba (valor negativo) */
+    }
+
+    p {
+    font-family: system-ui;
+    }
+
+    /* Bordes según tipo */
+    .tarjeta-ruta { border: 1px solid #333; } /* por defecto */
+
+    .tarjeta-ruta.ruta-optima { border: 2px solid #00aaff; }
+    .tarjeta-ruta.ruta-larga  { border: 2px solid #ff8800; }
+    .tarjeta-ruta.ruta-segura { border: 2px solid #00ff88; }
+
+
+</style>
+
+
+<div class="card-mapa">
+
+    <div class="titulo-mapa">
+        <h3>Rutas disponibles</h3>
+    </div>
+    <div id="mapa"></div>
+    <div class="tarjeta-info" id="opciones-rutas">
+
+        {% for r in detalles_rutas %}
+        <div class="tarjeta-ruta ruta-{{ r.tipo|default:'otra' }}"
+        data-tipo="{{ r.tipo }}"
+        onclick="seleccionarRuta({{ forloop.counter }})">
+
+            <p>Tiempo estimado:  {{ r.tiempo_min|floatformat:1 }} min</p>
+
+            <p>Distancia: {{ r.distancia_km|floatformat:2 }} km</p>
+
+            {% if r.consumo_litros %}
+            <p>Combustible utiliza: {{ r.consumo_litros|floatformat:2 }} L</p>
+            {% endif %}
+
+            {% if r.costo_ruta %}
+            <p>Costo estimado: {{ r.costo_ruta|floatformat:2 }}</p>
+            {% endif %}
+
+            {% if r.tipo == "optima" %}
+                <center><p class="pill-tipo pill-optima texto-arriba ">Ruta Óptima</p></center>
+
+            {% elif r.tipo == "larga" %}
+                 <center><p class="pill-tipo pill-larga texto-arriba">Ruta Alternativa</p></center>
+            {% elif r.tipo == "segura" %}
+                 <center><p class="pill-tipo pill-segura texto-arriba">Ruta Alternativa</p></center>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+        <div class="acciones-rutas">
+            <a href="/buscarlugares/" class="btn-accion btn-cancelar">Cancelar</a>
+            <a href="/recorrido/"id="btn-ir-ahora" class="btn-accion btn-ir">Ir ahora</a>
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    const map = L.map('mapa').setView([-0.9333, -78.6167], 15);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const iconOrigen = L.icon({
+        iconUrl: '{% static "img/punto.png" %}',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+
+    const iconDestino = L.icon({
+        iconUrl: '{% static "img/puntorojo.png" %}',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+
+    const origen = JSON.parse('{{ origen_real|escapejs }}');
+    const destino = JSON.parse('{{ destino_real|escapejs }}');
+
+    const markerOrigen = L.marker(
+        [origen.latitud, origen.longitud],
+        { icon: iconOrigen }
+    ).addTo(map);
+    markerOrigen.bindPopup("Origen del vehículo");
+
+    const markerDestino = L.marker(
+        [destino.latitud, destino.longitud],
+        { icon: iconDestino }
+    ).addTo(map);
+    markerDestino.bindPopup(`Destino: ${destino.nombre}`);
+
+    const bounds = L.latLngBounds(
+        [origen.latitud, origen.longitud],
+        [destino.latitud, destino.longitud]
+    );
+    map.fitBounds(bounds, { padding: [50, 50] });
+
+
+    const rutas = JSON.parse('{{ rutas_js|escapejs }}');
+
+    const polylines = rutas.map((coords, idx) => {
+        let color = "#0077ff"; 
+        if (idx === 1) {
+            color = "#ff8800"; 
+        } else if (idx === 2) {
+            color = "#00ff88"; 
+        }
+        return L.polyline(coords, { color: color, weight: 6 });
+    });
+
+    function activarRuta(n) {
+        const idx = n - 1;
+        polylines.forEach(p => p.remove());
+        if (polylines[idx]) {
+            polylines[idx].addTo(map);
+        }
+    }
+
+
+    let rutaSeleccionada = 1;  
+
+    function seleccionarRuta(n) {
+        rutaSeleccionada = n;
+        activarRuta(n);
+
+   
+        const cards = document.querySelectorAll('.tarjeta-ruta');
+        cards.forEach((card, idx) => {
+            if (idx === n - 1) {
+                card.style.boxShadow = '0 0 0 2px #00e53a';
+            } else {
+                card.style.boxShadow = 'none';
+            }
+        });
+    }
+
+    document.getElementById('btn-ir-ahora').addEventListener('click', function (e) {
+        e.preventDefault();
+
+        const cards = document.querySelectorAll('.tarjeta-ruta');
+        const card = cards[rutaSeleccionada - 1];
+        const tipo = card.dataset.tipo;  
+
+        window.location.href = `/recorrido/?ruta=${tipo}`;
+    });
+
+    seleccionarRuta(1);
+
+    setTimeout(() => map.invalidateSize(), 300);
+</script>
+
+{% endblock %}

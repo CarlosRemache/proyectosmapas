@@ -1,8 +1,14 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Usuario, Vehiculo, Lugarguardado
+from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion
 from django.utils.timezone import now
 import requests
+import json
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from Aplicaciones.proyectos.rutas_utils import (construir_grafo,dijkstra,calcular_metricas_ruta,nodo_mas_cercano,nodos_mas_cercanos,calcular_ruta_larga,construir_grafo_seguro,calcular_ruta_segura,)
+
+
 
 def login_usuario(request):
     #validar el inicio de cesion de usuario
@@ -239,4 +245,561 @@ def eliminar_lugar(request, id):
     lugar.delete()
     messages.success(request,"habito eliminado")
     return redirect("buscarlugares")
+
+
+#rutas ----------------------------------------------------------------------------------------------------------------------------
+
+
+# Umbrales para considerar que una ruta es "realmente más larga"
+UMBRAL_DISTANCIA_REL = 0.10   # 10% más distancia
+UMBRAL_DISTANCIA_ABS = 0.3    # o al menos 0.3 km más
+UMBRAL_TIEMPO_REL = 0.10      # 10% más tiempo
+UMBRAL_TIEMPO_ABS = 1.0       # o al menos 1 minuto más
+
+def es_significativamente_mas_larga(dist_opt, t_opt, dist_larga, t_larga):
+    """
+    Devuelve True si la ruta larga es suficientemente más larga
+    que la óptima (en distancia o en tiempo).
+    """
+    # Diferencias
+    delta_dist = dist_larga - dist_opt
+    delta_t    = t_larga - t_opt
+
+    dist_ok = delta_dist >= max(UMBRAL_DISTANCIA_ABS, dist_opt * UMBRAL_DISTANCIA_REL)
+    tiempo_ok = delta_t >= max(UMBRAL_TIEMPO_ABS, t_opt * UMBRAL_TIEMPO_REL)
+
+    return dist_ok or tiempo_ok
+
+
+# Rendimientos aproximados (km por litro) por tipo de vehículo
+RENDIMIENTOS_KM_LITRO = {
+    "PRIVADO": 12.0,
+    "TAXI": 11.0,
+    "MOTOCICLETA": 30.0,
+    "CAMION": 5.0,
+}
+
+
+def rutas(request):
+    usuario_id = request.session.get("usuario_id")
+
+    # 1. Origen: última ubicación del vehículo del usuario
+    origen_obj = UbicacionVehiculo.objects.filter(
+        vehiculo__usuario__id_usuario=usuario_id
+    ).first()
+
+    if not origen_obj:
+        messages.error(request, "No se encontró la ubicación del vehículo.")
+        return redirect('/inicio')
+
+    lat_origen = origen_obj.latitud
+    lon_origen = origen_obj.longitud
+
+    # 2. Destino: último lugar guardado del usuario
+    destino_obj = Lugarguardado.objects.filter(usuario_id=usuario_id).last()
+
+    if not destino_obj:
+        messages.error(request, "Debes guardar un lugar primero.")
+        return redirect('/buscarlugares')
+
+    lat_dest = destino_obj.latitud_Lugarguardado
+    lon_dest = destino_obj.longitud_Lugarguardado
+
+
+    # 3. Buscar nodos más cercanos en tu red vial
+    nodo_origen = nodo_mas_cercano(lat_origen, lon_origen)
+    nodo_destino = nodo_mas_cercano(lat_dest, lon_dest)
+
+    if not nodo_origen or not nodo_destino:
+        messages.error(request, "No se encontraron nodos cercanos en la red vial.")
+        return redirect('/inicio')
+
+    # 4. Calcular la ruta óptima (mínimo tiempo) con Dijkstra
+    grafo = construir_grafo()
+    ruta_optima_ids, costo_min = dijkstra(grafo, nodo_origen.id_nodo, nodo_destino.id_nodo)
+
+    # ========= Fallback: probar con varios nodos cercanos si no hay ruta =========
+    if not ruta_optima_ids:
+        origen_candidatos = nodos_mas_cercanos(lat_origen, lon_origen, k=5)
+        destino_candidatos = nodos_mas_cercanos(lat_dest, lon_dest, k=5)
+
+        mejor = None
+
+        for o in origen_candidatos:
+            for d in destino_candidatos:
+                ruta_tmp, costo_tmp = dijkstra(grafo, o.id_nodo, d.id_nodo)
+                if ruta_tmp:
+                    mejor = (o, d, ruta_tmp, costo_tmp)
+                    break
+            if mejor:
+                break
+
+        if not mejor:
+            messages.error(request, "No se pudo calcular una ruta óptima en la red vial.")
+            return redirect('/inicio')
+
+        # Usamos el mejor par encontrado
+        nodo_origen, nodo_destino, ruta_optima_ids, costo_min = mejor
+
+    # Ya tenemos ruta_optima_ids -> calculamos métricas
+    distancia_km_opt, tiempo_min_opt = calcular_metricas_ruta(ruta_optima_ids)
+
+
+    #  Calcular la Ruta Larga (si existe)
+    
+    ruta_larga_ids, costo_largo = calcular_ruta_larga(
+        grafo,
+        ruta_optima_ids,
+        nodo_origen.id_nodo,
+        nodo_destino.id_nodo
+    )
+
+    distancia_km_larga = None
+    tiempo_min_larga = None
+
+    if ruta_larga_ids:
+        distancia_km_larga, tiempo_min_larga = calcular_metricas_ruta(ruta_larga_ids)
+  
+
+    ruta_segura_ids = None
+    distancia_km_segura = None
+    tiempo_min_segura = None
+
+    grafo_seguro = construir_grafo_seguro()
+
+    ruta_segura_ids, costo_seguro = calcular_ruta_segura(
+        grafo_seguro,
+        ruta_optima_ids,
+        ruta_larga_ids,
+        nodo_origen.id_nodo,
+        nodo_destino.id_nodo
+    )
+
+    if ruta_segura_ids:
+        distancia_km_segura, tiempo_min_segura = calcular_metricas_ruta(ruta_segura_ids)
+
+
+
+
+    vehiculo = Vehiculo.objects.filter(usuario_id=usuario_id).first()
+
+    if not vehiculo:
+        messages.error(request, "Debes registrar un vehículo antes de calcular la ruta.")
+        return redirect('/inicio')  # o a la pantalla donde se crean vehículos
+
+    rendimiento_km_litro = RENDIMIENTOS_KM_LITRO.get(
+        vehiculo.tipovehiculo_vehiculo
+    )
+
+    precio_obj = PrecioCombustible.objects.filter(
+        tipo=vehiculo.tipocombustible_vehiculo
+    ).first()
+
+    consumo_opt = costo_opt = None
+    consumo_larga = costo_larga = None
+    consumo_segura = costo_segura_monto = None 
+
+    if rendimiento_km_litro and precio_obj:
+        precio_litro = precio_obj.precio_por_litro
+
+        # Combustible necesario y costo para la ruta óptima
+        consumo_opt = distancia_km_opt / rendimiento_km_litro
+        costo_opt = consumo_opt * precio_litro
+
+        # Para la ruta larga (solo si existe)
+        if distancia_km_larga is not None:
+            consumo_larga = distancia_km_larga / rendimiento_km_litro
+            costo_larga = consumo_larga * precio_litro
+
+        # Para la ruta segura (solo si existe)
+        if distancia_km_segura is not None:
+            consumo_segura = distancia_km_segura / rendimiento_km_litro
+            costo_segura_monto = consumo_segura * precio_litro
+
+
+  
+
+
+    viaje = Viaje.objects.create(
+        usuario_id=usuario_id,
+        vehiculo=vehiculo,
+        origen=origen_obj,
+        destino=destino_obj,
+      
+    )
+       
+    request.session['viaje_id'] = viaje.id_viaje
+
+
+    #  Preparar datos para el template (Óptima + Larga + Segura)
+
+    detalles_rutas = []
+
+    # Ruta Óptima
+    detalles_rutas.append({
+        "distancia_km": distancia_km_opt,
+        "tiempo_min": tiempo_min_opt,
+        "tipo": "optima",
+        "consumo_litros": consumo_opt,
+        "costo_ruta": costo_opt,
+    })
+
+    # Ruta Larga (solo si realmente existe)
+    if ruta_larga_ids and distancia_km_larga and tiempo_min_larga:
+        detalles_rutas.append({
+            "distancia_km": distancia_km_larga,
+            "tiempo_min": tiempo_min_larga,
+            "tipo": "larga",
+            "consumo_litros": consumo_larga,
+            "costo_ruta": costo_larga,
+        })
+
+    # Ruta Segura (solo si realmente existe y es distinta)
+    if ruta_segura_ids and distancia_km_segura and tiempo_min_segura:
+        detalles_rutas.append({
+            "distancia_km": distancia_km_segura,
+            "tiempo_min": tiempo_min_segura,
+            "tipo": "segura",
+            "consumo_litros": consumo_segura,
+            "costo_ruta": costo_segura_monto,
+        })
+
+    # Coordenadas de las rutas (para Leaflet)
+
+
+    # Unimos todos los nodos usados por las rutas para una sola consulta
+    todos_ids = set(ruta_optima_ids)
+    if ruta_larga_ids:
+        todos_ids.update(ruta_larga_ids)
+    if ruta_segura_ids:
+        todos_ids.update(ruta_segura_ids)
+
+    nodos_dict = NodoMapa.objects.in_bulk(todos_ids, field_name='id_nodo')
+
+    # Ruta Óptima
+    coords_ruta_optima = []
+    for nid in ruta_optima_ids:
+        nodo = nodos_dict.get(nid)
+        if nodo:
+            coords_ruta_optima.append([nodo.latitud, nodo.longitud])
+
+    rutas_js = [coords_ruta_optima]
+
+    # Ruta Larga
+    if ruta_larga_ids:
+        coords_ruta_larga = []
+        for nid in ruta_larga_ids:
+            nodo = nodos_dict.get(nid)
+            if nodo:
+                coords_ruta_larga.append([nodo.latitud, nodo.longitud])
+
+        if coords_ruta_larga:
+            rutas_js.append(coords_ruta_larga)
+
+    # Ruta Segura
+    if ruta_segura_ids:
+        coords_ruta_segura = []
+        for nid in ruta_segura_ids:
+            nodo = nodos_dict.get(nid)
+            if nodo:
+                coords_ruta_segura.append([nodo.latitud, nodo.longitud])
+
+        if coords_ruta_segura:
+            rutas_js.append(coords_ruta_segura)
+
+
+    #  Enviar al template
+
+
+    return render(request, "rutas.html", {
+        "origen_real": json.dumps({"latitud": lat_origen, "longitud": lon_origen}),
+        "destino_real": json.dumps({
+            "latitud": lat_dest,
+            "longitud": lon_dest,
+            "nombre": destino_obj.nombre_Lugarguardado
+        }),
+        "rutas_js": json.dumps(rutas_js),
+        "detalles_rutas": detalles_rutas,
+    })
+
+#  recorrido-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+def recorrido(request):
+    usuario_id = request.session.get("usuario_id")
+    tipo_solicitado = request.GET.get("ruta", "optima") 
+
+    # Vehículo del usuario (ya lo tenías)
+    vehiculo = Vehiculo.objects.filter(usuario_id=usuario_id).first()
+
+    # === Origen / destino (igual que en rutas) ===
+    origen_obj = UbicacionVehiculo.objects.filter(
+        vehiculo__usuario__id_usuario=usuario_id
+    ).first()
+    if not origen_obj:
+        messages.error(request, "No se encontró la ubicación del vehículo.")
+        return redirect('/inicio')
+
+    destino_obj = Lugarguardado.objects.filter(usuario_id=usuario_id).last()
+    if not destino_obj:
+        messages.error(request, "Debes guardar un lugar primero.")
+        return redirect('/buscarlugares')
+
+    lat_origen = origen_obj.latitud
+    lon_origen = origen_obj.longitud
+    lat_dest = destino_obj.latitud_Lugarguardado
+    lon_dest = destino_obj.longitud_Lugarguardado
+
+    nodo_origen = nodo_mas_cercano(lat_origen, lon_origen)
+    nodo_destino = nodo_mas_cercano(lat_dest, lon_dest)
+
+    if not nodo_origen or not nodo_destino:
+        messages.error(request, "No se encontraron nodos cercanos en la red vial.")
+        return redirect('/inicio')
+
+    # === Ruta óptima ===
+    grafo = construir_grafo()
+    ruta_optima_ids, _ = dijkstra(grafo, nodo_origen.id_nodo, nodo_destino.id_nodo)
+
+    if not ruta_optima_ids:
+        origen_candidatos = nodos_mas_cercanos(lat_origen, lon_origen, k=5)
+        destino_candidatos = nodos_mas_cercanos(lat_dest, lon_dest, k=5)
+        mejor = None
+        for o in origen_candidatos:
+            for d in destino_candidatos:
+                rtmp, ctmp = dijkstra(grafo, o.id_nodo, d.id_nodo)
+                if rtmp:
+                    mejor = (o, d, rtmp)
+                    break
+            if mejor:
+                break
+        if not mejor:
+            messages.error(request, "No se pudo calcular una ruta en la red vial.")
+            return redirect('/inicio')
+        nodo_origen, nodo_destino, ruta_optima_ids = mejor
+
+    # === Ruta larga ===
+    ruta_larga_ids, _ = calcular_ruta_larga(
+        grafo,
+        ruta_optima_ids,
+        nodo_origen.id_nodo,
+        nodo_destino.id_nodo
+    )
+
+    # === Ruta segura ===
+    grafo_seguro = construir_grafo_seguro()
+    ruta_segura_ids, _ = calcular_ruta_segura(
+        grafo_seguro,
+        ruta_optima_ids,
+        ruta_larga_ids,
+        nodo_origen.id_nodo,
+        nodo_destino.id_nodo
+    )
+
+    # ============================
+    # Elegir la ruta a mostrar
+    # ============================
+    if tipo_solicitado == "larga" and ruta_larga_ids:
+        ruta_seleccionada_ids = ruta_larga_ids
+        color_ruta = "#ff8800"
+        tipo_bd = "LARGA"
+    elif tipo_solicitado == "segura" and ruta_segura_ids:
+        ruta_seleccionada_ids = ruta_segura_ids
+        color_ruta = "#00ff88"
+        tipo_bd = "SEGURA"
+    else:
+        # fallback a óptima
+        ruta_seleccionada_ids = ruta_optima_ids
+        color_ruta = "#00aaff"
+        tipo_bd = "OPTIMA"
+
+    # Coordenadas de la ruta seleccionada
+    todos_ids = set(ruta_seleccionada_ids)
+    nodos_dict = NodoMapa.objects.in_bulk(todos_ids, field_name='id_nodo')
+
+    coords_ruta = []
+    for nid in ruta_seleccionada_ids:
+        nodo = nodos_dict.get(nid)
+        if nodo:
+            coords_ruta.append([nodo.latitud, nodo.longitud])
+
+    rutas_js = [coords_ruta]
+
+
+    # NUEVO 1: calcular distancia y tiempo
+
+    distancia_km, tiempo_min = calcular_metricas_ruta(ruta_seleccionada_ids)
+
+
+    #  calcular consumo y costo
+
+    consumo_litros = None
+    costo_estimado = None
+
+    if vehiculo:
+        rendimiento = RENDIMIENTOS_KM_LITRO.get(vehiculo.tipovehiculo_vehiculo)
+        if rendimiento:
+            precio_obj = PrecioCombustible.objects.filter(
+                tipo=vehiculo.tipocombustible_vehiculo
+            ).first()
+            if precio_obj:
+                consumo_litros = distancia_km / rendimiento
+                costo_estimado = consumo_litros * precio_obj.precio_por_litro
+
+
+    # obtener el Viaje creado en rutas()
+
+    viaje = None
+    viaje_id = request.session.get('viaje_id')
+    if viaje_id:
+        viaje = Viaje.objects.filter(id_viaje=viaje_id).first()
+
+    # Si por alguna razón no existe, lo creamos aquí
+    if not viaje:
+        viaje = Viaje.objects.create(
+            usuario_id=usuario_id,
+            vehiculo=vehiculo,
+            origen=origen_obj,
+            destino=destino_obj,
+        )
+        request.session['viaje_id'] = viaje.id_viaje
+
+ 
+    RutaOpcion.objects.create(
+        viaje=viaje,
+        tipo=tipo_bd,               
+        tiempo_min=tiempo_min,
+        distancia_km=distancia_km,
+        consumo_litros=consumo_litros if consumo_litros is not None else 0,
+        costo_estimado=costo_estimado if costo_estimado is not None else 0,
+    )
+
+
+    return render(request, "recorrido.html", {
+        "origen_real": json.dumps({"latitud": lat_origen, "longitud": lon_origen}),
+        "destino_real": json.dumps({
+            "latitud": lat_dest,
+            "longitud": lon_dest,
+            "nombre": destino_obj.nombre_Lugarguardado
+        }),
+        "rutas_js": json.dumps(rutas_js),
+        "color_ruta": color_ruta,
+        "vehiculo": vehiculo,
+    })
+
+
+#historial-----------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+def historial(request):
+    # Proteger: solo usuarios logueados
+    if not request.session.get('usuario_id'):
+        return redirect('/login')
+
+    usuario_id = request.session.get('usuario_id')
+
+    # Todas las rutas de los viajes de ESTE usuario
+    rutas = RutaOpcion.objects.filter(
+        viaje__usuario_id=usuario_id
+    ).select_related('viaje', 'viaje__vehiculo').order_by('-viaje__fecha_creacion')
+
+    return render(request, 'historial.html', {
+        'rutas': rutas,
+    })
+
+
+
+
+def eliminar_ruta_historial(request, id_ruta):
+    if not request.session.get('usuario_id'):
+        return redirect('/login')
+
+    if request.method != 'POST':
+        return redirect('historial')
+
+    usuario_id = request.session.get('usuario_id')
+
+    ruta = RutaOpcion.objects.filter(
+        id_ruta_opcion=id_ruta,
+        viaje__usuario_id=usuario_id
+    ).first()
+
+    if not ruta:
+        messages.error(request, "La ruta que intentas eliminar no existe o no te pertenece.")
+        return redirect('historial')
+
+    ruta.delete()
+    messages.success(request, "Ruta eliminada del historial.")
+    return redirect('historial')
+
+
+
+
+
+#api ruta ---------------------------------------------------------------------------------------------------------
+
+
+
+@require_GET
+def api_ruta_optima(request):
+    """
+    Endpoint: devuelve la ruta óptima (mínimo tiempo) entre dos nodos.
+
+    Ejemplo de uso:
+    /api/ruta-optima/?origen=8520975411&destino=8520975397
+    """
+    try:
+        origen_id = int(request.GET.get("origen"))
+        destino_id = int(request.GET.get("destino"))
+    except (TypeError, ValueError):
+        return JsonResponse(
+            {"error": "Parámetros 'origen' y 'destino' son obligatorios y deben ser enteros."},
+            status=400,
+        )
+
+    # Verificar que existan los nodos
+    try:
+        NodoMapa.objects.get(pk=origen_id)
+        NodoMapa.objects.get(pk=destino_id)
+    except NodoMapa.DoesNotExist:
+        return JsonResponse(
+            {"error": "Alguno de los nodos (origen o destino) no existe."},
+            status=404,
+        )
+
+    grafo = construir_grafo()
+    ruta_ids, costo = dijkstra(grafo, origen_id, destino_id)
+
+    if not ruta_ids:
+        return JsonResponse(
+            {"error": "No se encontró ruta entre los nodos indicados."},
+            status=404,
+        )
+
+    distancia_km, tiempo_min = calcular_metricas_ruta(ruta_ids)
+
+    # Convertir ids de nodos a coordenadas [lon, lat] para el mapa
+    nodos = NodoMapa.objects.in_bulk(ruta_ids, field_name="id_nodo")
+    coordenadas = []
+    for nid in ruta_ids:
+        nodo = nodos.get(nid)
+        if nodo:
+            coordenadas.append([nodo.longitud, nodo.latitud])  # formato típico de mapas
+
+    data = {
+        "origen": origen_id,
+        "destino": destino_id,
+        "ruta_optima": {
+            "nodos": ruta_ids,
+            "coordenadas": coordenadas,
+            "distancia_km": distancia_km,
+            "tiempo_min": tiempo_min,
+        },
+    }
+
+    return JsonResponse(data)
+
+
+
 
