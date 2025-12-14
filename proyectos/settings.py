@@ -29,7 +29,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', default='your secret key')
 DEBUG = 'RENDER' not in os.environ
 
 ALLOWED_HOSTS = [
-    'proyectosmapas1.onrender.com',
+    'proyectodistric.onrender.com',
     os.environ.get('RENDER_EXTERNAL_HOSTNAME', ''),
     'localhost',
     '127.0.0.1'
@@ -43,7 +43,7 @@ if RENDER_EXTERNAL_HOSTNAME:
 
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://proyectosmapas1.onrender.com',
+    'https://proyectodistric.onrender.com',
 ]
 
 
@@ -120,15 +120,13 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-#postgresql://mapadb_grhm_user:SWQa6FGhLZB8TCBrkPfm105UW6GidhfT@dpg-d4rr0q75r7bs73f0b3ig-a/mapadb_grhm
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'mapadb_grhm',
-        'USER': 'mapadb_grhm_user',
-        'PASSWORD': 'SWQa6FGhLZB8TCBrkPfm105UW6GidhfT',
-        'HOST': 'dpg-d4rr0q75r7bs73f0b3ig-a',
+        'NAME': 'mapadistric',
+        'USER': 'mapadistric_user',
+        'PASSWORD': 'yF1lna5gBwXg3Vo4qJGaskWU4QrDutGP',
+        'HOST': 'dpg-d4tha3c9c44c73bocc0g-a',
         'PORT': '5432',
     }
 }
