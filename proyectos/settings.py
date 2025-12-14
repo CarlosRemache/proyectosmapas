@@ -120,13 +120,14 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'mapadistric',
         'USER': 'mapadistric_user',
         'PASSWORD': 'yF1lna5gBwXg3Vo4qJGaskWU4QrDutGP',
-        'HOST': 'dpg-d4tha3c9c44c73bocc0g-a',
+        'HOST': 'dpg-d4tha3c9c44c73bocc0g-a.oregon-postgres.render.com',
         'PORT': '5432',
     }
 }
