@@ -73,7 +73,6 @@
 
     .pill-tipo {
         margin-top: 6px;
-        font-size: 13px;
         font-weight: bold;
     }
 
@@ -140,6 +139,25 @@
     .tarjeta-ruta.ruta-segura { border: 2px solid #00ff88; }
 
 
+    .tarjeta-ruta.ruta-optima .pill-tipo{
+        font-size: 17px;     
+        line-height: 1.1;
+        margin: 0;           
+    }
+
+    .tarjeta-ruta.ruta-larga .pill-tipo{
+        font-size: 17px;     
+        line-height: 1.1;
+        margin: 0;           
+    }
+
+    .tarjeta-ruta.ruta-segura .pill-tipo{
+        font-size: 17px;     
+        line-height: 1.1;
+        margin: 0;           
+    }
+
+
 </style>
 
 
@@ -149,6 +167,7 @@
         <h3>Rutas disponibles</h3>
     </div>
     <div id="mapa"></div>
+
     <div class="tarjeta-info" id="opciones-rutas">
 
         {% for r in detalles_rutas %}
@@ -169,12 +188,14 @@
             {% endif %}
 
             {% if r.tipo == "optima" %}
-                <center><p class="pill-tipo pill-optima texto-arriba ">Ruta Óptima</p></center>
-
+                <center><p class="pill-tipo pill-optima texto-arriba ">Ruta </p></center>
+                <center><p class="pill-tipo pill-optima texto-arriba ">Óptima</p></center>
             {% elif r.tipo == "larga" %}
-                 <center><p class="pill-tipo pill-larga texto-arriba">Ruta Alternativa</p></center>
+                 <center><p class="pill-tipo pill-larga texto-arriba">Ruta </p></center>
+                <center><p class="pill-tipo pill-larga texto-arriba">Alternativa</p></center>
             {% elif r.tipo == "segura" %}
-                 <center><p class="pill-tipo pill-segura texto-arriba">Ruta Alternativa</p></center>
+                 <center><p class="pill-tipo pill-segura texto-arriba">Ruta</p></center>
+                <center><p class="pill-tipo pill-segura texto-arriba">Alternativa</p></center>
             {% endif %}
 
         </div>
@@ -199,14 +220,14 @@
 
     const iconOrigen = L.icon({
         iconUrl: '{% static "img/punto.png" %}',
-        iconSize: [30, 30],
-        iconAnchor: [15, 15]
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
     });
 
     const iconDestino = L.icon({
         iconUrl: '{% static "img/puntorojo.png" %}',
-        iconSize: [25, 25],
-        iconAnchor: [15, 15]
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
     });
 
     const origen = JSON.parse('{{ origen_real|escapejs }}');
@@ -230,9 +251,7 @@
     );
     map.fitBounds(bounds, { padding: [50, 50] });
 
-
     const rutas = JSON.parse('{{ rutas_js|escapejs }}');
-
     const polylines = rutas.map((coords, idx) => {
         let color = "#0077ff"; 
         if (idx === 1) {
@@ -251,14 +270,12 @@
         }
     }
 
-
     let rutaSeleccionada = 1;  
 
     function seleccionarRuta(n) {
         rutaSeleccionada = n;
         activarRuta(n);
 
-   
         const cards = document.querySelectorAll('.tarjeta-ruta');
         cards.forEach((card, idx) => {
             if (idx === n - 1) {
@@ -280,7 +297,6 @@
     });
 
     seleccionarRuta(1);
-
     setTimeout(() => map.invalidateSize(), 300);
 </script>
 
