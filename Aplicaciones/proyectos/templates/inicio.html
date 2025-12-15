@@ -1,3 +1,4 @@
+
 {% extends "./plantilla.html" %}
 {% load static %}
 {% block contenido %}
@@ -15,6 +16,7 @@
           padding: 0;
           margin: 0;
       }
+
       html, body, #map {
           height: 100%;
           width: 100vw;
@@ -48,8 +50,7 @@
  
   </head>
   <body>
-
-    
+        
   <nav class="navbar navbar-dark bg-dark fixed-top">
     <div class="container-fluid">
       <a class="navbar-brand" href="#"></a>
@@ -91,6 +92,8 @@
     </div>
   </nav>
 
+
+
   <button id="btnUbicacion">Activar ubicación</button>
     <div id="map"></div> 
 
@@ -99,75 +102,115 @@
             crossorigin=""></script>
 
     <script>
-      // Inicializa el mapa
-      const map = L.map('map').setView([-0.9333, -78.6167], 15);
+           //Cargas el CSS de Leaflet, que es la librería JavaScript que se para mostrar mapas usando OpenStreetMap. link rel="stylesheet"
+          //Carga de Leaflet JS con <script src="https://unpkg.com/leaflet@1.9.4
+
+      
+      const map = L.map('map').setView([-0.9333, -78.6167], 15); // crear el mapa  dentro de  <div id="map">,    .setView([lat, lon], zoom): centra el mapa (Latacunga aprox) y nivel de zoom 15
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap'
-      }).addTo(map);
+      }).addTo(map);// agrega capas
 
       // Ícono personalizado
       const phoneIcon = L.icon({
         iconUrl: '{% static "img/punto.png" %}',
-        iconSize: [35, 35],
-        iconAnchor: [17, 17]
+        iconSize: [35, 35],// tamaño de la imagen
+        iconAnchor: [17, 17] // el ancho
       });
 
-      let phoneMarker = null;
+      let phoneMarker = null; //Variable donde guarda el marcador que representa la ubicación actual del teléfono.
 
-      // === WebSocket ===
+      // WebSocket canal de comunicación en tiempo real entre el navegador y el servidor.  /ws/ubicacion/: ruta del WebSocket, debe coincidir con routing.py
       const socket = new WebSocket((window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/ubicacion/');
+
+
+      // Restablecer estado si estaba activada antes
+      document.addEventListener("DOMContentLoaded", function () {
+        const boton = document.getElementById("btnUbicacion");
+        const estado = localStorage.getItem("ubicacion_activa");
+
+        if (estado === "1") {
+            boton.disabled = true;
+            boton.textContent = "Ubicación activada";
+            boton.style.backgroundColor = "#28a745";
+
+            // Reactivar el seguimiento automáticamente
+            mostrarUbicacionTiempoReal();
+        }
+      });
+
+
 
       // Recibir coordenadas desde el servidor
       socket.onmessage = function(e) {
-        const data = JSON.parse(e.data);
+        const data = JSON.parse(e.data); //JSON.parse(e.data): conviertes el texto recibido en objeto JS.
         const coords = [data.latitud, data.longitud];
 
-        if (!phoneMarker) {
-          phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);
+        if (!phoneMarker) {//Si no existe phoneMarker, lo crea
+          phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);// permite en crear marcadores
         } else {
-          phoneMarker.setLatLng(coords);
+          phoneMarker.setLatLng(coords);//Si ya existe, solo actualizas su posición con
         }
-        map.panTo(coords);
+        map.panTo(coords);//map.panTo(coords): mueve el mapa para centrarlo en la nueva ubicación
       };
+
+
 
       socket.onclose = function(e) {
         console.error('Conexión WebSocket cerrada inesperadamente');
-      };
+      };//Solo loguea si la conexión se cierra de forma inesperada
+
+
 
       
-      // Enviar coordenadas al servidor (desde el teléfono)
+      // Enviar coordenadas al servidor (desde el teléfono)     API de Geolocalización
+      //activa el gps del telefeno
+      //el navegador soporta gps, si lo sosporta ejecuta el codigo y si no muestra un mensaje de error
       function mostrarUbicacionTiempoReal() {
         if ("geolocation" in navigator) {
-          navigator.geolocation.watchPosition((pos) => {
+          navigator.geolocation.watchPosition((pos) => {      //Obtiene la ubicación en tiempo real y activa el gps
             const lat = pos.coords.latitude;
-            const lon = pos.coords.longitude;
+            const lon = pos.coords.longitude; //se obtiene la latitud y longitud
             console.log(" Coordenadas enviadas:", lat, lon);
             
-            socket.send(JSON.stringify({ latitud: lat, longitud: lon }));
+            if (!window.ubicacionGuardada) { // la primera ves que se aplaste el boton se guarda en la base de datos
+                socket.send(JSON.stringify({// se envia al WebSocket con latitud, longitud el id del vehiculo y el boton de guardar
+                    latitud: lat,
+                    longitud: lon,
+                    vehiculo_id: {{ vehiculo.id_vehiculo|default:0 }},
+                    guardar: true
+                }));
+                window.ubicacionGuardada = true; // esto sirve para que ya no se vuelva a guardar 
+            } else {
+                socket.send(JSON.stringify({ // envia la ubicaicon para moverlo en el tiempo real y seguir mostrnado su ruta
+                    latitud: lat,
+                    longitud: lon,
+                    guardar: false
+                }));
+            }//Envía al servidor
+
           }, (error) => {
             alert("Error al obtener ubicación: " + error.message);
-          }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+          }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }); //usa GPS si está disponible. se demora 10 segundos para obtener la posición
 
           const boton = document.getElementById("btnUbicacion");
           boton.disabled = true;
           boton.textContent = "Ubicación activada";
           boton.style.backgroundColor = "#28a745";
+          localStorage.setItem("ubicacion_activa", "1");
+          
         } else {
           alert("Tu navegador no soporta geolocalización.");
         }
       }
 
 
-
-
       document.getElementById("btnUbicacion")
-              .addEventListener("click", mostrarUbicacionTiempoReal);
+              .addEventListener("click", mostrarUbicacionTiempoReal);//Al hacer clic, llamas a la función que comienza el watchPosition y el envío por WebSocket.
     </script>
   </body>
+
 </html>
 
-
-
-{% endblock %}
-
+{% endblock %} 

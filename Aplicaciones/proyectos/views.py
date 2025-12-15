@@ -1,12 +1,13 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
 from django.utils.timezone import now
 import requests
 import json
-from django.http import JsonResponse
-from django.views.decorators.http import require_GET
 from Aplicaciones.proyectos.rutas_utils import (construir_grafo,dijkstra,calcular_metricas_ruta,nodo_mas_cercano,nodos_mas_cercanos,calcular_ruta_larga,construir_grafo_seguro,calcular_ruta_segura,)
+
 
 
 
@@ -39,17 +40,20 @@ def login_usuario(request):
 def logout_usuario(request):
     request.session.flush()
     messages.success(request, "Sesión cerrada correctamente")
-    return redirect('/login') #devuelve la pantalla en login
+    return redirect('/login') 
 
 
 
 
 
 def inicio(request):
-    # Proteger el inicio: solo usuarios logueados
     if not request.session.get('usuario_id'):
         return redirect('/login')
-    return render(request, 'inicio.html')
+    
+    usuario_id = request.session.get('usuario_id')
+    vehiculo = Vehiculo.objects.filter(usuario_id=usuario_id).first()
+
+    return render(request, 'inicio.html', {'vehiculo': vehiculo})
 
 
 
@@ -95,8 +99,8 @@ def procesareditarusuario(request):
 
 
 def perfilusuario(request):
-    usuario_id = request.session.get('usuario_id') #obtiene el id del usuario creado
-    usuario = Usuario.objects.get(id_usuario=usuario_id) #busca el usuario en la base de datos
+    usuario_id = request.session.get('usuario_id') 
+    usuario = Usuario.objects.get(id_usuario=usuario_id) 
     return render(request, 'perfilusuario.html', {'usuario': usuario})
 
 
@@ -137,8 +141,6 @@ def guardarvehiculo(request):
 def listadovehiculo(request):
     id_usuario = request.session.get('usuario_id')
     usuario = Usuario.objects.get(id_usuario=id_usuario)
-
-    # Obtener SOLO el vehículo del usuario
     vehiculo = Vehiculo.objects.filter(usuario=usuario).first()
 
     return render(request, 'listadovehiculo.html', {'vehiculo': vehiculo})
@@ -155,7 +157,7 @@ def eliminarvehiculo(request, id):
 def editarvehiculo(request, id):
     id_usuario = request.session.get('usuario_id') 
     vehiculo = Vehiculo.objects.get(id_vehiculo=id)
-    usuarios = Usuario.objects.get(id_usuario=id_usuario) #Busca en la base de datos al usuario
+    usuarios = Usuario.objects.get(id_usuario=id_usuario) 
     return render(request, 'editarvehiculo.html', {'vehiculo': vehiculo, 'usuarios': usuarios})
 
 
@@ -171,8 +173,10 @@ def procesareditarvehiculo(request):
     messages.success(request, "Vehículo editado exitosamente")
     return redirect('/listadovehiculo')
 
-#---------------------------------------------------------------------------------------------------------------
-# buscarlugares
+
+
+
+#----------------------------------------------------------------------------------------------buscar lugares 
 
 
 def buscarlugares(request):
@@ -202,11 +206,13 @@ def buscarlugares(request):
         r = requests.get(url, params=params, headers={"User-Agent": "tuapp"})
         resultados = r.json()
 
+
     return render(request, "buscarlugares.html", {
         "query": query,
         "resultados": resultados,
         "historial": historial,
     })
+
 
 
 
@@ -222,10 +228,11 @@ def ver_lugar(request, lat, lon):
 
 
 
-
 def guardar_lugar(request, lat, lon, nombre):
+    # Obtener al usuario logueado
     usuario_id = request.session.get("usuario_id")
     usuario = Usuario.objects.get(id_usuario=usuario_id)
+    # Guardar en la tabla existente
     Lugarguardado.objects.create(
         usuario=usuario,
         nombre_Lugarguardado=nombre,
@@ -233,6 +240,7 @@ def guardar_lugar(request, lat, lon, nombre):
         longitud_Lugarguardado=float(lon)
     )
     messages.success(request, "Lugar guardado con exito")
+
     return redirect("ver_lugar", lat=lat, lon=lon)
 
 
@@ -241,9 +249,15 @@ def guardar_lugar(request, lat, lon, nombre):
 
 def eliminar_lugar(request, id):
     usuario_id = request.session.get("usuario_id")
-    lugar = Lugarguardado.objects.get(id_Lugarguardado=id, usuario=usuario_id)
+    lugar = Lugarguardado.objects.filter(
+        id_Lugarguardado=id,   
+        usuario_id=usuario_id ).first()
+    if not lugar:
+        messages.error(request,"El lugar que intentas eliminar ya no existe o no te pertenece.")
+        return redirect("buscarlugares")
+
     lugar.delete()
-    messages.success(request,"habito eliminado")
+    messages.success(request, "Lugar eliminado correctamente.")
     return redirect("buscarlugares")
 
 
@@ -283,7 +297,6 @@ RENDIMIENTOS_KM_LITRO = {
 def rutas(request):
     usuario_id = request.session.get("usuario_id")
 
-    # 1. Origen: última ubicación del vehículo del usuario
     origen_obj = UbicacionVehiculo.objects.filter(
         vehiculo__usuario__id_usuario=usuario_id
     ).first()
@@ -295,7 +308,6 @@ def rutas(request):
     lat_origen = origen_obj.latitud
     lon_origen = origen_obj.longitud
 
-    # 2. Destino: último lugar guardado del usuario
     destino_obj = Lugarguardado.objects.filter(usuario_id=usuario_id).last()
 
     if not destino_obj:
@@ -305,8 +317,8 @@ def rutas(request):
     lat_dest = destino_obj.latitud_Lugarguardado
     lon_dest = destino_obj.longitud_Lugarguardado
 
-
     # 3. Buscar nodos más cercanos en tu red vial
+
     nodo_origen = nodo_mas_cercano(lat_origen, lon_origen)
     nodo_destino = nodo_mas_cercano(lat_dest, lon_dest)
 
@@ -345,8 +357,8 @@ def rutas(request):
     distancia_km_opt, tiempo_min_opt = calcular_metricas_ruta(ruta_optima_ids)
 
 
-    #  Calcular la Ruta Larga (si existe)
-    
+    # Calcular la Ruta Larga (si existe)
+
     ruta_larga_ids, costo_largo = calcular_ruta_larga(
         grafo,
         ruta_optima_ids,
@@ -359,7 +371,8 @@ def rutas(request):
 
     if ruta_larga_ids:
         distancia_km_larga, tiempo_min_larga = calcular_metricas_ruta(ruta_larga_ids)
-  
+
+    # Calcular la Ruta Segura (Alternativa recomendada)
 
     ruta_segura_ids = None
     distancia_km_segura = None
@@ -379,13 +392,13 @@ def rutas(request):
         distancia_km_segura, tiempo_min_segura = calcular_metricas_ruta(ruta_segura_ids)
 
 
-
+    # Combustible y costo usando PrecioCombustible
 
     vehiculo = Vehiculo.objects.filter(usuario_id=usuario_id).first()
 
     if not vehiculo:
         messages.error(request, "Debes registrar un vehículo antes de calcular la ruta.")
-        return redirect('/inicio')  # o a la pantalla donde se crean vehículos
+        return redirect('/inicio')  
 
     rendimiento_km_litro = RENDIMIENTOS_KM_LITRO.get(
         vehiculo.tipovehiculo_vehiculo
@@ -397,7 +410,7 @@ def rutas(request):
 
     consumo_opt = costo_opt = None
     consumo_larga = costo_larga = None
-    consumo_segura = costo_segura_monto = None 
+    consumo_segura = costo_segura_monto = None  
 
     if rendimiento_km_litro and precio_obj:
         precio_litro = precio_obj.precio_por_litro
@@ -417,8 +430,7 @@ def rutas(request):
             costo_segura_monto = consumo_segura * precio_litro
 
 
-  
-
+    # Registrar el viaje en la base de datos (solo una vez)
 
     viaje = Viaje.objects.create(
         usuario_id=usuario_id,
@@ -427,12 +439,11 @@ def rutas(request):
         destino=destino_obj,
       
     )
-       
     request.session['viaje_id'] = viaje.id_viaje
 
 
-    #  Preparar datos para el template (Óptima + Larga + Segura)
-
+    # Preparar datos para el template (Óptima + Larga + Segura)
+  
     detalles_rutas = []
 
     # Ruta Óptima
@@ -464,8 +475,8 @@ def rutas(request):
             "costo_ruta": costo_segura_monto,
         })
 
-    # Coordenadas de las rutas (para Leaflet)
 
+    # Coordenadas de las rutas (para Leaflet)
 
     # Unimos todos los nodos usados por las rutas para una sola consulta
     todos_ids = set(ruta_optima_ids)
@@ -508,7 +519,7 @@ def rutas(request):
             rutas_js.append(coords_ruta_segura)
 
 
-    #  Enviar al template
+    # Enviar al template
 
 
     return render(request, "rutas.html", {
@@ -527,12 +538,10 @@ def rutas(request):
 
 def recorrido(request):
     usuario_id = request.session.get("usuario_id")
-    tipo_solicitado = request.GET.get("ruta", "optima") 
+    tipo_solicitado = request.GET.get("ruta", "optima")  
 
-    # Vehículo del usuario (ya lo tenías)
     vehiculo = Vehiculo.objects.filter(usuario_id=usuario_id).first()
 
-    # === Origen / destino (igual que en rutas) ===
     origen_obj = UbicacionVehiculo.objects.filter(
         vehiculo__usuario__id_usuario=usuario_id
     ).first()
@@ -596,9 +605,8 @@ def recorrido(request):
         nodo_destino.id_nodo
     )
 
-    # ============================
     # Elegir la ruta a mostrar
-    # ============================
+
     if tipo_solicitado == "larga" and ruta_larga_ids:
         ruta_seleccionada_ids = ruta_larga_ids
         color_ruta = "#ff8800"
@@ -630,9 +638,7 @@ def recorrido(request):
 
     distancia_km, tiempo_min = calcular_metricas_ruta(ruta_seleccionada_ids)
 
-
-    #  calcular consumo y costo
-
+    # NUEVO 2: calcular consumo y costo
     consumo_litros = None
     costo_estimado = None
 
@@ -647,8 +653,8 @@ def recorrido(request):
                 costo_estimado = consumo_litros * precio_obj.precio_por_litro
 
 
-    # obtener el Viaje creado en rutas()
-
+    # NUEVO 3: obtener el Viaje creado en rutas()
+ 
     viaje = None
     viaje_id = request.session.get('viaje_id')
     if viaje_id:
@@ -664,17 +670,17 @@ def recorrido(request):
         )
         request.session['viaje_id'] = viaje.id_viaje
 
- 
+    # NUEVO 4: guardar en RutaOpcion
     RutaOpcion.objects.create(
         viaje=viaje,
-        tipo=tipo_bd,               
+        tipo=tipo_bd,           
         tiempo_min=tiempo_min,
         distancia_km=distancia_km,
         consumo_litros=consumo_litros if consumo_litros is not None else 0,
         costo_estimado=costo_estimado if costo_estimado is not None else 0,
     )
 
-
+    # Renderizar template
     return render(request, "recorrido.html", {
         "origen_real": json.dumps({"latitud": lat_origen, "longitud": lon_origen}),
         "destino_real": json.dumps({
@@ -691,19 +697,11 @@ def recorrido(request):
 #historial-----------------------------------------------------------------------------------------------------------------------------------------
 
 
-
 def historial(request):
-    # Proteger: solo usuarios logueados
     if not request.session.get('usuario_id'):
         return redirect('/login')
-
     usuario_id = request.session.get('usuario_id')
-
-    # Todas las rutas de los viajes de ESTE usuario
-    rutas = RutaOpcion.objects.filter(
-        viaje__usuario_id=usuario_id
-    ).select_related('viaje', 'viaje__vehiculo').order_by('-viaje__fecha_creacion')
-
+    rutas = RutaOpcion.objects.filter(viaje__usuario_id=usuario_id).select_related('viaje', 'viaje__vehiculo').order_by('-viaje__fecha_creacion')
     return render(request, 'historial.html', {
         'rutas': rutas,
     })
@@ -720,10 +718,8 @@ def eliminar_ruta_historial(request, id_ruta):
 
     usuario_id = request.session.get('usuario_id')
 
-    ruta = RutaOpcion.objects.filter(
-        id_ruta_opcion=id_ruta,
-        viaje__usuario_id=usuario_id
-    ).first()
+
+    ruta = RutaOpcion.objects.filter(id_ruta_opcion=id_ruta,viaje__usuario_id=usuario_id).first()
 
     if not ruta:
         messages.error(request, "La ruta que intentas eliminar no existe o no te pertenece.")
@@ -785,7 +781,7 @@ def api_ruta_optima(request):
     for nid in ruta_ids:
         nodo = nodos.get(nid)
         if nodo:
-            coordenadas.append([nodo.longitud, nodo.latitud])  # formato típico de mapas
+            coordenadas.append([nodo.longitud, nodo.latitud])  
 
     data = {
         "origen": origen_id,

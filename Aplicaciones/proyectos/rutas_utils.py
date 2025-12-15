@@ -1,4 +1,4 @@
-# Aplicaciones/carros2/rutas_utils.py
+
 
 from django.db.models import F, FloatField, ExpressionWrapper
 from Aplicaciones.proyectos.models import NodoMapa, TramoVial
