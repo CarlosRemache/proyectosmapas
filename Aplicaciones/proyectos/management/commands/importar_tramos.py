@@ -50,7 +50,7 @@ class Command(BaseCommand):
         file_path = options["file_path"]
         self.stdout.write(self.style.NOTICE(f"Leyendo archivo: {file_path}"))
 
-        # ✅ para confirmar BD (Render vs local)
+        # ✅ Confirmar DB (Render vs local)
         self.stdout.write(
             f"DB => HOST={connection.settings_dict.get('HOST')} "
             f"NAME={connection.settings_dict.get('NAME')}"
@@ -61,20 +61,24 @@ class Command(BaseCommand):
 
         elementos = data.get("elements", [])
 
-        # Cache: {osm_id: NodoMapa(pk interno)}
-        # Traemos solo lo necesario para no cargar campos extra
-        nodos_cache = dict(NodoMapa.objects.values_list("id_nodo", "id_nodo"))
-        # Nota: como id_nodo es PK, el valor que necesitamos para FK es el mismo (id_nodo)
+        # ✅ OPTIMIZACIÓN: precargar coords de TODOS los nodos 1 sola vez
+        # nodos_xy: {id_nodo: (lat, lon)}
+        self.stdout.write("Precargando coordenadas de nodos...")
+        nodos_xy = {
+            n["id_nodo"]: (n["latitud"], n["longitud"])
+            for n in NodoMapa.objects.values("id_nodo", "latitud", "longitud")
+        }
+        self.stdout.write(f"Coordenadas cargadas: {len(nodos_xy)} nodos")
 
         total_ways = 0
         total_tramos_intentados = 0
-        total_tramos_creados_aprox = 0
+        total_tramos_insertados_aprox = 0
 
-        BATCH_SIZE = 2000  # tramos: puedes subir a 2000-5000 según estabilidad
+        BATCH_SIZE = 2000
         batch = []
 
         def insertar_lote(lote):
-            nonlocal total_tramos_creados_aprox
+            nonlocal total_tramos_insertados_aprox
             for intento in range(1, 6):
                 try:
                     TramoVial.objects.bulk_create(
@@ -82,11 +86,11 @@ class Command(BaseCommand):
                         ignore_conflicts=True,
                         batch_size=BATCH_SIZE
                     )
-                    total_tramos_creados_aprox += len(lote)
+                    total_tramos_insertados_aprox += len(lote)
                     return
-                except OperationalError:
+                except OperationalError as e:
                     self.stdout.write(self.style.WARNING(
-                        f"⚠️ Se cortó SSL (intento {intento}/5). Reintentando..."
+                        f"⚠️ Se cortó SSL (intento {intento}/5): {e}. Reintentando..."
                     ))
                     connection.close()
                     time.sleep(2 * intento)
@@ -114,35 +118,32 @@ class Command(BaseCommand):
                 osm_id_origen = nodes_list[idx]
                 osm_id_destino = nodes_list[idx + 1]
 
-                # si no existen nodos en la tabla, saltar
-                if osm_id_origen not in nodos_cache or osm_id_destino not in nodos_cache:
+                # ✅ ya no consultamos BD: buscamos coordenadas en dict
+                origen_xy = nodos_xy.get(osm_id_origen)
+                destino_xy = nodos_xy.get(osm_id_destino)
+                if not origen_xy or not destino_xy:
                     continue
 
                 total_tramos_intentados += 1
 
-                # Obtener coordenadas de BD (solo cuando toca) — forma eficiente:
-                # (si quieres más velocidad, puedo darte una versión que precargue lat/lon en dict)
-                nodo_origen = NodoMapa.objects.only("id_nodo", "latitud", "longitud").get(id_nodo=osm_id_origen)
-                nodo_destino = NodoMapa.objects.only("id_nodo", "latitud", "longitud").get(id_nodo=osm_id_destino)
+                lat1, lon1 = origen_xy
+                lat2, lon2 = destino_xy
 
-                dist_km = haversine_km(
-                    nodo_origen.latitud, nodo_origen.longitud,
-                    nodo_destino.latitud, nodo_destino.longitud
-                )
+                dist_km = haversine_km(lat1, lon1, lat2, lon2)
 
                 vel_kmh = velocidad_por_tipo_via(tipo_via)
                 tiempo_min = (dist_km / vel_kmh) * 60.0 if vel_kmh > 0 else 0.0
 
                 # tramo ida
                 batch.append(TramoVial(
-                    origen_id=osm_id_origen,      # FK directo por id
+                    origen_id=osm_id_origen,
                     destino_id=osm_id_destino,
                     distancia_km=dist_km,
                     tiempo_base_min=tiempo_min,
                     tipo_via=tipo_via,
                 ))
 
-                # tramo vuelta (doble sentido)
+                # tramo vuelta
                 batch.append(TramoVial(
                     origen_id=osm_id_destino,
                     destino_id=osm_id_origen,
@@ -162,7 +163,5 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("✅ Importación de tramos completada (por lotes)"))
         self.stdout.write(f"Total ways procesados: {total_ways}")
         self.stdout.write(f"Tramos intentados (pares de nodos): {total_tramos_intentados}")
-        self.stdout.write(f"Tramos insertados (aprox, incluye ignorados si ya existían): {total_tramos_creados_aprox}")
-
-        # Conteo real en BD (útil)
+        self.stdout.write(f"Tramos insertados (aprox, incluye ignorados si ya existían): {total_tramos_insertados_aprox}")
         self.stdout.write(f"Total tramos actualmente en la BD: {TramoVial.objects.count()}")
