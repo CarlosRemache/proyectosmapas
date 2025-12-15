@@ -132,6 +132,22 @@ DATABASES = {
     }
 }
 
+
+
+DATABASES["default"]["CONN_MAX_AGE"] = 60  # mantiene viva la conexión
+
+DATABASES["default"]["OPTIONS"] = {
+    "sslmode": "require",
+    "connect_timeout": 10,
+    "keepalives": 1,
+    "keepalives_idle": 30,
+    "keepalives_interval": 10,
+    "keepalives_count": 5,
+}
+
+
+
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
