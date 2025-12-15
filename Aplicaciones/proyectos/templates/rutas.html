@@ -142,19 +142,22 @@
     .tarjeta-ruta.ruta-optima .pill-tipo{
         font-size: 17px;     
         line-height: 1.1;
-        margin: 0;           
+        margin: 0;
+        text-align: right;           
     }
 
     .tarjeta-ruta.ruta-larga .pill-tipo{
         font-size: 17px;     
         line-height: 1.1;
-        margin: 0;           
+        margin: 0;
+        text-align: right;           
     }
 
     .tarjeta-ruta.ruta-segura .pill-tipo{
         font-size: 17px;     
         line-height: 1.1;
-        margin: 0;           
+        margin: 0;
+        text-align: right;           
     }
 
 
@@ -188,14 +191,14 @@
             {% endif %}
 
             {% if r.tipo == "optima" %}
-                <center><p class="pill-tipo pill-optima texto-arriba ">Ruta </p></center>
-                <center><p class="pill-tipo pill-optima texto-arriba ">Óptima</p></center>
+                <p class="pill-tipo pill-optima texto-arriba ">Ruta </p>
+                <p class="pill-tipo pill-optima texto-arriba ">Óptima</p>
             {% elif r.tipo == "larga" %}
-                 <center><p class="pill-tipo pill-larga texto-arriba">Ruta </p></center>
-                <center><p class="pill-tipo pill-larga texto-arriba">Alternativa</p></center>
+                 <p class="pill-tipo pill-larga texto-arriba">Ruta </p>
+                 <p class="pill-tipo pill-larga texto-arriba">Alternativa</p>
             {% elif r.tipo == "segura" %}
-                 <center><p class="pill-tipo pill-segura texto-arriba">Ruta</p></center>
-                <center><p class="pill-tipo pill-segura texto-arriba">Alternativa</p></center>
+                <p class="pill-tipo pill-segura texto-arriba">Ruta</p>
+                <p class="pill-tipo pill-segura texto-arriba">Alternativa</p>
             {% endif %}
 
         </div>
