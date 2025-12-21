@@ -140,21 +140,21 @@
 
 
     .tarjeta-ruta.ruta-optima .pill-tipo{
-        font-size: 14px;     
+        font-size: 17px;     
         line-height: 1.1;
         margin: 0;
         text-align: right;           
     }
 
     .tarjeta-ruta.ruta-larga .pill-tipo{
-        font-size: 14px;     
+        font-size: 17px;     
         line-height: 1.1;
         margin: 0;
         text-align: right;           
     }
 
     .tarjeta-ruta.ruta-segura .pill-tipo{
-        font-size: 14px;     
+        font-size: 17px;     
         line-height: 1.1;
         margin: 0;
         text-align: right;           
@@ -169,6 +169,7 @@
     <div class="titulo-mapa">
         <h3>Rutas disponibles</h3>
     </div>
+
     <div id="mapa"></div>
 
     <div class="tarjeta-info" id="opciones-rutas">
@@ -194,11 +195,11 @@
                 <p class="pill-tipo pill-optima texto-arriba ">Ruta </p>
                 <p class="pill-tipo pill-optima texto-arriba ">Óptima</p>
             {% elif r.tipo == "larga" %}
-                 <p class="pill-tipo pill-larga texto-arriba">Ruta </p>
-                 <p class="pill-tipo pill-larga texto-arriba">Alternativa</p>
+                <p class="pill-tipo pill-larga texto-arriba">Ruta </p>
+                <p class="pill-tipo pill-larga texto-arriba">Alternativa</p>
             {% elif r.tipo == "segura" %}
-                <p class="pill-tipo pill-segura texto-arriba">Ruta</p>
-                <p class="pill-tipo pill-segura texto-arriba">Alternativa</p>
+                 <p class="pill-tipo pill-segura texto-arriba">Ruta</p>
+                 <p class="pill-tipo pill-segura texto-arriba">Alternativa</p>
             {% endif %}
 
         </div>
@@ -254,11 +255,13 @@
     );
     map.fitBounds(bounds, { padding: [50, 50] });
 
+
     const rutas = JSON.parse('{{ rutas_js|escapejs }}');
+
     const polylines = rutas.map((coords, idx) => {
         let color = "#0077ff"; 
         if (idx === 1) {
-            color = "#ff8800"; 
+            color = "#ff8800";
         } else if (idx === 2) {
             color = "#00ff88"; 
         }
@@ -300,6 +303,7 @@
     });
 
     seleccionarRuta(1);
+
     setTimeout(() => map.invalidateSize(), 300);
 </script>
 
