@@ -1,5 +1,4 @@
 
-
 from django.db.models import F, FloatField, ExpressionWrapper
 from Aplicaciones.proyectos.models import NodoMapa, TramoVial
 from collections import defaultdict
@@ -7,7 +6,6 @@ import heapq
 
 
 # CACHÉ DE TRAMOS (para no consultar la BD muchas veces)
-
 
 _tramos_cache = None
 _tramos_index_cache = None
@@ -50,9 +48,7 @@ def limpiar_cache_tramos():
     _tramos_index_cache = None
 
 
-
 # CONSTRUCCIÓN DE GRAFOS
-
 
 def construir_grafo():
     """
@@ -122,10 +118,9 @@ def calcular_metricas_ruta(lista_ids_nodo):
         if not tramo:
             continue
         distancia_total += tramo.distancia_km   
-        tiempo_total += tramo.tiempo_base_min  
+        tiempo_total += tramo.tiempo_base_min   
 
     return distancia_total, tiempo_total
-
 
 
 # NODOS CERCANOS (para enganchar GPS con la red vial)
@@ -154,8 +149,8 @@ def nodo_mas_cercano(lat, lon):
     return resultados[0] if resultados else None
 
 
-#  RUTAS ALTERNATIVAS
 
+# UTILES PARA RUTAS ALTERNATIVAS
 
 def construir_grafo_sin_tramo(grafo, u, v):
     """
@@ -184,8 +179,8 @@ def construir_grafo_sin_tramo(grafo, u, v):
     return nuevo_grafo
 
 
-# Penalización para los tramos de la ruta óptima
-PENALIZACION_RUTA_OPTIMA = 2.0  # puedes probar 2.0, 3.0, 5.0, etc.
+
+PENALIZACION_RUTA_OPTIMA = 2.0  
 
 
 def construir_grafo_penalizado(grafo, ruta_optima_ids, factor=PENALIZACION_RUTA_OPTIMA):
@@ -227,7 +222,7 @@ def calcular_ruta_larga(grafo, ruta_optima_ids, origen_id, destino_id):
 
 
 
-# RUTA SEGURA (3ª RUTA)
+# RUTA SEGURA (3ª RUTA)---------------------------------------
 
 # FACTORES DE SEGURIDAD (ajusta a tu gusto)
 FACTOR_SEGURIDAD = {
@@ -283,7 +278,7 @@ def calcular_ruta_segura(grafo_seguro, ruta_optima_ids, ruta_larga_ids,
 
     Devuelve (lista_ids_ruta_segura, costo_total_minutos) o (None, None).
     """
-
+    # 1) Ruta segura básica
     ruta_segura, costo_seguro = dijkstra(grafo_seguro, origen_id, destino_id)
 
     if not ruta_segura:
@@ -293,7 +288,7 @@ def calcular_ruta_segura(grafo_seguro, ruta_optima_ids, ruta_larga_ids,
        not rutas_muy_similares(ruta_segura, ruta_larga_ids or []):
         return ruta_segura, costo_seguro
 
-
+    # 2) Forzar ruta distinta eliminando tramos inseguros de la óptima
     index_tramos = obtener_index_tramos()
     candidatos = []
 
@@ -312,7 +307,7 @@ def calcular_ruta_segura(grafo_seguro, ruta_optima_ids, ruta_larga_ids,
 
         candidatos.append((prioridad, u, v))
 
-    candidatos.sort(reverse=True)  #
+    candidatos.sort(reverse=True) 
 
     for prioridad, u, v in candidatos:
         grafo_alt = construir_grafo_sin_tramo(grafo_seguro, u, v)
@@ -324,4 +319,4 @@ def calcular_ruta_segura(grafo_seguro, ruta_optima_ids, ruta_larga_ids,
            not rutas_muy_similares(ruta_alt, ruta_larga_ids or []):
             return ruta_alt, costo_alt
 
-    return None, None
+    return None, None  

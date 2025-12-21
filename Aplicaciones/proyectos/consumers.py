@@ -1,7 +1,7 @@
 import json 
 from channels.generic.websocket import AsyncWebsocketConsumer 
 from .models import UbicacionVehiculo 
-from asgiref.sync import sync_to_async  
+from asgiref.sync import sync_to_async 
 
 
 
@@ -17,7 +17,7 @@ class UbicacionConsumer(AsyncWebsocketConsumer):
 
 
     async def receive(self, text_data):
-        data = json.loads(text_data) 
+        data = json.loads(text_data)
         lat = data['latitud']
         lon = data['longitud']
         guardar = data.get("guardar", False)
@@ -30,7 +30,6 @@ class UbicacionConsumer(AsyncWebsocketConsumer):
                 latitud=lat,
                 longitud=lon
             )
-
 
 
         await self.channel_layer.group_send(

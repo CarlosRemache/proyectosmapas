@@ -123,8 +123,8 @@
 
 
     .texto-arriba {
-    position: relative; /* Define el contexto de posicionamiento */
-    top: -70px;         /* Mueve el elemento 20 píxeles hacia arriba (valor negativo) */
+    position: relative; /
+    top: -70px;         
     }
 
     p {
@@ -169,7 +169,6 @@
     <div class="titulo-mapa">
         <h3>Rutas disponibles</h3>
     </div>
-
     <div id="mapa"></div>
 
     <div class="tarjeta-info" id="opciones-rutas">
@@ -261,7 +260,7 @@
     const polylines = rutas.map((coords, idx) => {
         let color = "#0077ff"; 
         if (idx === 1) {
-            color = "#ff8800";
+            color = "#ff8800"; 
         } else if (idx === 2) {
             color = "#00ff88"; 
         }
@@ -276,11 +275,13 @@
         }
     }
 
+
     let rutaSeleccionada = 1;  
 
     function seleccionarRuta(n) {
         rutaSeleccionada = n;
         activarRuta(n);
+
 
         const cards = document.querySelectorAll('.tarjeta-ruta');
         cards.forEach((card, idx) => {
@@ -292,6 +293,7 @@
         });
     }
 
+
     document.getElementById('btn-ir-ahora').addEventListener('click', function (e) {
         e.preventDefault();
 
@@ -301,6 +303,7 @@
 
         window.location.href = `/recorrido/?ruta=${tipo}`;
     });
+
 
     seleccionarRuta(1);
 
