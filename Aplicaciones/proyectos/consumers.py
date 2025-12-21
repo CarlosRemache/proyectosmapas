@@ -20,17 +20,15 @@ class UbicacionConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         lat = data['latitud']
         lon = data['longitud']
-        guardar = data.get("guardar", False)
         vehiculo_id = data.get("vehiculo_id")
 
-
-        if  guardar and vehiculo_id:
+        # Guardar SIEMPRE (si viene vehiculo_id)
+        if vehiculo_id:
             await sync_to_async(UbicacionVehiculo.objects.create)(
                 vehiculo_id=vehiculo_id,
                 latitud=lat,
                 longitud=lon
             )
-
 
         await self.channel_layer.group_send(
             "vehiculos",

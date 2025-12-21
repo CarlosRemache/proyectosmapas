@@ -144,9 +144,6 @@ def perfilusuario(request):
     return render(request, 'perfilusuario.html', {'usuario': usuario})
 
 
-
-
-
 #---------------------------------------------------------------------------------------------------------------
 
 def nuevovehiculo(request):
@@ -328,9 +325,24 @@ RENDIMIENTOS_KM_LITRO = {
 def rutas(request):
     usuario_id = request.session.get("usuario_id")
 
-    origen_obj = UbicacionVehiculo.objects.filter(
-        vehiculo__usuario__id_usuario=usuario_id
-    ).first()
+    lat_get = request.GET.get("lat")
+    lon_get = request.GET.get("lon")
+
+    if lat_get and lon_get:
+        lat_origen = float(lat_get)
+        lon_origen = float(lon_get)
+    else:
+        origen_obj = UbicacionVehiculo.objects.filter(
+            vehiculo__usuario__id_usuario=usuario_id
+        ).order_by('-fecha_hora').first()
+
+        if not origen_obj:
+            messages.error(request, "No se encontró la ubicación del vehículo.")
+            return redirect('/inicio')
+
+        lat_origen = origen_obj.latitud
+        lon_origen = origen_obj.longitud
+
 
     if not origen_obj:
         messages.error(request, "No se encontró la ubicación del vehículo.")
@@ -554,12 +566,23 @@ def recorrido(request):
     vehiculo = Vehiculo.objects.filter(usuario_id=usuario_id).first()
 
 
-    origen_obj = UbicacionVehiculo.objects.filter(
-        vehiculo__usuario__id_usuario=usuario_id
-    ).first()
-    if not origen_obj:
-        messages.error(request, "No se encontró la ubicación del vehículo.")
-        return redirect('/inicio')
+    lat_get = request.GET.get("lat")
+    lon_get = request.GET.get("lon")
+
+    if lat_get and lon_get:
+        lat_origen = float(lat_get)
+        lon_origen = float(lon_get)
+    else:
+        origen_obj = UbicacionVehiculo.objects.filter(
+            vehiculo__usuario__id_usuario=usuario_id
+        ).order_by('-fecha_hora').first()
+
+        if not origen_obj:
+            messages.error(request, "No se encontró la ubicación del vehículo.")
+            return redirect('/inicio')
+
+        lat_origen = origen_obj.latitud
+        lon_origen = origen_obj.longitud
 
     destino_obj = Lugarguardado.objects.filter(usuario_id=usuario_id).last()
     if not destino_obj:

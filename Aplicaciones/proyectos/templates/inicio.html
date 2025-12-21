@@ -172,6 +172,10 @@
           navigator.geolocation.watchPosition((pos) => {      //Obtiene la ubicación en tiempo real y activa el gps
             const lat = pos.coords.latitude;
             const lon = pos.coords.longitude; //se obtiene la latitud y longitud
+
+            localStorage.setItem("last_lat", lat);
+            localStorage.setItem("last_lon", lon);
+
             console.log(" Coordenadas enviadas:", lat, lon);
             
             if (!window.ubicacionGuardada) { // la primera ves que se aplaste el boton se guarda en la base de datos
