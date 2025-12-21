@@ -109,29 +109,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-
-        (function asegurarOrigenActual() {
-            const url = new URL(window.location.href);
-            if (url.searchParams.get("lat") && url.searchParams.get("lon")) return;
-
-            const lastLat = localStorage.getItem("last_lat");
-            const lastLon = localStorage.getItem("last_lon");
-            if (lastLat && lastLon) {
-            url.searchParams.set("lat", lastLat);
-            url.searchParams.set("lon", lastLon);
-            window.location.replace(url.toString());
-            return;
-            }
-
-            if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition((pos) => {
-                url.searchParams.set("lat", pos.coords.latitude);
-                url.searchParams.set("lon", pos.coords.longitude);
-                window.location.replace(url.toString());
-            }, () => {}, { enableHighAccuracy: true, timeout: 10000 });
-            }
-        })();
-
         const map = L.map('mapa').setView([-0.9333, -78.6167], 15);
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
