@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion
+from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion,Administrador
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.utils.timezone import now
@@ -10,33 +10,72 @@ from Aplicaciones.proyectos.rutas_utils import (construir_grafo,dijkstra,calcula
 
 
 
-
 def login_usuario(request):
-    #validar el inicio de cesion de usuario
     if request.session.get('usuario_id'):
+        if request.session.get('usuario_tiporol') == 'ADMINISTRADOR':
+            return redirect('/adminpanel/')
         return redirect('/inicio')
 
     if request.method == 'POST':
-        correo = request.POST.get('correo')
-        contrasena = request.POST.get('contrasena')
+        usuario_in = request.POST.get('usuario', '').strip()
+        contrasena = request.POST.get('contrasena', '').strip()
+        rol_elegido = request.POST.get('rol', '').strip()
+
+        if not rol_elegido:
+            messages.error(request, "Debes seleccionar un rol.")
+            return render(request, 'login.html')
 
         try:
-            #busca en la base de datos con sus datos correspondientes
-            usuario = Usuario.objects.get(correo_usuario=correo, contrasena_usuario=contrasena)
+            usuario = Usuario.objects.get(
+                correo_usuario=usuario_in,
+                contrasena_usuario=contrasena
+            )
+
+            if usuario.tiporol != rol_elegido:
+                messages.error(request, "Rol incorrecto para este usuario.")
+                return render(request, 'login.html')
+
+
+            if rol_elegido == "ADMINISTRADOR":
+                try:
+                    admin = Administrador.objects.get(usuario=usuario)
+                except Administrador.DoesNotExist:
+                    messages.error(request, "Este usuario NO tiene perfil de administrador.")
+                    return render(request, 'login.html')
+
+
             request.session['usuario_id'] = usuario.id_usuario
             request.session['usuario_nombre'] = usuario.nombre_usuario
             request.session['usuario_apellido'] = usuario.apellido_usuario
+            request.session['usuario_tiporol'] = usuario.tiporol
+
             messages.success(request, "Inicio de sesión exitoso")
+
+            if rol_elegido == 'ADMINISTRADOR':
+                return redirect('/adminpanel/')
+
             return redirect('/inicio')
+
         except Usuario.DoesNotExist:
-            messages.error(request, "Correo o contraseña incorrectos")
+            messages.error(request, "Usuario o contraseña incorrectos")
 
     return render(request, 'login.html')
 
 
 
 
-#sirve para cerrar la cesion 
+def admin_panel(request):
+    if not request.session.get('usuario_id'):
+        return redirect('/login')
+
+    if request.session.get('usuario_tiporol') != 'ADMINISTRADOR':
+        messages.error(request, "No tienes permisos para acceder.")
+        return redirect('/inicio')
+
+    return render(request, 'admin_panel.html')
+
+
+
 def logout_usuario(request):
     request.session.flush()
     messages.success(request, "Sesión cerrada correctamente")
@@ -47,6 +86,7 @@ def logout_usuario(request):
 
 
 def inicio(request):
+
     if not request.session.get('usuario_id'):
         return redirect('/login')
     
@@ -106,15 +146,14 @@ def perfilusuario(request):
 
 
 
+
 #---------------------------------------------------------------------------------------------------------------
-# Vehiculo
 
 def nuevovehiculo(request):
     id_usuario = request.session.get('usuario_id')
     usuario = Usuario.objects.get(id_usuario=id_usuario)
-    tiene_vehiculo = Vehiculo.objects.filter(usuario=usuario).exists()  
+    tiene_vehiculo = Vehiculo.objects.filter(usuario=usuario).exists() 
     return render(request, 'nuevovehiculo.html', {'usuario': usuario,'tiene_vehiculo': tiene_vehiculo  })
-
 
 
 def guardarvehiculo(request):
@@ -157,7 +196,7 @@ def eliminarvehiculo(request, id):
 def editarvehiculo(request, id):
     id_usuario = request.session.get('usuario_id') 
     vehiculo = Vehiculo.objects.get(id_vehiculo=id)
-    usuarios = Usuario.objects.get(id_usuario=id_usuario) 
+    usuarios = Usuario.objects.get(id_usuario=id_usuario) #Busca en la base de datos al usuario
     return render(request, 'editarvehiculo.html', {'vehiculo': vehiculo, 'usuarios': usuarios})
 
 
@@ -174,8 +213,6 @@ def procesareditarvehiculo(request):
     return redirect('/listadovehiculo')
 
 
-
-
 #----------------------------------------------------------------------------------------------buscar lugares 
 
 
@@ -183,8 +220,8 @@ def buscarlugares(request):
     query = request.GET.get("q", "") 
 
     resultados = []
-
     usuario_id = request.session.get("usuario_id")
+
 
     if usuario_id is None:
         messages.error(request, "Debes iniciar sesión")
@@ -198,22 +235,19 @@ def buscarlugares(request):
             "q": query, 
             "format": "json", 
             "addressdetails": 1, 
-            "limit": 15, 
-            "viewbox": "-78.7000,-0.8000,-78.5000,-1.0500",  
+            "limit": 15,
+            "viewbox": "-78.7000,-0.8000,-78.5000,-1.0500",
             "bounded": 1,  
         }
 
         r = requests.get(url, params=params, headers={"User-Agent": "tuapp"})
         resultados = r.json()
 
-
     return render(request, "buscarlugares.html", {
         "query": query,
         "resultados": resultados,
         "historial": historial,
     })
-
-
 
 
 
@@ -227,12 +261,9 @@ def ver_lugar(request, lat, lon):
 
 
 
-
 def guardar_lugar(request, lat, lon, nombre):
-    # Obtener al usuario logueado
     usuario_id = request.session.get("usuario_id")
     usuario = Usuario.objects.get(id_usuario=usuario_id)
-    # Guardar en la tabla existente
     Lugarguardado.objects.create(
         usuario=usuario,
         nombre_Lugarguardado=nombre,
@@ -249,11 +280,13 @@ def guardar_lugar(request, lat, lon, nombre):
 
 def eliminar_lugar(request, id):
     usuario_id = request.session.get("usuario_id")
-    lugar = Lugarguardado.objects.filter(
-        id_Lugarguardado=id,   
-        usuario_id=usuario_id ).first()
+    lugar = Lugarguardado.objects.filter(id_Lugarguardado=id,   usuario_id=usuario_id  ).first()
+
     if not lugar:
-        messages.error(request,"El lugar que intentas eliminar ya no existe o no te pertenece.")
+        messages.error(
+            request,
+            "El lugar que intentas eliminar ya no existe o no te pertenece."
+        )
         return redirect("buscarlugares")
 
     lugar.delete()

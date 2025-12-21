@@ -9,6 +9,18 @@ class Usuario(models.Model):
     apellido_usuario=models.CharField(max_length=100)
     correo_usuario=models.EmailField(unique=True)
     contrasena_usuario = models.CharField(max_length=128)
+    tiporol  = models.CharField(max_length=20, choices=[('USUARIO', 'USUARIO'), ('ADMINISTRADOR', 'ADMINISTRADOR')])
+
+
+
+class Administrador(models.Model):
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE)#tabla Administrador con relación OneToOne (1 a 1)
+    cargo = models.CharField(max_length=100, null=True, blank=True)
+    codigo_interno = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    telefono_institucional = models.CharField(max_length=20, null=True, blank=True)
+
+
+
 
 
 
