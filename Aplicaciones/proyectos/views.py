@@ -117,7 +117,7 @@ def guardarusuario(request):
     apellido_usuario = request.POST['txt_apellido']
     correo_usuario = request.POST['txt_correo']
     contrasena_usuario = request.POST['txt_contrasena']
-    nuevousuario=Usuario.objects.create(nombre_usuario=nombre_usuario,apellido_usuario=apellido_usuario,correo_usuario=correo_usuario,contrasena_usuario=contrasena_usuario)
+    nuevousuario=Usuario.objects.create(nombre_usuario=nombre_usuario,apellido_usuario=apellido_usuario,correo_usuario=correo_usuario,contrasena_usuario=contrasena_usuario,tiporol='USUARIO')
     messages.success(request, "Usuario creado correctamente. Inicia sesión.")
     return redirect('/login')
 
