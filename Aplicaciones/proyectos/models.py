@@ -271,7 +271,7 @@ class DetallePedido(models.Model):
 
 
 
-#tablas con valores extra unicas
+#tablas
 
 
 class PrecioCombustible(models.Model):
