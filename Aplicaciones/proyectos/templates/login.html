@@ -26,14 +26,16 @@
         color: #555;
     }
 
-    .login-container input[type="email"],
-    .login-container input[type="password"] {
+    .login-container input[type="text"],
+    .login-container input[type="password"],
+    .login-container select {
         width: 100%;
         padding: 10px;
         margin-bottom: 15px;
         border-radius: 5px;
         border: 1px solid #221f1fff;
         font-size: 14px;
+        background: #fff;
     }
 
     .login-container button {
@@ -50,6 +52,16 @@
     .login-container button:hover {
         background-color: #0056b3;
     }
+
+    .row-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: -5px;
+        margin-bottom: 15px;
+        color: #333;
+        font-size: 14px;
+    }
 </style>
 
 <div class="login-container">
@@ -58,19 +70,39 @@
     <form action="{% url 'login' %}" method="post">
         {% csrf_token %}
 
-        <label for="correo">Correo:</label>
-        <input type="email" name="correo" id="correo" required>
+        <label for="usuario">Correo:</label>
+        <input type="text" name="usuario" id="usuario" required>
 
         <label for="contrasena">Contraseña:</label>
         <input type="password" name="contrasena" id="contrasena" required>
 
+        <div class="row-check">
+            <input type="checkbox" id="chkMostrar">
+            <label for="chkMostrar" style="margin:0; font-weight:normal;">Mostrar contraseña</label>
+        </div>
+
+        <label for="rol">Rol:</label>
+        <select name="rol" id="rol" required>
+            <option value="" selected>Seleccionar</option>
+            <option value="USUARIO">Usuario</option>
+            <option value="ADMINISTRADOR">Administrador</option>
+        </select>
+
         <button type="submit">Ingresar</button>
-        <br>
-        <br>
-         <div class="enlace-extra"style="text-align: center" >
-        <a href="/nuevousuario/">Crear nueva cuenta</a>
-    </div>
+
+        <br><br>
+
+        <div class="enlace-extra" style="text-align:center;">
+            <a href="/nuevousuario/">Crear nueva cuenta</a>
+        </div>
     </form>
 </div>
+
+<script>
+  document.getElementById('chkMostrar').addEventListener('change', function(){
+    const input = document.getElementById('contrasena');
+    input.type = this.checked ? 'text' : 'password';
+  });
+</script>
 
 {% endblock %}

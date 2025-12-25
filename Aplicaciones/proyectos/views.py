@@ -1,12 +1,21 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion,Administrador
-from django.http import JsonResponse
-from django.views.decorators.http import require_GET
+from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion,EventoAdmin,Administrador,AsignacionEvento,Proveedor,Pedido,DetallePedido,ChecklistVehiculo
+from Aplicaciones.proyectos.rutas_utils import (construir_grafo,dijkstra,calcular_metricas_ruta,nodo_mas_cercano,nodos_mas_cercanos,calcular_ruta_larga,construir_grafo_seguro,calcular_ruta_segura)
+from django.utils.dateparse import parse_date, parse_time
+from django.db.models.functions import Round
+from datetime import datetime,timedelta
 from django.utils.timezone import now
-import requests
+from django.db.models import Sum,Count
+from django.http import JsonResponse
+from django.utils import timezone
+from decimal import Decimal
 import json
-from Aplicaciones.proyectos.rutas_utils import (construir_grafo,dijkstra,calcular_metricas_ruta,nodo_mas_cercano,nodos_mas_cercanos,calcular_ruta_larga,construir_grafo_seguro,calcular_ruta_segura,)
+import requests
+
+from django.views.decorators.http import require_GET
+from Aplicaciones.proyectos.models import NodoMapa
+from Aplicaciones.proyectos.rutas_utils import construir_grafo, dijkstra, calcular_metricas_ruta
 
 
 
@@ -30,12 +39,12 @@ def login_usuario(request):
                 correo_usuario=usuario_in,
                 contrasena_usuario=contrasena
             )
-
+            # validar que el rol coincida con el del usuario
             if usuario.tiporol != rol_elegido:
                 messages.error(request, "Rol incorrecto para este usuario.")
                 return render(request, 'login.html')
-
-
+            
+            # si elige ADMINISTRADOR, debe existir en tabla Administrador
             if rol_elegido == "ADMINISTRADOR":
                 try:
                     admin = Administrador.objects.get(usuario=usuario)
@@ -43,7 +52,7 @@ def login_usuario(request):
                     messages.error(request, "Este usuario NO tiene perfil de administrador.")
                     return render(request, 'login.html')
 
-
+            # Guardar sesión
             request.session['usuario_id'] = usuario.id_usuario
             request.session['usuario_nombre'] = usuario.nombre_usuario
             request.session['usuario_apellido'] = usuario.apellido_usuario
@@ -72,21 +81,23 @@ def admin_panel(request):
         messages.error(request, "No tienes permisos para acceder.")
         return redirect('/inicio')
 
-    return render(request, 'admin_panel.html')
+    return render(request, "administrador/admin_panel.html")
 
 
 
+
+#sirve para cerrar la cesion 
 def logout_usuario(request):
     request.session.flush()
     messages.success(request, "Sesión cerrada correctamente")
-    return redirect('/login') 
+    return redirect('/login') #devuelve la pantalla en login
 
 
 
 
 
 def inicio(request):
-
+    # Proteger el inicio: solo usuarios logueados
     if not request.session.get('usuario_id'):
         return redirect('/login')
     
@@ -139,12 +150,146 @@ def procesareditarusuario(request):
 
 
 def perfilusuario(request):
-    usuario_id = request.session.get('usuario_id') 
-    usuario = Usuario.objects.get(id_usuario=usuario_id) 
+    usuario_id = request.session.get('usuario_id') #obtiene el id del usuario creado
+    usuario = Usuario.objects.get(id_usuario=usuario_id) #busca el usuario en la base de datos
     return render(request, 'perfilusuario.html', {'usuario': usuario})
 
 
-#---------------------------------------------------------------------------------------------------------------
+#documento---------------------------------------------------------------------------------------------------
+
+def creardocumento(request):
+    id_usuario = request.session.get('usuario_id')
+    if not id_usuario:
+        return redirect('/login/')  
+
+    usuario = Usuario.objects.get(id_usuario=id_usuario)
+
+    checklist = ChecklistVehiculo.objects.filter(
+        usuario=usuario
+    ).order_by('-creado_en').first()
+
+    if checklist:
+        edit_mode = 'edit' in request.GET
+    else:
+        edit_mode = True  
+
+    if request.method == 'POST':
+        data = request.POST
+
+        if checklist:
+            c = checklist
+            c.licencia_conducir = data.get('licencia_conducir')
+            c.tarjeta_circulacion = data.get('tarjeta_circulacion')
+            c.poliza_impresa = data.get('poliza_impresa')
+            c.poliza_digital = data.get('poliza_digital')
+            c.verificacion_vehicular = data.get('verificacion_vehicular')
+            c.factura_propiedad = data.get('factura_propiedad')
+
+            # Chequeo mecánico
+            c.llantas = data.get('llantas')
+            c.frenos = data.get('frenos')
+            c.luces = data.get('luces')
+            c.fluidos_aceite = data.get('fluidos_aceite')
+            c.fluido_agua = data.get('fluido_agua')
+            c.bateria_general = data.get('bateria_general')
+            c.cinturones = data.get('cinturones')
+            c.limpiaparabrisas = data.get('limpiaparabrisas')
+
+            # Motor
+            c.motor_aceite = data.get('motor_aceite')
+            c.motor_refrigerante = data.get('motor_refrigerante')
+            c.motor_temperatura = data.get('motor_temperatura')
+            c.motor_bateria = data.get('motor_bateria')
+            c.motor_filtro_aire = data.get('motor_filtro_aire')
+            c.motor_fugas = data.get('motor_fugas')
+            c.motor_combustible = data.get('motor_combustible')
+
+            # Suspensión / transmisión
+            c.amortiguadores = data.get('amortiguadores')
+            c.alineacion = data.get('alineacion')
+            c.soportes_motor = data.get('soportes_motor')
+            c.caja = data.get('caja')
+            c.embrague = data.get('embrague')
+
+            # Equipo de seguridad
+            c.triangulo = data.get('triangulo')
+            c.chaleco = data.get('chaleco')
+            c.extintor = data.get('extintor')
+            c.gato_llave = data.get('gato_llave')
+            c.botiquin = data.get('botiquin')
+            c.linterna = data.get('linterna')
+            c.cables_corriente = data.get('cables_corriente')
+            c.tacos_ruedas = data.get('tacos_ruedas')
+            c.llanta_reparacion = data.get('llanta_reparacion')
+
+            c.save()
+            messages.success(request, "Checklist actualizado correctamente.")
+        else:
+            # CREAR nuevo checklist
+            checklist = ChecklistVehiculo.objects.create(
+                usuario=usuario,
+
+                # Documentos indispensables
+                licencia_conducir=data.get('licencia_conducir'),
+                tarjeta_circulacion=data.get('tarjeta_circulacion'),
+                poliza_impresa=data.get('poliza_impresa'),
+                poliza_digital=data.get('poliza_digital'),
+                verificacion_vehicular=data.get('verificacion_vehicular'),
+                factura_propiedad=data.get('factura_propiedad'),
+
+                # Chequeo mecánico
+                llantas=data.get('llantas'),
+                frenos=data.get('frenos'),
+                luces=data.get('luces'),
+                fluidos_aceite=data.get('fluidos_aceite'),
+                fluido_agua=data.get('fluido_agua'),
+                bateria_general=data.get('bateria_general'),
+                cinturones=data.get('cinturones'),
+                limpiaparabrisas=data.get('limpiaparabrisas'),
+
+                # Motor
+                motor_aceite=data.get('motor_aceite'),
+                motor_refrigerante=data.get('motor_refrigerante'),
+                motor_temperatura=data.get('motor_temperatura'),
+                motor_bateria=data.get('motor_bateria'),
+                motor_filtro_aire=data.get('motor_filtro_aire'),
+                motor_fugas=data.get('motor_fugas'),
+                motor_combustible=data.get('motor_combustible'),
+
+                # Suspensión / transmisión
+                amortiguadores=data.get('amortiguadores'),
+                alineacion=data.get('alineacion'),
+                soportes_motor=data.get('soportes_motor'),
+                caja=data.get('caja'),
+                embrague=data.get('embrague'),
+
+                # Equipo de seguridad
+                triangulo=data.get('triangulo'),
+                chaleco=data.get('chaleco'),
+                extintor=data.get('extintor'),
+                gato_llave=data.get('gato_llave'),
+                botiquin=data.get('botiquin'),
+                linterna=data.get('linterna'),
+                cables_corriente=data.get('cables_corriente'),
+                tacos_ruedas=data.get('tacos_ruedas'),
+                llanta_reparacion=data.get('llanta_reparacion'),
+            )
+            messages.success(request, "Checklist guardado correctamente.")
+
+        # Después de guardar, volvemos en modo lectura
+        return redirect('creardocumento')
+    bloqueado = bool(checklist) and not edit_mode
+
+    return render(request, 'creardocumento.html', {
+        'usuario': usuario,
+        'checklist': checklist,
+        'bloqueado': bloqueado,
+        'edit_mode': edit_mode,
+    })
+
+
+
+# Vehiculo-------------------------------------------------------------
 
 def nuevovehiculo(request):
     id_usuario = request.session.get('usuario_id')
@@ -178,7 +323,6 @@ def listadovehiculo(request):
     id_usuario = request.session.get('usuario_id')
     usuario = Usuario.objects.get(id_usuario=id_usuario)
     vehiculo = Vehiculo.objects.filter(usuario=usuario).first()
-
     return render(request, 'listadovehiculo.html', {'vehiculo': vehiculo})
 
 
@@ -193,7 +337,7 @@ def eliminarvehiculo(request, id):
 def editarvehiculo(request, id):
     id_usuario = request.session.get('usuario_id') 
     vehiculo = Vehiculo.objects.get(id_vehiculo=id)
-    usuarios = Usuario.objects.get(id_usuario=id_usuario) #Busca en la base de datos al usuario
+    usuarios = Usuario.objects.get(id_usuario=id_usuario)
     return render(request, 'editarvehiculo.html', {'vehiculo': vehiculo, 'usuarios': usuarios})
 
 
@@ -210,7 +354,9 @@ def procesareditarvehiculo(request):
     return redirect('/listadovehiculo')
 
 
-#----------------------------------------------------------------------------------------------buscar lugares 
+
+
+#busca en el mapa-------------------------------------------------------------------------------------
 
 
 def buscarlugares(request):
@@ -218,8 +364,6 @@ def buscarlugares(request):
 
     resultados = []
     usuario_id = request.session.get("usuario_id")
-
-
     if usuario_id is None:
         messages.error(request, "Debes iniciar sesión")
         return redirect("login")
@@ -229,12 +373,12 @@ def buscarlugares(request):
     if query:
         url = "https://nominatim.openstreetmap.org/search" 
         params = {
-            "q": query, 
-            "format": "json", 
-            "addressdetails": 1, 
-            "limit": 15,
-            "viewbox": "-78.7000,-0.8000,-78.5000,-1.0500",
-            "bounded": 1,  
+            "q": query, #El texto que el usuario buscó
+            "format": "json", #La respuesta vendrá en formato JSON
+            "addressdetails": 1, #Devuelve datos completos como barrio, ciudad, etc.
+            "limit": 15, #Máximo 15 resultados
+            "viewbox": "-78.7000,-0.8000,-78.5000,-1.0500",  # OESTE,NORTE,ESTE,SUR   ,  Caja rectangular que cubre solo Latacunga
+            "bounded": 1,  #  Obligatorio para restringir área,  Obliga que los resultados estén dentro de esa caja
         }
 
         r = requests.get(url, params=params, headers={"User-Agent": "tuapp"})
@@ -247,7 +391,6 @@ def buscarlugares(request):
     })
 
 
-
 def ver_lugar(request, lat, lon):
     nombre = request.GET.get("nombre", "Ubicación seleccionada")
     return render(request, "ver_lugar.html", {
@@ -258,9 +401,12 @@ def ver_lugar(request, lat, lon):
 
 
 
+
 def guardar_lugar(request, lat, lon, nombre):
+    # Obtener al usuario logueado
     usuario_id = request.session.get("usuario_id")
     usuario = Usuario.objects.get(id_usuario=usuario_id)
+    # Guardar en la tabla existente
     Lugarguardado.objects.create(
         usuario=usuario,
         nombre_Lugarguardado=nombre,
@@ -277,7 +423,10 @@ def guardar_lugar(request, lat, lon, nombre):
 
 def eliminar_lugar(request, id):
     usuario_id = request.session.get("usuario_id")
-    lugar = Lugarguardado.objects.filter(id_Lugarguardado=id,   usuario_id=usuario_id  ).first()
+    lugar = Lugarguardado.objects.filter(
+        id_Lugarguardado=id,  
+        usuario_id=usuario_id  
+    ).first()
 
     if not lugar:
         messages.error(
@@ -724,10 +873,11 @@ def recorrido(request):
 
 #historial-----------------------------------------------------------------------------------------------------------------------------------------
 
-
 def historial(request):
+    # Proteger: solo usuarios logueados
     if not request.session.get('usuario_id'):
         return redirect('/login')
+
     usuario_id = request.session.get('usuario_id')
     rutas = RutaOpcion.objects.filter(viaje__usuario_id=usuario_id).select_related('viaje', 'viaje__vehiculo').order_by('-viaje__fecha_creacion')
     return render(request, 'historial.html', {
@@ -745,9 +895,10 @@ def eliminar_ruta_historial(request, id_ruta):
         return redirect('historial')
 
     usuario_id = request.session.get('usuario_id')
-
-
-    ruta = RutaOpcion.objects.filter(id_ruta_opcion=id_ruta,viaje__usuario_id=usuario_id).first()
+    ruta = RutaOpcion.objects.filter(
+        id_ruta_opcion=id_ruta,
+        viaje__usuario_id=usuario_id
+    ).first()
 
     if not ruta:
         messages.error(request, "La ruta que intentas eliminar no existe o no te pertenece.")
@@ -758,12 +909,7 @@ def eliminar_ruta_historial(request, id_ruta):
     return redirect('historial')
 
 
-
-
-
 #api ruta ---------------------------------------------------------------------------------------------------------
-
-
 
 @require_GET
 def api_ruta_optima(request):
@@ -809,7 +955,7 @@ def api_ruta_optima(request):
     for nid in ruta_ids:
         nodo = nodos.get(nid)
         if nodo:
-            coordenadas.append([nodo.longitud, nodo.latitud])  
+            coordenadas.append([nodo.longitud, nodo.latitud])  # formato típico de mapas
 
     data = {
         "origen": origen_id,
@@ -825,5 +971,808 @@ def api_ruta_optima(request):
     return JsonResponse(data)
 
 
+#asignacion usuario-----------------------------------------------------------------------------------------------------
 
 
+def _solo_usuario(request):
+    return request.session.get('usuario_tiporol') == 'USUARIO'
+
+
+def pedidosusuario(request):
+    if not _solo_usuario(request):
+        messages.error(request, "No tienes permisos.")
+        return redirect('/login')
+
+    usuario_id = request.session.get('usuario_id')
+    if not usuario_id:
+        return redirect('/login')
+
+    asignaciones = (
+        AsignacionEvento.objects
+        .filter(usuario_id=usuario_id)
+        .select_related('evento', 'evento__creado_por', 'evento__creado_por__usuario')
+        .order_by('-fecha_asignacion', '-evento__inicio_fecha', '-evento__inicio_hora')
+    )
+
+    return render(request, 'pedidosusuario.html', {
+        'asignaciones': asignaciones
+    })
+
+
+def usuario_eventos_json(request):
+    if not _solo_usuario(request):
+        return JsonResponse([], safe=False)
+
+    usuario_id = request.session.get('usuario_id')
+    if not usuario_id:
+        return JsonResponse([], safe=False)
+
+    tz = timezone.get_current_timezone()
+
+    asignaciones = (
+        AsignacionEvento.objects
+        .filter(usuario_id=usuario_id)
+        .select_related('evento')
+        .order_by('evento__inicio_fecha', 'evento__inicio_hora')
+    )
+
+    data = []
+    for a in asignaciones:
+        e = a.evento
+        start_dt = timezone.make_aware(datetime.combine(e.inicio_fecha, e.inicio_hora), tz)
+        end_dt = None
+        if e.fin_fecha and e.fin_hora:
+            end_dt = timezone.make_aware(datetime.combine(e.fin_fecha, e.fin_hora), tz)
+
+        data.append({
+            "id": e.id_evento,
+            "title": e.titulo,
+            "start": start_dt.isoformat(),
+            "end": end_dt.isoformat() if end_dt else None,
+        })
+
+    return JsonResponse(data, safe=False)
+
+
+
+def usuario_cambiar_estado(request, asig_id):
+    # Cambia el estado: COMPLETADO / ATRASADO / NO_COMPLETADO
+    if request.method != "POST":
+        return redirect("pedidosusuario") 
+
+    if not _solo_usuario(request):
+        messages.error(request, "No tienes permisos.")
+        return redirect("/login")
+
+    usuario_id = request.session.get("usuario_id")
+    if not usuario_id:
+        messages.error(request, "Sesión no válida.")
+        return redirect("/login")
+
+    nuevo_estado = request.POST.get("estado")
+    if nuevo_estado not in ["COMPLETADO", "ATRASADO", "NO_COMPLETADO"]:
+        messages.error(request, "Estado inválido.")
+        return redirect("pedidosusuario")
+
+    asign = (
+        AsignacionEvento.objects
+        .select_related("evento")
+        .filter(id_usuario_evento=asig_id, usuario_id=usuario_id)
+        .first()
+    )
+
+    if not asign:
+        messages.error(request, "Asignación no encontrada.")
+        return redirect("pedidosusuario")
+
+    e = asign.evento
+
+    # Validación: debe existir fin
+    if not (e.fin_fecha and e.fin_hora):
+        messages.error(request, "Este evento no tiene fecha/hora fin.")
+        return redirect("pedidosusuario")
+
+    ahora = timezone.localtime()
+    fin_dt = timezone.make_aware(
+        datetime.combine(e.fin_fecha, e.fin_hora),
+        timezone.get_current_timezone()
+    )
+
+    # COMPLETADO: solo cuando ya terminó y dentro de 5 minutos
+    if nuevo_estado == "COMPLETADO":
+        if ahora < fin_dt:
+            messages.error(request, "Aún no termina el evento.")
+            return redirect("pedidosusuario")
+        if ahora > fin_dt + timedelta(minutes=5):#aqui se puede cambiar el tiempo de comtrol de completado.
+            messages.error(request, "Se acabó el tiempo para completar (5 minutos).")
+            return redirect("pedidosusuario")
+
+    # ATRASADO / NO_COMPLETADO: solo después de fin
+    if nuevo_estado in ["ATRASADO", "NO_COMPLETADO"]:
+        if ahora < fin_dt:
+            messages.error(request, "Aún no termina el evento.")
+            return redirect("pedidosusuario")
+
+    # Guardar en BD (requiere campos estado y estado_fecha en AsignacionEvento)
+    asign.estado = nuevo_estado
+    asign.estado_fecha = timezone.now()
+    asign.save(update_fields=["estado", "estado_fecha"])
+
+    messages.success(request, f"Estado actualizado a: {nuevo_estado}.")
+    return redirect("pedidosusuario")
+
+
+
+
+
+
+
+def _solo_admin(request):
+    return request.session.get('usuario_tiporol') == 'ADMINISTRADOR'
+
+
+def reporte_asignaciones(request):
+    """
+    Vista SOLO ADMIN para ver el estado de las asignaciones
+    """
+    if not _solo_admin(request):
+        messages.error(request, "No tienes permisos.")
+        return redirect('/login')
+
+    estado_filtro = request.GET.get("estado")  # COMPLETADO / ATRASADO / NO_COMPLETADO / PENDIENTE
+    asignaciones = (
+        AsignacionEvento.objects
+        .select_related("usuario", "evento", "evento__creado_por", "evento__creado_por__usuario")
+        .order_by("-fecha_asignacion", "-evento__inicio_fecha", "-evento__inicio_hora")
+    )
+
+    if estado_filtro in ["COMPLETADO", "ATRASADO", "NO_COMPLETADO", "PENDIENTE"]:
+        asignaciones = asignaciones.filter(estado=estado_filtro)
+
+    total = AsignacionEvento.objects.count()
+    total_completados = AsignacionEvento.objects.filter(estado="COMPLETADO").count()
+    total_atrasados = AsignacionEvento.objects.filter(estado="ATRASADO").count()
+    total_nocomp = AsignacionEvento.objects.filter(estado="NO_COMPLETADO").count()
+    total_pendientes = AsignacionEvento.objects.filter(estado="PENDIENTE").count()
+
+    contexto = {
+        "asignaciones": asignaciones,
+        "estado_filtro": estado_filtro,
+        "total": total,
+        "total_completados": total_completados,
+        "total_atrasados": total_atrasados,
+        "total_nocomp": total_nocomp,
+        "total_pendientes": total_pendientes,
+    }
+    return render(request, "administrador/reporte_asignaciones.html", contexto)
+
+
+
+
+#noticicaciones---------------------------------------------------------------------------------------------------------
+
+def usuario_toast_evento(request):
+    id_usuario = request.session.get("usuario_id")
+    if not id_usuario:
+        return JsonResponse({"ok": False})
+
+    asign = (
+        AsignacionEvento.objects
+        .filter(usuario_id=id_usuario)
+        .select_related("evento")
+        .order_by("-fecha_asignacion")
+        .first()
+    )
+
+    if not asign:
+        return JsonResponse({"ok": False})
+
+    e = asign.evento
+
+    inicio_dt = datetime.combine(e.inicio_fecha, e.inicio_hora)
+    inicio_txt = inicio_dt.strftime("%d-%m-%Y %I:%M %p")
+
+    #  si no hay fin, puedes decidir: que nunca se detenga, o que no muestre
+    if e.fin_fecha and e.fin_hora:
+        fin_dt = datetime.combine(e.fin_fecha, e.fin_hora)
+        fin_txt = fin_dt.strftime("%d-%m-%Y %I:%M %p")
+        fin_iso = fin_dt.strftime("%Y-%m-%dT%H:%M:%S")
+    else:
+        fin_txt = "Sin final"
+        fin_iso = None
+
+    return JsonResponse({
+        "ok": True,
+        "inicio": inicio_txt,
+        "fin": fin_txt,
+        "fin_iso": fin_iso,   
+        "descripcion": e.descripcion or "-"
+    })
+
+
+
+
+
+#panel de administrador-------------------------------------------------------------------------------------------------------------
+
+#calendario--------------------------------------------------------------------------------------------------
+
+def _solo_admin(request):
+    return request.session.get('usuario_tiporol') == 'ADMINISTRADOR'# Solo para administradores
+
+
+
+def admin_calendario(request):
+    if not _solo_admin(request):
+        messages.error(request, "No tienes permisos.")
+        return redirect('/login')
+    return render(request, 'administrador/admin_calendario.html')
+
+
+def admin_eventos_json(request):
+    if not _solo_admin(request):
+        return JsonResponse([], safe=False)
+
+    eventos = EventoAdmin.objects.all().order_by('inicio_fecha', 'inicio_hora')
+    tz = timezone.get_current_timezone()
+
+    data = []
+    for e in eventos:
+        start_dt = timezone.make_aware(datetime.combine(e.inicio_fecha, e.inicio_hora), tz)
+
+        end_dt = None
+        if e.fin_fecha and e.fin_hora:
+            end_dt = timezone.make_aware(datetime.combine(e.fin_fecha, e.fin_hora), tz)
+
+        data.append({
+            "id": e.id_evento,
+            "title": e.titulo,
+            "start": start_dt.isoformat(),
+            "end": end_dt.isoformat() if end_dt else None,
+        })
+
+    return JsonResponse(data, safe=False)
+
+
+
+def admin_evento_crear(request):# Crear evento
+    if not _solo_admin(request):
+        messages.error(request, "No tienes permisos.")
+        return redirect('/login')
+
+    if request.method == 'POST':
+        titulo = request.POST.get('titulo', '').strip()
+        inicio_fecha = request.POST.get('inicio_fecha', '').strip()
+        inicio_hora  = request.POST.get('inicio_hora', '').strip()
+        fin_fecha = request.POST.get('fin_fecha', '').strip()
+        fin_hora  = request.POST.get('fin_hora', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+
+        # Convertir fechas y horas
+        d_ini = parse_date(inicio_fecha)
+        t_ini = parse_time(inicio_hora)
+        d_fin = parse_date(fin_fecha) if fin_fecha else None
+        t_fin = parse_time(fin_hora) if fin_hora else None
+
+        if not titulo or not d_ini or not t_ini:
+            messages.error(request, "Título, fecha de inicio y hora de inicio son obligatorios.")
+            return redirect('/panel/calendario/')
+
+        if (d_fin and not t_fin) or (t_fin and not d_fin):
+            d_fin, t_fin = None, None
+
+        # Obtener al usuario logueado
+        usuario_id = request.session.get('usuario_id')
+        usuario = Usuario.objects.get(id_usuario=usuario_id)
+
+        # Obtener su perfil administrador
+        try:
+            admin = Administrador.objects.get(usuario=usuario)
+        except Administrador.DoesNotExist:
+            messages.error(request, "Este usuario no tiene perfil de administrador.")
+            return redirect('/panel/calendario/')
+
+        # Crear el evento con el administrador real
+        EventoAdmin.objects.create(
+            titulo=titulo,
+            inicio_fecha=d_ini,
+            inicio_hora=t_ini,
+            fin_fecha=d_fin,
+            fin_hora=t_fin,
+            descripcion=descripcion,
+            creado_por=admin
+        )
+
+        messages.success(request, "Evento creado correctamente.")
+        return redirect('/panel/calendario/lista/')
+
+    return redirect('/panel/calendario/')
+
+
+
+
+
+def listar_eventos_admin(request):
+    if not _solo_admin(request):
+        messages.error(request, "No tienes permisos.")
+        return redirect('/login')
+
+    eventos = EventoAdmin.objects.all().order_by('-inicio_fecha', '-inicio_hora')
+
+    return render(request, 'administrador/listacalendarios.html', {
+        'eventos': eventos
+    })
+
+
+
+def editar_evento_admin(request, id_evento):
+    if not _solo_admin(request):
+        messages.error(request, "No tienes permisos.")
+        return redirect('/login')
+
+    evento = EventoAdmin.objects.get(id_evento=id_evento)
+    if request.method == "POST":
+        titulo = request.POST.get('titulo')
+        inicio_fecha = parse_date(request.POST.get('inicio_fecha'))
+        inicio_hora  = parse_time(request.POST.get('inicio_hora'))
+        fin_fecha    = parse_date(request.POST.get('fin_fecha')) if request.POST.get('fin_fecha') else None
+        fin_hora     = parse_time(request.POST.get('fin_hora')) if request.POST.get('fin_hora') else None
+        descripcion  = request.POST.get('descripcion')
+
+        evento.titulo = titulo
+        evento.inicio_fecha = inicio_fecha
+        evento.inicio_hora = inicio_hora
+        evento.fin_fecha = fin_fecha
+        evento.fin_hora = fin_hora
+        evento.descripcion = descripcion
+
+        evento.save()
+
+        messages.success(request, "Evento actualizado correctamente.")
+        return redirect('/panel/calendario/lista/')
+
+    return render(request, 'administrador/editar_evento.html', {'evento': evento})
+
+
+
+def eliminar_evento_admin(request, id_evento):
+    if not _solo_admin(request):
+        messages.error(request, "No tienes permisos.")
+        return redirect('/login')
+    try:
+        evento = EventoAdmin.objects.get(id_evento=id_evento)
+        evento.delete()
+        messages.success(request, "Evento eliminado correctamente.")
+    except EventoAdmin.DoesNotExist:
+        messages.error(request, "El evento no existe.")
+
+    return redirect('/panel/calendario/lista/')
+
+
+#cliente-------------------------------------------------------------------------------------------------------------
+
+def lista_asignaciones(request):
+    asignaciones = AsignacionEvento.objects.select_related("usuario", "evento")
+    return render(request, 'administrador/lista_asignaciones.html', {
+        'asignaciones': asignaciones
+    })
+
+
+
+def crear_asignacion(request):
+    # Solo mostrar usuarios normales (no admin)
+    usuarios = Usuario.objects.filter(tiporol="USUARIO")
+    eventos = EventoAdmin.objects.all()
+
+    if request.method == "POST":
+        usuario_id = request.POST.get("usuario")
+        evento_id = request.POST.get("evento")
+        descripcion = request.POST.get("descripcion")
+        fecha_asignacion = request.POST.get("fecha_asignacion")
+        # Evitar duplicados
+        if AsignacionEvento.objects.filter(usuario_id=usuario_id, evento_id=evento_id).exists():
+            messages.error(request, "El usuario ya está asignado a este evento.")
+            return redirect("/crear_asignacion/")
+
+        AsignacionEvento.objects.create(
+            usuario_id=usuario_id,
+            evento_id=evento_id,
+            descripcion_evento=descripcion,
+            fecha_asignacion=fecha_asignacion
+        )
+
+        messages.success(request, "Asignación creada correctamente.")
+        return redirect("/lista_asignaciones/")
+
+    return render(request, 'administrador/crear_asignacion.html', {
+        'usuarios': usuarios,
+        'eventos': eventos,
+    })
+
+
+def editar_asignacion(request, id):
+    asignacion = AsignacionEvento.objects.get(id_usuario_evento=id)
+    usuarios = Usuario.objects.filter(tiporol="USUARIO")   # Solo mostrar usuarios normales (no administradores)
+    eventos = EventoAdmin.objects.all()    # Puedes filtrar eventos si deseas, por ahora se mantienen todos:
+    if request.method == "POST":
+        asignacion.usuario_id = request.POST.get("usuario")
+        asignacion.evento_id = request.POST.get("evento")
+        asignacion.descripcion_evento = request.POST.get("descripcion")
+        asignacion.fecha_asignacion = request.POST.get("fecha_asignacion")
+        asignacion.save()
+
+        messages.success(request, "Asignación actualizada correctamente.")
+        return redirect("/lista_asignaciones/")
+
+    return render(request, "administrador/editar_asignacion.html", {
+        "asignacion": asignacion,
+        "usuarios": usuarios,
+        "eventos": eventos
+    })
+
+
+
+def eliminar_asignacion(request, id):
+    asignacion = AsignacionEvento.objects.get(id_usuario_evento=id)
+    asignacion.delete()
+    messages.success(request, "Asignación eliminada correctamente.")
+    return redirect("/lista_asignaciones/")
+
+
+
+#provedor--------------------------------------------------------------------------------------------------------------------
+
+def listadoproveedor(request):
+    proveedores = Proveedor.objects.all()
+    return render(request, 'administrador/listadoproveedor.html', {'proveedores': proveedores})
+
+
+def nuevoproveedor(request):
+    return render(request, 'administrador/nuevoproveedor.html')
+
+
+def guardarproveedor(request):
+    nombre = request.POST['txt_nombre']
+    direccion = request.POST['txt_direccion']
+    telefono = request.POST['txt_telefono']
+    correo = request.POST['txt_correo']
+    ruc = request.POST['txt_ruc']
+    estado = request.POST['txt_estado']
+
+    Proveedor.objects.create(
+        nombre_proveedor=nombre,
+        direccion_proveedor=direccion,
+        telefono_proveedor=telefono,
+        correo_proveedor=correo,
+        ruc_proveedor=ruc,
+        estado_proveedor=estado
+    )
+
+    messages.success(request, "Proveedor guardado correctamente.")
+    return redirect('/listadoproveedor')
+
+
+def eliminarproveedor(request, id):
+    proveedor = Proveedor.objects.get(id_proveedor=id)
+    proveedor.delete()
+    messages.success(request, "Proveedor eliminado correctamente.")
+    return redirect('/listadoproveedor')
+
+
+def editarproveedor(request, id):
+    proveedor = Proveedor.objects.get(id_proveedor=id)
+    return render(request, 'administrador/editarproveedor.html', {'proveedor': proveedor})
+
+
+def procesareditarproveedor(request):
+    proveedor = Proveedor.objects.get(id_proveedor=request.POST['id'])
+
+    proveedor.nombre_proveedor = request.POST['txt_nombre']
+    proveedor.direccion_proveedor = request.POST['txt_direccion']
+    proveedor.telefono_proveedor = request.POST['txt_telefono']
+    proveedor.correo_proveedor = request.POST['txt_correo']
+    proveedor.ruc_proveedor = request.POST['txt_ruc']
+    proveedor.estado_proveedor = request.POST['txt_estado']
+
+    proveedor.save()
+
+    messages.success(request, "Proveedor actualizado exitosamente.")
+    return redirect('/listadoproveedor')
+
+
+#pedido--------------------------------------------------------------------------------------------------------------------
+
+def listadopedido(request):
+    pedidos = Pedido.objects.select_related("proveedor", "evento").all()
+    return render(request, 'administrador/listadopedido.html', {'pedidos': pedidos})
+
+
+def nuevopedido(request):
+    proveedores = Proveedor.objects.all()
+    eventos = EventoAdmin.objects.all()
+    return render(request, 'administrador/nuevopedido.html', {
+        'proveedores': proveedores,
+        'eventos': eventos
+    })
+
+
+def guardarpedido(request):
+    descripcion = request.POST['txt_descripcion']
+    proveedor_id = request.POST['txt_proveedor'] or None
+    evento_id = request.POST['txt_evento']
+    fecha_pedido = request.POST['txt_fecha']
+    estado = request.POST['txt_estado']
+
+    Pedido.objects.create(
+        descripcion_pedido=descripcion,
+        proveedor_id=proveedor_id,
+        evento_id=evento_id if evento_id != "" else None,
+        fecha_pedido=fecha_pedido,
+        estado_pedido=estado
+    )
+
+    messages.success(request, "Pedido guardado correctamente.")
+    return redirect('/listadopedido')
+
+
+def eliminarpedido(request, id):
+    pedido = Pedido.objects.get(id_pedido=id)
+    pedido.delete()
+    messages.success(request, "Pedido eliminado correctamente.")
+    return redirect('/listadopedido')
+
+
+def editarpedido(request, id):
+    pedido = Pedido.objects.get(id_pedido=id)
+    proveedores = Proveedor.objects.all()
+    eventos = EventoAdmin.objects.all()
+
+    return render(request, 'administrador/editarpedido.html', {
+        'pedido': pedido,
+        'proveedores': proveedores,
+        'eventos': eventos
+    })
+
+
+
+def procesareditarpedido(request):
+    pedido = Pedido.objects.get(id_pedido=request.POST['id'])
+    pedido.descripcion_pedido = request.POST['txt_descripcion']
+    pedido.proveedor_id = request.POST['txt_proveedor']if request.POST['txt_proveedor'] != "" else None
+    pedido.evento_id = request.POST['txt_evento'] if request.POST['txt_evento'] != "" else None
+    pedido.fecha_pedido = request.POST['txt_fecha']
+    pedido.estado_pedido = request.POST['txt_estado']
+
+    pedido.save()
+
+    messages.success(request, "Pedido actualizado exitosamente.")
+    return redirect('/listadopedido')
+
+
+#DetallePedido-----------------------------------------------------------------------------------------------------
+
+def listadodetalle(request, id_pedido):
+    pedido = Pedido.objects.get(id_pedido=id_pedido)
+    detalles = DetallePedido.objects.filter(pedido_id=id_pedido)
+    return render(request, "administrador/listadodetalle.html", {
+        "pedido": pedido,
+        "detalles": detalles
+    })
+
+
+def nuevodetalle(request, id_pedido):
+    pedido = Pedido.objects.get(id_pedido=id_pedido)
+    return render(request, 'administrador/nuevodetalle.html', {'pedido': pedido})
+
+def guardardetalle(request):
+
+    pedido_id = request.POST["pedido_id"]
+    descripcion = request.POST["txt_descripcion"]
+    cantidad = request.POST["txt_cantidad"]
+    precio = request.POST["txt_precio"]
+
+    DetallePedido.objects.create(
+        pedido_id=pedido_id,
+        descripcion_item=descripcion,
+        cantidad=cantidad,
+        precio_unitario=precio
+    )
+
+    messages.success(request, "Detalle guardado correctamente.")
+    return redirect(f'/listadodetalle/{pedido_id}/')
+
+
+def editardetalle(request, id):
+    detalle = DetallePedido.objects.get(id_detalle_pedido=id)
+    return render(request, 'administrador/editardetalle.html', {
+        'detalle': detalle,
+        'pedido': detalle.pedido
+    })
+
+
+def procesareditardetalle(request):
+    detalle = DetallePedido.objects.get(id_detalle_pedido=request.POST["id"])
+    detalle.descripcion_item = request.POST["txt_descripcion"]
+    detalle.cantidad = request.POST["txt_cantidad"]
+    detalle.precio_unitario = request.POST["txt_precio"]
+    detalle.save()
+
+    messages.success(request, "Detalle actualizado correctamente.")
+    return redirect(f"/listadodetalle/{detalle.pedido.id_pedido}/")
+
+
+def eliminardetalle(request, id):
+    detalle = DetallePedido.objects.get(id_detalle_pedido=id)
+    pedido_id = detalle.pedido.id_pedido
+    detalle.delete()
+
+    messages.success(request, "Detalle eliminado correctamente.")
+    return redirect(f"/listadodetalle/{pedido_id}/")
+
+
+def seleccionar_pedido_detalle(request):
+    pedidos = Pedido.objects.all()
+    return render(request, "administrador/seleccionar_pedido.html", {"pedidos": pedidos})
+
+
+def redirigir_detalle_nuevo(request):
+    id_pedido = request.POST["id_pedido"]
+    return redirect(f"/nuevodetalle/{id_pedido}/")
+
+
+
+def redirigir_detalle_lista(request):
+    id_pedido = request.POST["id_pedido"]
+    return redirect(f"/listadodetalle/{id_pedido}/")
+
+
+
+
+#reportes----------------------------------------------------------------------------------------------
+
+def reporteviaje(request):
+    viajes = (
+        Viaje.objects
+        .select_related("usuario", "vehiculo", "destino")
+        .prefetch_related("opciones")
+        .order_by("-fecha_creacion")
+    )
+
+    data = []
+
+    for viaje in viajes:
+        ruta_optima = viaje.opciones.filter(tipo="OPTIMA").first()
+
+        data.append({
+            "usuario": f"{viaje.usuario.nombre_usuario} {viaje.usuario.apellido_usuario}",
+            "vehiculo": viaje.vehiculo.matricula_vehiculo,
+            "tipo_combustible": viaje.vehiculo.tipocombustible_vehiculo,
+            "destino": viaje.destino.nombre_Lugarguardado,
+            "fecha": viaje.fecha_creacion
+        })
+
+    return render(request, "administrador/reporteviaje.html", {
+        "viajes": data
+    })
+
+
+
+
+def reportehistorial(request):
+    viajes = (
+        Viaje.objects
+        .select_related("usuario", "vehiculo", "origen", "destino")
+        .prefetch_related("opciones")
+        .order_by("-fecha_creacion")
+    )
+
+    data = []
+
+    for viaje in viajes:
+        ruta = viaje.opciones.filter(tipo="OPTIMA").first()
+        data.append({
+            "usuario": f"{viaje.usuario.nombre_usuario} {viaje.usuario.apellido_usuario}",
+            "fecha": viaje.fecha_creacion,
+            "origen": f"{viaje.origen.latitud}, {viaje.origen.longitud}",
+            "destino": viaje.destino.nombre_Lugarguardado,
+            "vehiculo": viaje.vehiculo.matricula_vehiculo,
+            "ruta": ruta.tipo if ruta else "N/A",
+            "tiempo": ruta.tiempo_min if ruta else 0,
+            "distancia": ruta.distancia_km if ruta else 0,
+            "consumo": ruta.consumo_litros if ruta and ruta.consumo_litros else 0,
+        })
+
+    return render(request, "administrador/reportehistorial.html", {
+        "viajes": data
+    })
+
+
+
+
+#kpis--------------------------------------------------------------------------
+
+def admin_panel(request):
+    # KPI 1: lugar más repetido por cada usuario
+    lugares_agrupados = (
+        Lugarguardado.objects
+        .values(
+            'usuario_id',
+            'usuario__nombre_usuario',
+            'usuario__apellido_usuario',
+            'nombre_Lugarguardado'
+        )
+        .annotate(total=Count('id_Lugarguardado'))
+        .order_by('usuario_id', '-total')
+    )
+
+    resultado_por_usuario = []
+    usuarios_vistos = set()
+
+    for l in lugares_agrupados:
+        uid = l['usuario_id']
+        if uid in usuarios_vistos:
+            continue
+        usuarios_vistos.add(uid)
+        resultado_por_usuario.append(l)
+
+
+    kpi1_labels = []
+    for l in resultado_por_usuario:
+        etiqueta = (
+            l['usuario__nombre_usuario'] + " " +
+            l['usuario__apellido_usuario'] + " → " +
+            l['nombre_Lugarguardado']
+        )
+        kpi1_labels.append(etiqueta)
+
+    kpi1_data = [l['total'] for l in resultado_por_usuario]
+
+    context = {
+        'kpi1_labels': json.dumps(kpi1_labels),
+        'kpi1_data': json.dumps(kpi1_data),
+    }
+
+    # ============= KPI 2: suma de combustibles como en la tabla ===
+    rutas = (
+        RutaOpcion.objects
+        .filter(viaje__usuario__tiporol="USUARIO")
+        .select_related('viaje__usuario')
+    )
+
+    totales_por_usuario = {}   # {id_usuario: {"nombre": "carlos rem", "total": Decimal}}
+
+    for r in rutas:
+        usuario = r.viaje.usuario
+        key = usuario.id_usuario
+        nombre = f"{usuario.nombre_usuario} {usuario.apellido_usuario}"
+
+        # redondeamos CADA ruta a 2 decimales (igual que en la tabla)
+        litros_ruta = Decimal(str(r.consumo_litros or 0)).quantize(Decimal('0.01'))
+
+        if key not in totales_por_usuario:
+            totales_por_usuario[key] = {
+                "nombre": nombre,
+                "total": Decimal('0.00')
+            }
+
+        totales_por_usuario[key]["total"] += litros_ruta
+
+    kpi2_labels = []
+    kpi2_data = []
+
+    for info in totales_por_usuario.values():
+        kpi2_labels.append(info["nombre"])
+        # convertimos a float solo para Chart.js, pero ya es 2.66 exacto en Decimal
+        kpi2_data.append(float(info["total"]))
+
+    context = {
+        # KPI 1
+        'kpi1_labels': json.dumps(kpi1_labels),
+        'kpi1_data': json.dumps(kpi1_data),
+
+        # KPI 2
+        'kpi2_labels': json.dumps(kpi2_labels),
+        'kpi2_data': json.dumps(kpi2_data),
+    }
+
+    return render(request, "administrador/admin_panel.html", context)

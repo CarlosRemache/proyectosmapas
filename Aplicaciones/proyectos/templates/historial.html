@@ -3,186 +3,288 @@
 {% block contenido %}
 
 <style>
-    body {
-        background-color: #000 !important;
+  body { 
+    background-color:#000;
+   }
+
+  .buscar-container{
+    max-width: 1100px;           
+    margin: 70px auto;
+    background:#222;
+    padding: 26px;
+    border-radius: 20px;
+    color:#fff;
+    text-align:center;
+    box-shadow:0 4px 25px rgba(0,0,0,.7);
+    font-family: Arial, sans-serif;
+  }
+
+  .barra{
+    width:260px; height:18px;
+    background:#444;
+    margin:0 auto 18px auto;
+    border-radius:10px;
+  }
+
+  h3{ 
+    font-size:22px;
+     margin-bottom:18px; 
+     color:#fff; 
     }
 
-    .buscar-container {
-        max-width: 700px;
-        margin: 100px auto;
-        background-color: #222;
-        padding: 30px;
-        border-radius: 20px;
-        color: white;
-        text-align: center;
-        box-shadow: 0 4px 25px rgba(0,0,0,0.7);
-        font-family: Arial, sans-serif;
-    }
+  .acciones-rutas{
+    margin-top:10px;
+    display:flex;
+    gap:12px;
+    justify-content:space-between;
+  }
 
-    .barra {
-        width: 260px;
-        height: 18px;
-        background-color: #444;
-        margin: 0 auto 25px auto;
-        border-radius: 10px;
-    }
+  .btn-accion{
+    flex:1;
+    text-align:center;
+    padding:12px 0;
+    border-radius:30px;
+    font-weight:bold;
+    font-size:16px;
+    text-decoration:none;
+    border:none;
+    cursor:pointer;
+    transition:.15s;
+  }
 
-    h3 {
-        font-size: 22px;
-        margin-bottom: 25px;
-        color: white;
-    }
+  .btn-cancelar{
+    background:#111;
+    color:#00e53a;
+    border:2px solid #00e53a;
+    box-shadow:0 3px 10px rgba(28,130,16,.5);
+  }
 
-    .resultados-box {
-        width: 100%;
-        padding: 10px;
-        background-color: #1b1b1b;
-        border-radius: 15px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-        text-align: left;
-        margin-top: 10px;
-    }
-
-    .resultado-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: rgba(0,0,0,0.3);
-        padding: 12px 15px;
-        border-radius: 8px;
-        border: 1px solid #444;
-        margin-bottom: 12px;
-        color: #fff;
-        font-size: 14px;
-    }
-
-    .guardado-por {
-        color: #00ff00;
-        font-weight: bold;
-    }
-
-    .fecha-label {
-        color: #aaa;
-        font-size: 12px;
-    }
-
-    .no-historial {
-        color: white;
-        text-align: center;
-        margin-top: 15px;
-    }
-
-    .btn-eliminar {
-        padding: 6px 10px;
-        border-radius: 5px;
-        background-color: #ff4444;
-        color: #fff;
-        border: none;
-        cursor: pointer;
-        font-weight: bold;
-        font-size: 13px;
-    }
-
-    .btn-eliminar:hover {
-        background-color: #cc0000;
-    }
-
-        
-    .acciones-rutas{
-        margin-top:18px;
-        display:flex;
-        gap:12px;
-        justify-content:space-between;
-    }
+  .btn-cancelar:hover{ 
+    background:#191919; 
+  }
 
 
-        .btn-accion{
-            flex:1;
-            text-align:center;
-            padding:12px 0;
-            border-radius:30px;
-            font-weight:bold;
-            font-size:16px;
-            text-decoration:none;
-            border:none;
-            cursor:pointer;
-            transition:0.15s;
-        }
+  .table-responsive{
+    width:100%;
+    margin-top: 14px;
+    border-radius:14px;
+    border:1px solid #333;
+    background:#1b1b1b;
+    padding:12px;
+    overflow:hidden;
+    text-align:left;
+  }
 
-        .btn-cancelar{
-            background:#111;
-            color:#00e53a;
-            border:2px solid #00e53a;
-            box-shadow:0 3px 10px rgba(28, 130, 16, 0.5);
-        }
+  #tbl_rutas{
+    width:100%;
+    font-size:13px;
+    color:#F3F4F6;
+    margin:0;
+  }
 
-        .btn-cancelar:hover{
-            background:#191919;
-        }
+  #tbl_rutas thead th{
+    background:#111;
+    color:#F3F4F6;
+    border-bottom:1px solid #333 ;
+    padding:10px;
+    white-space:nowrap;
+  }
+
+  #tbl_rutas tbody td{
+    background:#1b1b1b;
+    color:#F3F4F6;
+    border-top:1px solid #333;
+    padding:10px;
+    vertical-align:middle;
+  }
+
+  #tbl_rutas tbody tr:hover td{
+    background:#141414;
+  }
 
 
+  .dt-buttons{
+    text-align:right;
+    margin-bottom:10px;
+  }
+
+  .dt-buttons .dt-button{
+    padding:10px 14px;
+    border-radius:10px;
+    border:1px solid #333;
+    background:#00e53a;
+    color:#000;
+    font-weight:800;
+    margin-left:8px;
+  }
+  
+  .dt-buttons .dt-button:hover{
+    filter: brightness(.95);
+  }
+
+  .dataTables_filter label,
+  .dataTables_length label,
+  .dataTables_info{
+    color:#d1d5db !important;
+    font-weight:600;
+  }
+
+  .dataTables_filter input{
+    background:#0f0f0f;
+    color:#fff;
+    border:1px solid #333;
+    border-radius:10px;
+    padding:8px 10px;
+    outline:none;
+  }
+
+  .dataTables_length select{
+    background:#0f0f0f;
+    color:#fff;
+    border:1px solid #333;
+    border-radius:10px;
+    padding:6px 10px;
+  }
 
 
+  .dataTables_paginate{
+    margin-top:10px;
+  }
+  .dataTables_paginate .paginate_button{
+    padding:8px 12px;
+    border-radius:10px;
+    border:1px solid #333;
+    background:#0f0f0f;
+    color:#fff;
+    margin-left:6px;
+  }
+  .dataTables_paginate .paginate_button:hover{
+    background:#191919;
+  }
+  .dataTables_paginate .paginate_button.current{
+    background:#00e53a;
+    color:#000;
+    border-color:#00e53a;
+  }
+
+
+  .btn-eliminar{
+    padding:7px 10px;
+    border-radius:10px;
+    background:#ff4444;
+    color:#fff;
+    border:none;
+    cursor:pointer;
+    font-weight:800;
+    font-size:13px;
+  }
+  .btn-eliminar:hover{ 
+    background:#cc0000; 
+  }
+
+  
+  @media (max-width: 768px){
+    .buscar-container{ padding:16px; }
+    .table-responsive{ overflow-x:auto; }
+    .dt-buttons{ text-align:left; }
+    .dt-buttons .dt-button{ margin:6px 6px 0 0; }
+  }
 </style>
 
-
 <div class="buscar-container">
+  <div class="barra"></div>
 
-    <div class="barra"></div>
-        <div class="acciones-rutas">
-            <!-- Ajusta las URLs a lo que necesites -->
-            <a href="/inicio/" class="btn-accion btn-cancelar">Regresar</a>            
-        </div>
-    <br>
-    <h3>Historial de rutas</h3>
+  <div class="acciones-rutas">
+    <a href="/inicio/" class="btn-accion btn-cancelar">Regresar</a>
+  </div>
 
-    {% if rutas %}
-        <div class="resultados-box">
-            {% for r in rutas %}
-                <div class="resultado-item">
-                    <div>
-                        <div class="guardado-por">
-                            {{ r.get_tipo_display }} &nbsp;–&nbsp;
-                            Viaje {{ r.viaje.id_viaje }}
-                        </div>
+  <br>
+  <h3>Historial de rutas</h3>
 
-                        <div>
-                            Distancia: {{ r.distancia_km|floatformat:2 }} km   |
-                            Tiempo: {{ r.tiempo_min|floatformat:1 }} min
-                        </div>
+  {% if rutas %}
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped" id="tbl_rutas">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Viaje</th>
+            <th>Distancia (km)</th>
+            <th>Tiempo (min)</th>
+            <th>Combustible (L)</th>
+            <th>Costo ($)</th>
+            <th>Fecha</th>
+            <th>Combustible</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
 
-                        {% if r.consumo_litros %}
-                        <div>
-                            Combustible: {{ r.consumo_litros|floatformat:2 }} L
-                        </div>
-                        {% endif %}
-
-                        {% if r.costo_estimado %}
-                        <div>
-                            Costo estimado: $ {{ r.costo_estimado|floatformat:2 }}
-                        </div>
-                        {% endif %}
-
-                        <div class="fecha-label">
-                            Fecha: {{ r.viaje.fecha_creacion|date:"d/m/Y H:i" }}
-                        </div>
-                    </div>
-
-                    <div>
-                        <form method="post" action="{% url 'eliminar_ruta_historial' r.id_ruta_opcion %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn-eliminar">
-                                Eliminar
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <p class="no-historial">Todavía no tienes rutas guardadas.</p>
-    {% endif %}
-
+        <tbody>
+          {% for r in rutas %}
+            <tr>
+              <td>{{ r.get_tipo_display }}</td>
+              <td>{{ r.viaje.id_viaje }}</td>
+              <td>{{ r.distancia_km|floatformat:2 }}</td>
+              <td>{{ r.tiempo_min|floatformat:1 }}</td>
+              <td>
+                {% if r.consumo_litros %}
+                  {{ r.consumo_litros|floatformat:2 }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                {% if r.costo_estimado %}
+                  {{ r.costo_estimado|floatformat:2 }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>{{ r.viaje.fecha_creacion|date:"d/m/Y H:i" }}</td>
+              <td>
+                {% if r.combustible_tipo %}
+                  {{ r.combustible_tipo }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td style="white-space:nowrap;">
+                <form method="post" action="{% url 'eliminar_ruta_historial' r.id_ruta_opcion %}" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-eliminar">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p style="color:#fff; margin-top:15px;">Todavía no tienes rutas guardadas.</p>
+  {% endif %}
 </div>
+
+<script>
+$(document).ready(function () {
+  $('#tbl_rutas').DataTable({
+    dom: 'Bfrtip',
+    buttons: [
+      { extend: 'copy', text: 'Copiar' },
+      { extend: 'excel', text: 'Excel' },
+      { extend: 'csv', text: 'CSV' },
+      { extend: 'pdf', text: 'PDF', orientation: 'landscape', pageSize: 'A4' }
+    ],
+    language: {
+      url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+      search: "Buscar:",
+      lengthMenu: "Mostrar _MENU_ registros",
+      info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+      infoEmpty: "Mostrando 0 a 0 de 0 registros",
+      infoFiltered: "(filtrado de _MAX_ registros totales)",
+      paginate: { previous: "Anterior", next: "Siguiente" },
+      zeroRecords: "No se encontraron resultados"
+    }
+  });
+});
+</script>
 
 {% endblock %}

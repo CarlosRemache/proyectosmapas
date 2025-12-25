@@ -1,0 +1,347 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<style>
+    body {
+        background-color: #000 ;
+    }
+
+  .box{
+    width:92%;
+    max-width:1100px;
+    margin:30px auto;
+    background:#222;
+    color:#F3F4F6;
+    padding:22px;
+    border-radius:18px;
+    border:1px solid #1F2937;
+    box-shadow:0 12px 30px rgba(0,0,0,0.4);
+  }
+
+  .box h3{
+    margin-bottom:18px;
+    font-weight:700;
+    color:#F3F4F6;
+    text-align:center;
+  }
+
+
+  #calendar{
+    background:#ffffff;
+    padding:12px;
+    border-radius:14px;
+    border:1px solid #202122ff;
+  }
+
+
+  .table-responsive{
+    width:100%;
+    border-radius:14px;
+    border:1px solid #1F2937;
+    background:#111827;
+    padding:12px;
+    overflow:auto;              
+    margin-top:18px;
+  }
+
+
+  .dt-buttons{
+    text-align:right;
+    margin-bottom:12px;
+  }
+
+  .dt-buttons .dt-button{
+    padding:10px 14px;
+    border-radius:10px;
+    border:1px solid #1F2937;
+    background:#00aa30;
+    color:#ffffff;
+    font-weight:700;
+    margin-left:8px;
+  }
+
+  .dt-buttons .dt-button:hover{
+    background:#000;
+    color:#ffffff;
+  }
+
+
+  .dataTables_filter label,
+  .dataTables_length label{
+    color:#A1A1AA;
+    font-weight:600;
+  }
+  .dataTables_filter input,
+  .dataTables_length select{
+    background:#06080D;
+    color:#F3F4F6;
+    border:1px solid #1F2937;
+    border-radius:10px;
+    padding:8px 10px;
+    outline:none;
+  }
+  
+  .dataTables_filter input:focus,
+  .dataTables_length select:focus{
+    border-color:#3B82F6;
+    box-shadow:0 0 0 3px rgba(59,130,246,0.25);
+  }
+
+  
+  .dataTables_info{
+    color:#A1A1AA;
+    margin-top:10px;
+  }
+
+  .dataTables_paginate{
+    margin-top:10px;
+  }
+  .dataTables_paginate .paginate_button{
+    padding:8px 12px;
+    border-radius:10px;
+    border:1px solid #1F2937;
+    background:#06080D;
+    color:#F3F4F6;
+    margin-left:6px;
+  }
+
+  .dataTables_paginate .paginate_button:hover{
+    background:#111827;
+    border-color:#3B82F6;
+    color:#F3F4F6;
+  }
+
+  .dataTables_paginate .paginate_button.current{
+    background:#3B82F6;
+    color:#ffffff;
+    border-color:#3B82F6;
+  }
+
+  #tbl_asignados{
+    width:100%;
+    font-size:13px;
+    color:#F3F4F6;
+    margin:0;
+  }
+
+  #tbl_asignados thead th{
+    background:#06080D;
+    color:#F3F4F6;
+    border-bottom:1px solid #1F2937;
+    padding:10px;
+    white-space:nowrap;
+  }
+
+  #tbl_asignados tbody td{
+    background:#111827;
+    color:#F3F4F6;
+    border-top:1px solid #1F2937;
+    padding:10px;
+    vertical-align:middle;
+    white-space:nowrap;
+  }
+  
+  #tbl_asignados tbody tr:hover td{
+    background:#0B1220;
+  }
+
+  .text-muted{ color:#A1A1AA; }
+
+  .btn-bloqueado{
+  opacity: .35;
+  pointer-events: none;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: bold;
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    cursor: pointer;
+    min-width: 140px;
+    transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
+}
+
+
+    .btn-cancel {
+        background-color: #4b5563;
+        color: #f9fafb;
+    }
+
+    .btn-cancel:hover {
+        background-color: #374151;
+        box-shadow: 0 8px 18px rgba(55, 65, 81, 0.5);
+        transform: translateY(-1px);
+    }
+
+  #calendar .fc-toolbar-title{
+    color:#111827 ;   
+    font-weight:800;
+  }
+
+
+
+  @media (max-width: 768px){
+    .box{ padding:14px; }
+    .dt-buttons{ text-align:left; }
+    .dt-buttons .dt-button{ margin:6px 6px 0 0; }
+  }
+</style>
+
+<div class="box">
+  <h3>Mis eventos asignados</h3>
+        <a href="/inicio/" class="btn-cancel">Menu</a>
+        <br>
+        <br>
+  <div id="calendar"></div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped" id="tbl_asignados">
+      <thead>
+        <tr>
+          <th>Título</th>
+          <th>Inicio</th>
+          <th>Fin</th>
+          <th>Descripción</th>
+          <th>Asignado</th>
+          <th>Creado por</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+          {% for a in asignaciones %}
+            <tr>
+              <td>{{ a.evento.titulo }}</td>
+
+              <td>
+                {{ a.evento.inicio_fecha|date:"d-m-Y" }}
+                {{ a.evento.inicio_hora|time:"h:i A" }}
+              </td>
+
+              <td>
+                {% if a.evento.fin_fecha and a.evento.fin_hora %}
+                  {{ a.evento.fin_fecha|date:"d-m-Y" }}
+                  {{ a.evento.fin_hora|time:"h:i A" }}
+                {% elif a.evento.fin_fecha and not a.evento.fin_hora %}
+                  {{ a.evento.fin_fecha|date:"d-m-Y" }} <span class="text-muted">Sin hora</span>
+                {% else %}
+                  <span class="text-muted">Sin final</span>
+                {% endif %}
+              </td>
+
+              <td>{{ a.evento.descripcion|default:"-" }}</td>
+
+              <td>
+                {% if a.fecha_asignacion %}
+                  {{ a.fecha_asignacion|date:"d-m-Y h:i A" }}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+
+              <td>
+                {{ a.evento.creado_por.usuario.nombre_usuario }}
+                {{ a.evento.creado_por.usuario.apellido_usuario }}
+              </td>
+              <td>
+                {% if a.estado == "COMPLETADO" %}
+                  <span class="badge bg-success">Completado</span>
+                {% elif a.estado == "ATRASADO" %}
+                  <span class="badge bg-danger">Atrasado</span>
+                {% elif a.estado == "NO_COMPLETADO" %}
+                  <span class="badge bg-info text-dark">No completado</span>
+                {% else %}
+                  <span class="badge bg-secondary">Pendiente</span>
+                {% endif %}
+              </td>
+              <td>
+                <form method="POST" action="{% url 'usuario_cambiar_estado' a.id_usuario_evento %}" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="estado" value="COMPLETADO">
+                  <button type="submit" class="btn btn-success btn-sm">Completado</button>
+                </form>
+
+                <form method="POST" action="{% url 'usuario_cambiar_estado' a.id_usuario_evento %}" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="estado" value="ATRASADO">
+                  <button type="submit" class="btn btn-danger btn-sm">Atrasado</button>
+                </form>
+
+                <form method="POST" action="{% url 'usuario_cambiar_estado' a.id_usuario_evento %}" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="estado" value="NO_COMPLETADO">
+                  <button type="submit" class="btn btn-info btn-sm">No completado</button>
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="8" class="text-center text-muted">No tienes eventos asignados.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      locale: 'es',
+      height: 650,
+      events: '{% url "usuario_eventos_json" %}',
+
+      //  Cambia 17:06 -> 05:06 PM (12h)
+      eventTimeFormat: {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      },
+
+      //para timeGridWeek/timeGridDay (columna de horas)
+      slotLabelFormat: {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      },
+      buttonText: { today:'Hoy', month:'Mes', week:'Semana', day:'Día' }
+    });
+
+    calendar.render();
+  });
+
+  // DATATABLES
+  $(document).ready(function() {
+    $('#tbl_asignados').DataTable({
+      dom: 'Bfrtip',
+      buttons: [
+        { extend: 'copy',  text: 'Copiar' },
+        { extend: 'excel', text: 'Excel' },
+        { extend: 'csv',   text: 'CSV' },
+        { extend: 'pdf',   text: 'PDF', orientation: 'landscape', pageSize: 'A4' }
+      ],
+      language: {
+        url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+        search: "Buscar:",
+        lengthMenu: "Mostrar _MENU_ registros",
+        info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+        infoEmpty: "Mostrando 0 a 0 de 0 registros",
+        infoFiltered: "(filtrado de _MAX_ registros totales)",
+        paginate: { previous: "Anterior", next: "Siguiente" },
+        zeroRecords: "No se encontraron resultados"
+      }
+    });
+  });
+</script>
+
+
+{% endblock %}

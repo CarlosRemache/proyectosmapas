@@ -1,0 +1,171 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento de Hábitos de Estudio </title>
+
+        <!-- calendario -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+    <!-- jQuery (solo una vez) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <!-- DataTables Buttons -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+
+    <!-- Exportación Excel / CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+
+    <!-- Exportación PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- iziToast -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.css"/>
+
+    <!-- jQuery Validate -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.js"></script>
+
+    <!-- Plantilla CSS -->
+    <link href="{% static 'plantilla/assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+
+    <link href="{% static 'plantilla/assets/img/favicon.png' %}" rel="icon">
+    <link href="{% static 'plantilla/assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&family=Poppins:wght@100;300;400;500;600;700;800;900&family=Raleway:wght@100;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Main CSS -->
+    <link href="{% static 'plantilla/assets/css/main.css' %}" rel="stylesheet">
+
+  </head>
+
+
+<body class="index-page">
+
+  <header id="header" class="header dark-background d-flex flex-column">
+    <i class="header-toggle d-xl-none bi bi-list"></i>
+
+    <nav id="navmenu" class="navmenu">
+      <ul>
+        <li><a href="/adminpanel/" class="active"><i class="bi bi-house navicon"></i>Inicio</a></li>
+        <li><a href="/panel/calendario/"><i class="bi bi-calendar4-week navicon"></i> Calendario de viajes</a></li>
+        <li><a href="/crear_asignacion/"><i class="bi bi-person navicon"></i> Choferes</a></li>
+        <li><a href="/nuevoproveedor/"><i class="bi bi-person navicon"></i> Provedores</a></li>
+        <li class="dropdown"><a href="#"><i class="bi bi-briefcase navicon"></i> <span>Pedidos</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+          <ul>
+            <li><a href="/nuevopedido/"> Crear Pedidos</a></li>
+            <li><a href="/agregarproducto/">Agregar Productos</a></li>
+          </ul>
+        </li>
+        <li><a href="#resume"><i class="bi bi-file-earmark-text navicon"></i>SALVOCONDUCTOS</a></li>
+        <li><a href="#resume"><i class="bi bi-card-checklist navicon"></i> Facturacion</a></li>
+        <li><a href="#resume"><i class="bi bi-card-checklist navicon"></i> Pago</a></li>
+        <li class="dropdown"><a href="#"><i class="bi bi-bar-chart navicon"></i> <span>Reportes</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+          <ul>
+            <li><a href="/reporteviaje/">control de viajes</a></li>
+            <li><a href="/reportehistorial/">historial de viajes</a></li>
+            <li><a href="{% url 'reporte_asignaciones' %}">Estado de asignacion</a></li>
+          </ul>
+        </li>
+
+        <li><a href="/logout/"> Cerrar sesión</a></li>
+      </ul>
+    </nav>
+
+  </header>
+
+    {% block contener %}
+
+    {% endblock %}
+<br>
+<br>
+
+
+
+<!--verificacion y mostrando mensajes-->
+
+{% if messages %}
+    {% for mesajeConfirmacion in messages %}
+        <script>
+            // Verifica si el tag del mensaje es "success"
+            if ("{{ mesajeConfirmacion.tags }}" === "success") {
+                iziToast.success({
+                    title: 'CONFIRMACIÓN',
+                    message: "{{ mesajeConfirmacion }}", // Corregido: "messages" a "message"
+                    position: 'topRight'
+                });
+            }
+        </script>
+    {% endfor %}
+{% endif %}
+
+<script>
+      jQuery.validator.addMethod("letras", function(value, element) {            
+          return this.optional(element) || /^[A-Za-zÁÉÍÓÚÑáéíóúñ ]*$/.test(value);
+         
+        }, "Este campo solo acepta letras"); 
+</script>
+  
+
+<footer id="footer" class="footer position-relative light-background">
+
+    <div class="container">
+      <div class="copyright text-center ">
+        <p> <span></span> <strong class="px-1 sitename"></strong> <span></span></p>
+      </div>
+      <div class="credits">
+        <!-- All the links in the footer should remain intact. -->
+        <!-- You can delete the links only if you've purchased the pro version. -->
+        <!-- Licensing information: https://bootstrapmade.com/license/ -->
+        <!-- Purchase the pro version with working PHP/AJAX contact form: [buy-url] -->
+        <a href="https://bootstrapmade.com/"></a>  <a href="https://themewagon.com"></a>
+      </div>
+    </div>
+
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Preloader -->
+  <div id="preloader"></div>
+
+
+
+
+  <!-- Vendor JS Files -->
+  <script src="{% static 'plantilla/assets/vendor/bootstrap/js/bootstrap.bundle.min.js'   %}"></script>
+  <script src="{% static 'plantilla/assets/vendor/php-email-form/validate.js'   %}"></script>
+  <script src="{% static 'plantilla/assets/vendor/aos/aos.js'   %}"></script>
+  <script src="{% static 'plantilla/assets/vendor/typed.js/typed.umd.js'   %}"></script>
+  <script src="{% static 'plantilla/assets/vendor/purecounter/purecounter_vanilla.js'   %}"></script>
+  <script src="{% static 'plantilla/assets/vendor/waypoints/noframework.waypoints.js'   %}"></script>
+  <script src="{% static 'plantilla/assets/vendor/glightbox/js/glightbox.min.js'   %}"></script>
+  <script src="{% static 'plantilla/assets/vendor/imagesloaded/imagesloaded.pkgd.min.js'   %}"></script>
+  <script src="{% static 'plantilla/assets/vendor/isotope-layout/isotope.pkgd.min.js'   %}"></script>
+  <script src="{% static 'plantilla/assets/vendor/swiper/swiper-bundle.min.js'  %}"></script>
+
+  <!-- Main JS File -->
+  <script src="{% static 'plantilla/assets/js/main.js' %}"> </script>
+
+
+</body>
+</html>
+

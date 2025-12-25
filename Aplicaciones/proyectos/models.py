@@ -2,7 +2,6 @@ from django.db import models
 from django.utils import timezone
 
 
-
 class Usuario(models.Model):
     id_usuario=models.AutoField(primary_key=True)
     nombre_usuario=models.CharField(max_length=100)
@@ -21,7 +20,58 @@ class Administrador(models.Model):
 
 
 
+class ChecklistVehiculo(models.Model):
+    id_checklist = models.AutoField(primary_key=True)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="checklists")
+    creado_en = models.DateTimeField(default=timezone.now)
+    SI_NO = (('SI', 'Si'), ('NO', 'No'))
+    # Documentos indispensables
+    licencia_conducir = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    tarjeta_circulacion = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    poliza_impresa = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    poliza_digital = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    verificacion_vehicular = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    factura_propiedad = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
 
+    # Chequeo mecánico esencial
+    llantas = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    frenos = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    luces = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    fluidos_aceite = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    fluido_agua = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    bateria_general = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    cinturones = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    limpiaparabrisas = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+
+    # Estado general del motor
+    motor_aceite = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    motor_refrigerante = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    motor_temperatura = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    motor_bateria = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    motor_filtro_aire = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    motor_fugas = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    motor_combustible = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+
+    # Suspensión / transmisión
+    amortiguadores = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    alineacion = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    soportes_motor = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    caja = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    embrague = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+
+    # Equipo de seguridad requerido
+    triangulo = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    chaleco = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    extintor = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    gato_llave = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    botiquin = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    linterna = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    cables_corriente = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    tacos_ruedas = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+    llanta_reparacion = models.CharField(max_length=2, choices=SI_NO, null=True, blank=True)
+
+    def __str__(self):
+        return f"Checklist #{self.id_checklist} - {self.usuario.nombre_usuario} ({self.creado_en.date()})"
 
 
 
@@ -48,7 +98,7 @@ class UbicacionVehiculo(models.Model):
         return f"{self.latitud}, {self.longitud} ({self.fecha_hora})"
 
 
-#punto 
+#punto final
 class Lugarguardado(models.Model):
     id_Lugarguardado=models.AutoField(primary_key=True)
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="Lugarguardados")
@@ -64,10 +114,9 @@ class Lugarguardado(models.Model):
 
 
 
-
 class NodoMapa(models.Model):
     id_nodo = models.BigIntegerField(primary_key=True)
-    nombre = models.CharField(max_length=200)   # Ej: "Parque La Laguna"
+    nombre = models.CharField(max_length=200)  
     latitud = models.FloatField()
     longitud = models.FloatField()
     tipo = models.CharField(
@@ -91,16 +140,7 @@ class TramoVial(models.Model):
     destino = models.ForeignKey(NodoMapa, on_delete=models.CASCADE, related_name='tramos_llegada')
     distancia_km = models.FloatField()         
     tiempo_base_min = models.FloatField()      
-    tipo_via = models.CharField(
-        max_length=50,
-        choices=[
-            ('URBANA', 'Urbana'),
-            ('RURAL', 'Rural'),
-            ('PRINCIPAL', 'Principal'),
-            ('SECUNDARIA', 'Secundaria'),
-        ],
-        blank=True
-    )
+    tipo_via = models.CharField(max_length=50,choices=[('URBANA', 'Urbana'),('RURAL', 'Rural'),('PRINCIPAL', 'Principal'),('SECUNDARIA', 'Secundaria'),],blank=True)
 
     def __str__(self):
         return f"{self.origen} -> {self.destino}"
@@ -130,12 +170,18 @@ class Viaje(models.Model):
 class RutaOpcion(models.Model):
     id_ruta_opcion = models.AutoField(primary_key=True)
     viaje = models.ForeignKey(Viaje, on_delete=models.CASCADE, related_name="opciones")
-    TIPO_CHOICES = [('OPTIMA', 'Óptima'),('LARGA', 'Larga'),('SEGURA', 'Segura'),]
-    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
+    tipo  = models.CharField(max_length=20, choices=[('OPTIMA', 'OPTIMA'), ('LARGA', 'LARGA'), ('SEGURA', 'SEGURA')])
     tiempo_min = models.FloatField()
     distancia_km = models.FloatField()
     consumo_litros = models.FloatField(null=True, blank=True)
     costo_estimado = models.FloatField(null=True, blank=True)
+    combustible_tipo = models.CharField(max_length=20,choices=[('EXTRA', 'EXTRA'), ('DIESEL', 'DIESEL'),('SUPER', 'SUPER'), ('ECOPAIS', 'ECOPAIS')],null=True,blank=True)
+
+
+    class Meta:#Evitar duplicados en RutaOpcion
+        constraints = [
+            models.UniqueConstraint(fields=["viaje", "tipo"], name="uniq_viaje_tipo")
+        ]
 
 
     def __str__(self):
@@ -143,7 +189,89 @@ class RutaOpcion(models.Model):
 
 
 
+class EventoAdmin(models.Model):
+    id_evento = models.AutoField(primary_key=True)
+    titulo = models.CharField(max_length=200)
+    inicio_fecha = models.DateField()
+    inicio_hora = models.TimeField()
+    fin_fecha = models.DateField(null=True, blank=True)
+    fin_hora = models.TimeField(null=True, blank=True)
+    descripcion = models.TextField(blank=True)
+    creado_por = models.ForeignKey('Administrador', on_delete=models.CASCADE)
+    def __str__(self):
+        return f"{self.titulo} ({self.inicio_fecha} {self.inicio_hora})"
 
+
+
+
+class AsignacionEvento(models.Model):
+    id_usuario_evento = models.AutoField(primary_key=True)
+    descripcion_evento = models.TextField(blank=True)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    evento = models.ForeignKey(EventoAdmin, on_delete=models.CASCADE)
+    fecha_asignacion = models.DateTimeField(null=True, blank=True)
+    ESTADOS = (('PENDIENTE', 'PENDIENTE'),('COMPLETADO', 'COMPLETADO'),('ATRASADO', 'ATRASADO'),('NO COMPLETADO', 'NO COMPLETADO'),)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='PENDIENTE')
+    estado_fecha = models.DateTimeField(null=True, blank=True)  # cuándo cambió el estado
+
+    class Meta:
+        unique_together = ('usuario', 'evento')
+
+    def __str__(self):
+        return f"{self.usuario.nombre_usuario} asignado a {self.evento.titulo}"
+
+
+
+
+
+
+class Proveedor(models.Model):
+    id_proveedor = models.AutoField(primary_key=True)
+    nombre_proveedor = models.CharField(max_length=150)
+    direccion_proveedor = models.CharField(max_length=255, blank=True, null=True)
+    telefono_proveedor = models.CharField(max_length=20, blank=True, null=True)
+    correo_proveedor = models.EmailField(unique=True)
+    ruc_proveedor = models.CharField(max_length=13, unique=True)
+    estado_proveedor = models.CharField(max_length=20, choices=[('ACTIVO', 'ACTIVO'),('INACTIVO', 'INACTIVO')])
+
+
+
+
+
+
+class Pedido(models.Model):
+    id_pedido = models.AutoField(primary_key=True)
+    descripcion_pedido = models.TextField(blank=True, null=True)
+    proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)
+    evento = models.ForeignKey(EventoAdmin, on_delete=models.SET_NULL, null=True, blank=True)  # Viaje
+    fecha_pedido = models.DateField()
+    estado_pedido = models.CharField(max_length=20, choices=[('PENDIENTE', 'PENDIENTE'),('EN PROCESO', 'EN PROCESO'),('ENTREGADO', 'ENTREGADO'),('CANCELADO', 'CANCELADO')])
+
+
+
+   
+
+class DetallePedido(models.Model):
+    id_detalle_pedido = models.AutoField(primary_key=True)
+    pedido = models.ForeignKey(Pedido,on_delete=models.CASCADE)
+    descripcion_item = models.CharField(max_length=255)
+    cantidad = models.PositiveIntegerField()
+    precio_unitario = models.DecimalField(max_digits=10,decimal_places=2,default=0)
+
+    def subtotal(self):
+        return self.cantidad * self.precio_unitario
+
+    def __str__(self):
+        return f"{self.descripcion_item} - Pedido #{self.pedido.id_pedido}"
+
+
+
+
+
+
+
+
+#tablas con valores extra unicas
 
 
 class PrecioCombustible(models.Model):
@@ -154,4 +282,19 @@ class PrecioCombustible(models.Model):
 
     def __str__(self):
         return f"{self.tipo} - {self.precio_por_litro} USD/L"
+
+
+
+class RendimientoVehiculoTipo(models.Model):
+    tipo  = models.CharField(max_length=20, choices=[('PRIVADO', 'PRIVADO'), ('TAXI', 'TAXI'), ('MOTOCICLETA', 'MOTOCICLETA'), ('CAMION', 'CAMION')])
+    # km por litro en contexto urbano / carretera
+    km_l_ciudad = models.FloatField()
+    km_l_carretera = models.FloatField()
+
+    # litros por hora en ralentí (motor encendido sin avanzar / stop&go)
+    idle_l_h = models.FloatField(default=0.8)
+
+    def __str__(self):
+        return f"{self.tipo} (ciudad {self.km_l_ciudad} km/L, carretera {self.km_l_carretera} km/L, idle {self.idle_l_h} L/h)"
+
 

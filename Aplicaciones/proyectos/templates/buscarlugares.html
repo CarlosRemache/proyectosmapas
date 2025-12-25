@@ -3,225 +3,351 @@
 {% block contenido %}
 
 <style>
-    body {
-        background-color: #000 !important;
-    }
+  body { background-color:#000; }
 
-    .buscar-container {
-        max-width: 700px;
-        margin: 100px auto;
-        background-color: #222;
-        padding: 30px;
-        border-radius: 20px;
-        color: white;
-        text-align: center;
-        box-shadow: 0 4px 25px rgba(0,0,0,0.7);
-        font-family: Arial, sans-serif;
-    }
+  .buscar-container{
+    max-width: 1100px;  
+    margin: 70px auto;
+    background:#222;
+    padding: 26px;
+    border-radius: 20px;
+    color:#fff;
+    text-align:center;
+    box-shadow:0 4px 25px rgba(0,0,0,.7);
+    font-family: Arial, sans-serif;
+  }
 
-    .barra {
-        width: 260px;
-        height: 18px;
-        background-color: #444;
-        margin: 0 auto 25px auto;
-        border-radius: 10px;
-    }
+  .barra{
+    width:260px; height:18px;
+    background:#444;
+    margin:0 auto 18px auto;
+    border-radius:10px;
+  }
 
-    h3 {
-        font-size: 22px;
-        margin-bottom: 25px;
-        color: white;
-    }
-
-    /* Contenedor input + botón */
-    .buscador-flex {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 25px;
-    }
-
-    .input-buscar {
-        width: 100%;
-        padding: 12px;
-        border: none;
-        border-radius: 12px;
-        background-color: #444;
-        color: #fff;
-        font-size: 16px;
-    }
-
-    .input-buscar::placeholder {
-        color: #aaa;
-    }
-
-    .btn-buscar {
-        width: 120px;
-        padding: 10px;
-        background-color: #00d13a;
-        color: white;
-        font-weight: bold;
-        border-radius: 12px;
-        border: none;
-        cursor: pointer;
-        font-size: 15px;
-    }
-
-    .btn-buscar:hover {
-        background-color: #00aa30;
-    }
-
-    /* RESULTADOS DENTRO DE LA MISMA CAJA */
-    .resultados-box {
-        background-color: #1b1b1b;
-        padding: 15px;
-        border-radius: 15px;
-        margin-top: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-        text-align: left;
-    }
-
-    .resultado-item {
-        background-color: #333;
-        padding: 12px;
-        border-radius: 15px;
-        margin-bottom: 10px;
-        color: #fff;
-        text-decoration: none;
-        display: block;
-        font-size: 14px;
-        transition: 0.2s;
-        border: 1px solid #3a3a3a;
-    }
-
-    .resultado-item:hover {
-        background-color: #444;
-        transform: scale(1.02);
-    }
-
-    hr {
-        border: 0;
-        height: 6px;
-        background-color: #ffffffff;
-        border-radius: 5px;
-        margin: 25px 0;
+  h3{ font-size:22px;
+     margin-bottom:18px;
+      color:#fff; 
     }
 
 
-    .titulo-historial {
-        color: white;
-        margin-bottom: 15px;
-        text-align: center;
+  .buscador-flex{
+    display:flex;
+    gap:10px;
+    margin-bottom: 18px;
+  }
+
+  .input-buscar{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:12px;
+    background:#444;
+    color:#fff;
+    font-size:16px;
+    outline:none;
+  }
+
+  .input-buscar::placeholder{
+     color:#aaa; 
     }
 
-    .resultados-box {
-        width: 100%;
-        padding: 10px;
+  .btn-buscar{
+    width:130px;
+    padding:10px;
+    background:#00d13a;
+    color:#fff;
+    font-weight:800;
+    border-radius:12px;
+    border:none;
+    cursor:pointer;
+    font-size:15px;
+    text-decoration:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .btn-buscar:hover{ 
+    background:#00aa30; 
+  }
+
+
+  .resultados-box{
+    background:#1b1b1b;
+    padding:15px;
+    border-radius:15px;
+    margin-top:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,.5);
+    text-align:left;
+  }
+
+  .resultado-item{
+    background:#333;
+    padding:12px;
+    border-radius:15px;
+    margin-bottom:10px;
+    color:#fff;
+    text-decoration:none;
+    display:block;
+    font-size:14px;
+    transition:.2s;
+    border:1px solid #3a3a3a;
+  }
+
+  .resultado-item:hover{
+    background:#444;
+    transform:scale(1.02);
+  }
+
+  hr{
+    border:0;
+    height:6px;
+    background:#fff;
+    border-radius:5px;
+    margin: 22px 0;
+  }
+
+
+  .table-responsive{
+    width:100%;
+    margin-top: 14px;
+    border-radius:14px;
+    border:1px solid #333;
+    background:#1b1b1b;
+    padding:12px;
+    overflow:hidden;
+    text-align:left;
+  }
+
+  #tbl_historial{
+    width:100%;
+    font-size:13px;
+    color:#F3F4F6;
+    margin:0;
+  }
+
+  #tbl_historial thead th{
+    background:#111;
+    color:#F3F4F6;
+    border-bottom:1px solid #333 ;
+    padding:10px;
+    white-space:nowrap;
+  }
+
+  #tbl_historial tbody td{
+    background:#1b1b1b;
+    color:#F3F4F6;
+    border-top:1px solid #333 ;
+    padding:10px;
+    vertical-align:middle;
+  }
+
+  #tbl_historial tbody tr:hover td{
+    background:#141414;
+  }
+
+  .guardado-por{ 
+    color:#00ff00; 
+    font-weight:800;
+   }
+
+  .fecha-label{ color:#aaa;
+     font-size:12px; 
     }
 
-    .resultado-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: rgba(0,0,0,0.3);
-        padding: 12px 15px;
-        border-radius: 8px;
-        border: 1px solid #444;
-        margin-bottom: 12px;
-    }
 
-    .guardado-por {
-        color: #00ff00;
-        font-weight: bold;
-    }
-
-    .fecha-label {
-        color: #aaa;
-    }
-
-    .no-historial {
-        color: white;
-        text-align: center;
-        margin-top: 15px;
-    }
-
-    .btn-eliminar {
-        padding: 6px 10px !important;
-        border-radius: 5px;
-        text-decoration: none;
-    }
+  .dt-buttons{
+    text-align:right;
+    margin-bottom:10px;
+  }
+  .dt-buttons .dt-button{
+    padding:10px 14px;
+    border-radius:10px;
+    border:1px solid #333;
+    background:#00d13a;
+    color:#000;
+    font-weight:900;
+    margin-left:8px;
+  }
+  .dt-buttons .dt-button:hover{ 
+    filter:brightness(.95); 
+  }
 
 
+  .dataTables_filter label,
+  .dataTables_length label,
+  .dataTables_info{
+    color:#d1d5db;
+    font-weight:600;
+  }
+
+  .dataTables_filter input{
+    background:#0f0f0f;
+    color:#fff;
+    border:1px solid #333;
+    border-radius:10px;
+    padding:8px 10px;
+    outline:none;
+  }
+
+  .dataTables_length select{
+    background:#0f0f0f;
+    color:#fff;
+    border:1px solid #333;
+    border-radius:10px;
+    padding:6px 10px;
+  }
+
+  /* paginación */
+  .dataTables_paginate{
+    margin-top:10px;
+  }
+  .dataTables_paginate .paginate_button{
+    padding:8px 12px;
+    border-radius:10px;
+    border:1px solid #333;
+    background:#0f0f0f;
+    color:#fff;
+    margin-left:6px;
+  }
+  .dataTables_paginate .paginate_button:hover{
+    background:#191919;
+  }
+  .dataTables_paginate .paginate_button.current{
+    background:#00d13a;
+    color:#000;
+    border-color:#00d13a;
+  }
 
 
+  .btn-eliminar{
+    padding:7px 10px;
+    border-radius:10px;
+    background:#ff4444;
+    color:#fff;
+    border:none;
+    cursor:pointer;
+    font-weight:900;
+    font-size:13px;
+    text-decoration:none;
+    display:inline-block;
+  }
+  .btn-eliminar:hover{ 
+    background:#cc0000; 
+  }
+
+  .no-historial{
+    color:#fff;
+    text-align:center;
+    margin-top:15px;
+  }
+
+  @media (max-width: 768px){
+    .buscar-container{ padding:16px; }
+    .buscador-flex{ flex-direction:column; }
+    .btn-buscar{ width:100%; }
+    .table-responsive{ overflow-x:auto; }
+    .dt-buttons{ text-align:left; }
+    .dt-buttons .dt-button{ margin:6px 6px 0 0; }
+  }
 </style>
 
-
-
 <div class="buscar-container">
-    <div class="barra"></div>
+  <div class="barra"></div>
 
-    <h3>Buscar lugares</h3>
+  <h3>Buscar lugares</h3>
 
-    <form method="get">
-        <div class="buscador-flex">
-            <input type="search"
-                   name="q"
-                   class="input-buscar"
-                   value="{{ query }}"
-                   required>
-            <button type="submit" class="btn-buscar">Buscar</button>
-            <a href="/inicio/" class="btn-buscar">menu</a>
-        </div>
-    </form> 
+  <form method="get">
+    <div class="buscador-flex">
+      <input type="search"
+             name="q"
+             class="input-buscar"
+             value="{{ query }}"
+             placeholder="Escribe un lugar..."
+             required>
 
-    {% if resultados %}
-        <div class="resultados-box">
+      <button type="submit" class="btn-buscar">Buscar</button>
+      <a href="/inicio/" class="btn-buscar">Menú</a>
+    </div>
+  </form>
 
-            <h5 style="color:white; margin-bottom:15px;">Resultados encontrados:</h5>
+  {% if resultados %}
+    <div class="resultados-box">
+      <h5 style="color:white; margin-bottom:15px;">Resultados encontrados:</h5>
 
-            {% for r in resultados %} 
-                <a href="/lugar/{{ r.lat }}/{{ r.lon }}/?nombre={{ r.display_name|urlencode }}" 
-                class="resultado-item">
-                {{ r.display_name }}
+      {% for r in resultados %}
+        <a href="/lugar/{{ r.lat }}/{{ r.lon }}/?nombre={{ r.display_name|urlencode }}"
+           class="resultado-item">
+          {{ r.display_name }}
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <hr>
+
+  {% if historial %}
+    <h4 style="color:white; margin-bottom: 10px;">Historial de lugares guardados</h4>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped" id="tbl_historial">
+        <thead>
+          <tr>
+            <th>Lugar</th>
+            <th>Guardado por</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for item in historial %}
+            <tr>
+              <td><b>{{ item.nombre_Lugarguardado }}</b></td>
+              <td>
+                <span class="guardado-por">
+                  {{ item.usuario.nombre_usuario }} {{ item.usuario.apellido_usuario }}
+                </span>
+              </td>
+              <td>{{ item.fecha_guardado|date:"Y-m-d H:i" }}</td>
+              <td style="white-space:nowrap;">
+                <a href="{% url 'eliminar_lugar' item.id_Lugarguardado %}"
+                   class="btn-eliminar">
+                  Eliminar
                 </a>
-            {% endfor %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-        </div>
-    {% endif %}
-    <hr>
-        {% if historial %}
-            <h4 class="titulo-historial">Historial de lugares guardados</h4>
-
-            <div class="resultados-box">
-                {% for item in historial %}
-                    <div class="resultado-item">
-                        <div>
-                            <b>{{ item.nombre_Lugarguardado }}</b><br>
-                            <span class="guardado-por">Guardado por:</span> 
-                                {{ item.usuario.nombre_usuario }} {{ item.usuario.apellido_usuario }} <br>
-                            <span class="fecha-label">Fecha:</span> 
-                                {{ item.fecha_guardado|date:"Y-m-d H:i" }}
-                        </div>
-
-                        <a href="{% url 'eliminar_lugar' item.id_Lugarguardado %}" 
-                        class="btn btn-danger btn-sm btn-eliminar"
-                        onclick="confirmarEliminacion(event, '{% url 'eliminar_lugar' item.id_Lugarguardado %}');">
-                        Eliminar
-                        </a>
-
-                    </div>
-                {% endfor %}
-            </div>
-
-        {% else %}
-            <p class="no-historial">No hay lugares guardados aún.</p>
-        {% endif %}
-
-
+  {% else %}
+    <p class="no-historial">No hay lugares guardados aún.</p>
+  {% endif %}
 </div>
 
+<script>
+$(document).ready(function () {
+  $('#tbl_historial').DataTable({
+    dom: 'Bfrtip',
+    buttons: [
+      { extend: 'copy', text: 'Copiar' },
+      { extend: 'excel', text: 'Excel' },
+      { extend: 'csv', text: 'CSV' },
+      { extend: 'pdf', text: 'PDF', orientation: 'landscape', pageSize: 'A4' }
+    ],
+    language: {
+      url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+      search: "Buscar:",
+      lengthMenu: "Mostrar _MENU_ registros",
+      info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+      infoEmpty: "Mostrando 0 a 0 de 0 registros",
+      infoFiltered: "(filtrado de _MAX_ registros totales)",
+      paginate: { previous: "Anterior", next: "Siguiente" },
+      zeroRecords: "No se encontraron resultados"
+    }
+  });
+});
+</script>
+
 {% endblock %}
-
-
-
-

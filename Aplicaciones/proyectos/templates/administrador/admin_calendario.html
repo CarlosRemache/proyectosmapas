@@ -1,0 +1,247 @@
+{% extends "plantillaadministrador.html" %}
+{% load static %}
+{% block contener %}
+
+
+<style>
+
+
+  body{
+    background:#ffffff;
+  }
+
+
+  .box{
+    width:92%;
+    max-width:1000px;
+    margin:30px auto;
+    background:#06080D;        
+    color:#F3F4F6;
+    padding:22px;
+    border-radius:18px;
+    margin-left: 380px;
+    border:1px solid #1F2937;
+    box-shadow:0 12px 30px rgba(0,0,0,0.4);
+  }
+
+
+  #calendar{
+    background:#ffffff;
+    padding:12px;
+    border-radius:14px;
+    border:1px solid #E5E7EB;
+  }
+
+
+  .form-box{
+    margin-top:18px;
+    background:#111827;          
+    padding:16px;
+    border-radius:14px;
+    border:1px solid #1F2937;
+  }
+
+  .form-box h3{
+    color:#F3F4F6;
+    margin-bottom:12px;
+  }
+
+  .form-box label{
+    color:#A1A1AA;
+    font-weight:600;
+    margin-top:10px;
+    display:block;
+  }
+
+  .form-box input,
+  .form-box textarea{
+    width:100%;
+    padding:10px;
+    border-radius:10px;
+    border:1px solid #1F2937;
+    margin-top:6px;
+    margin-bottom:12px;
+    background:#06080D;
+    color:#F3F4F6;
+    outline:none;
+  }
+
+  .form-box input:focus,
+  .form-box textarea:focus{
+    border-color:#3B82F6;       
+    box-shadow:0 0 0 3px rgba(59,130,246,0.25);
+  }
+
+  /* BOTONES */
+  .btn{
+    padding:10px 16px;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+    font-weight:700;
+  }
+
+  .btn-primary{
+    background:#3B82F6;
+    color:#ffffff;
+  }
+
+  .btn-primary:hover{
+    background:#2563EB;
+  }
+
+  .btn-back{ 
+    background:#EF4444; 
+    color:#fff; 
+    text-decoration:none; 
+    display:inline-block; 
+  }
+
+  /* BOTÓN VER EVENTOS */
+  .contenedor-ver-eventos{
+    text-align:right;
+    margin-bottom:20px;
+  }
+
+  .contenedor-ver-eventos a.btn{
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+@media (max-width: 992px){
+  .box{
+    margin-left: 0;
+    width: 96%;
+    max-width: 100%;
+  }
+}
+
+
+</style>
+
+
+<div class="box">
+
+<div class="contenedor-ver-eventos">
+  <a href="{% url 'lista_eventos_admin' %}" class="btn btn-primary">
+    Ver lista de eventos
+  </a>
+</div>
+
+  <div id="calendar"></div>
+
+  <div class="form-box">
+    <h3>Crear evento</h3>
+    <form method="post" action="{% url 'admin_evento_crear' %}">
+      {% csrf_token %}
+
+      <label>Título</label>
+      <input type="text" name="titulo" required>
+
+      <label>fecha de inicio</label>
+      <input type="text" id="inicio_fecha" name="inicio_fecha" required>
+
+      <label>hora iniciada</label>
+      <input type="time" id="inicio_hora" name="inicio_hora" required>
+
+      <label>fecha final</label>
+      <input type="text" id="fin_fecha" name="fin_fecha">
+
+      <label>hora finalizada</label>
+      <input type="time" id="fin_hora" name="fin_hora">
+
+      <label>Descripción (opcional)</label>
+      <textarea name="descripcion" rows="3"></textarea>
+
+      <button class="btn btn-primary" type="submit">Guardar evento</button>
+    </form>
+  </div>
+</div>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+
+    const inicioFecha = document.getElementById('inicio_fecha');
+    const inicioHora  = document.getElementById('inicio_hora');
+    const finFecha    = document.getElementById('fin_fecha');
+    const finHora     = document.getElementById('fin_hora');
+
+    let primerClickDate = null;
+
+    function pad(n){ return String(n).padStart(2,'0'); }
+    function formatDate(d){
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    }
+    function addDays(dateObj, days){
+      const d = new Date(dateObj);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    // defaults de hora (ajústalos a tu gusto)
+    if (!inicioHora.value) inicioHora.value = "08:00";
+    if (!finHora.value) finHora.value = "18:00";
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      locale: 'es',
+      height: 650,
+      selectable: true,
+      events: '/panel/calendario/eventos/',
+
+      buttonText: {
+      today: 'Hoy',
+      month: 'Mes',
+      week: 'Semana',
+      day: 'Día'
+    },
+
+
+      dateClick: function(info){
+        const clicked = new Date(info.date);
+
+        // 1er click -> INICIO
+        if (!primerClickDate){
+          primerClickDate = clicked;
+
+          inicioFecha.value = formatDate(clicked);
+          finFecha.value = "";
+          // finHora.value = "18:00"; // si quieres resetear
+
+          calendar.unselect();
+          calendar.select(clicked, addDays(clicked, 1));
+          return;
+        }
+
+        // 2do click -> FIN
+        let start = new Date(primerClickDate);
+        let end = new Date(clicked);
+
+        if (end < start){
+          const tmp = start; start = end; end = tmp;
+        }
+
+        inicioFecha.value = formatDate(start);
+        finFecha.value = formatDate(end);
+
+        calendar.unselect();
+        calendar.select(start, addDays(end, 1));
+
+        primerClickDate = null; // reset
+      }
+    });
+
+    calendar.render();
+  });
+</script>
+
+
+
+{% endblock %}
+
+
