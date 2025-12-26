@@ -292,10 +292,20 @@ def creardocumento(request):
 # Vehiculo-------------------------------------------------------------
 
 def nuevovehiculo(request):
-    id_usuario = request.session.get('usuario_id')
-    usuario = Usuario.objects.get(id_usuario=id_usuario)
-    tiene_vehiculo = Vehiculo.objects.filter(usuario=usuario).exists() 
-    return render(request, 'nuevovehiculo.html', {'usuario': usuario,'tiene_vehiculo': tiene_vehiculo  })
+    usuario_id = request.session.get('usuario_id')
+    if not usuario_id:
+        messages.error(request, "Inicia sesión nuevamente.")
+        return redirect('/login')
+
+    usuario = Usuario.objects.filter(id_usuario=usuario_id).first()
+    if not usuario:
+        request.session.flush()
+        messages.error(request, "Tu sesión no es válida. Inicia sesión nuevamente.")
+        return redirect('/login')
+
+    tiene_vehiculo = Vehiculo.objects.filter(usuario=usuario).exists()
+    return render(request, 'nuevovehiculo.html', {'usuario': usuario, 'tiene_vehiculo': tiene_vehiculo})
+
 
 
 def guardarvehiculo(request):
@@ -318,10 +328,18 @@ def guardarvehiculo(request):
 
 
 
-
 def listadovehiculo(request):
-    id_usuario = request.session.get('usuario_id')
-    usuario = Usuario.objects.get(id_usuario=id_usuario)
+    usuario_id = request.session.get('usuario_id')
+    if not usuario_id:
+        messages.error(request, "Inicia sesión nuevamente.")
+        return redirect('/login')
+
+    usuario = Usuario.objects.filter(id_usuario=usuario_id).first()
+    if not usuario:
+        request.session.flush()
+        messages.error(request, "Tu sesión no es válida. Inicia sesión nuevamente.")
+        return redirect('/login')
+
     vehiculo = Vehiculo.objects.filter(usuario=usuario).first()
     return render(request, 'listadovehiculo.html', {'vehiculo': vehiculo})
 
