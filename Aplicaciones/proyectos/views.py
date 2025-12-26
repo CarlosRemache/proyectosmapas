@@ -855,6 +855,8 @@ def recorrido(request):
         distancia_km=distancia_km,
         consumo_litros=consumo_litros if consumo_litros is not None else 0,
         costo_estimado=costo_estimado if costo_estimado is not None else 0,
+        combustible_tipo=vehiculo.tipocombustible_vehiculo if vehiculo else None,
+
     )
 
     return render(request, "recorrido.html", {

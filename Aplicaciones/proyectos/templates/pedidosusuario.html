@@ -280,11 +280,18 @@
                 </form>
               </td>
             </tr>
-          {% empty %}
-            <tr>
-              <td colspan="8" class="text-center text-muted">No tienes eventos asignados.</td>
-            </tr>
-          {% endfor %}
+              {% empty %}
+              <tr>
+                <td class="text-center text-muted">No tienes eventos asignados.</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              {% endfor %}
         </tbody>
     </table>
   </div>
