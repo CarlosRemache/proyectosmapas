@@ -3,6 +3,8 @@ from django.contrib import messages
 from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion,EventoAdmin,Administrador,AsignacionEvento,Proveedor,Pedido,DetallePedido,ChecklistVehiculo,Pago,Salvoconducto,Factura
 from Aplicaciones.proyectos.rutas_utils import (construir_grafo,dijkstra,calcular_metricas_ruta,nodo_mas_cercano,nodos_mas_cercanos,calcular_ruta_larga,construir_grafo_seguro,calcular_ruta_segura)
 from django.utils.dateparse import parse_date, parse_time
+from django.views.decorators.http import require_GET
+from django.db.models.functions import TruncMonth
 from django.db.models.functions import Round
 from datetime import datetime,timedelta
 from django.core.mail import send_mail
@@ -14,10 +16,6 @@ from decimal import Decimal
 import json
 import requests
 import random
-
-from django.views.decorators.http import require_GET
-from Aplicaciones.proyectos.models import NodoMapa
-from Aplicaciones.proyectos.rutas_utils import construir_grafo, dijkstra, calcular_metricas_ruta
 
 
 
@@ -2333,52 +2331,164 @@ def admin_panel(request):
 
     kpi1_data = [l['total'] for l in resultado_por_usuario]
 
-    context = {
-        'kpi1_labels': json.dumps(kpi1_labels),
-        'kpi1_data': json.dumps(kpi1_data),
-    }
 
-    # ============= KPI 2: suma de combustibles como en la tabla ===
-    rutas = (
+
+    # KPI 2 (NUEVO): Scatter por usuario
+    # X = Velocidad (km/h)
+    # Y = Consumo (L/100km)
+    agg = (
         RutaOpcion.objects
         .filter(viaje__usuario__tiporol="USUARIO")
-        .select_related('viaje__usuario')
+        .values(
+            'viaje__usuario_id',
+            'viaje__usuario__nombre_usuario',
+            'viaje__usuario__apellido_usuario',
+        )
+        .annotate(
+            dist_total=Sum('distancia_km'),
+            tiempo_total=Sum('tiempo_min'),
+            litros_total=Sum('consumo_litros'),
+        )
     )
 
-    totales_por_usuario = {}   # {id_usuario: {"nombre": "carlos rem", "total": Decimal}}
+    kpi2_points = []
+    for row in agg:
+        dist = row['dist_total'] or 0
+        tmin = row['tiempo_total'] or 0
+        litros = row['litros_total'] or 0
 
-    for r in rutas:
-        usuario = r.viaje.usuario
-        key = usuario.id_usuario
-        nombre = f"{usuario.nombre_usuario} {usuario.apellido_usuario}"
+        # Evitar división por 0
+        if dist <= 0 or tmin <= 0:
+            continue
 
-        # redondeamos CADA ruta a 2 decimales (igual que en la tabla)
-        litros_ruta = Decimal(str(r.consumo_litros or 0)).quantize(Decimal('0.01'))
+        tiempo_h = Decimal(str(tmin)) / Decimal("60")
+        velocidad_kmh = (Decimal(str(dist)) / tiempo_h).quantize(Decimal("0.01"))
 
-        if key not in totales_por_usuario:
-            totales_por_usuario[key] = {
-                "nombre": nombre,
-                "total": Decimal('0.00')
-            }
+        # Consumo L/100km
+        consumo_l_100 = ((Decimal(str(litros)) / Decimal(str(dist))) * Decimal("100")).quantize(Decimal("0.01"))
 
-        totales_por_usuario[key]["total"] += litros_ruta
+        nombre = f"{row['viaje__usuario__nombre_usuario']} {row['viaje__usuario__apellido_usuario']}"
+        kpi2_points.append({
+            "x": float(velocidad_kmh),
+            "y": float(consumo_l_100),
+            "nombre": nombre
+        })
 
-    kpi2_labels = []
-    kpi2_data = []
+    # KPI 3: total consumo (L) por mes (TODOS los usuarios)
+    meses_es = {
+        1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun",
+        7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"
+    }
 
-    for info in totales_por_usuario.values():
-        kpi2_labels.append(info["nombre"])
-        # convertimos a float solo para Chart.js, pero ya es 2.66 exacto en Decimal
-        kpi2_data.append(float(info["total"]))
+    kpi3_qs = (
+        RutaOpcion.objects
+        .filter(viaje__usuario__tiporol="USUARIO")
+        .annotate(mes=TruncMonth('viaje__fecha_creacion'))
+        .values('mes')
+        .annotate(total_litros=Sum('consumo_litros'))
+        .order_by('mes')
+    )
+
+    kpi3_labels = []
+    kpi3_data = []
+
+    for r in kpi3_qs:
+        if not r["mes"]:
+            continue
+        m = r["mes"]
+        total = r["total_litros"] or 0
+        kpi3_labels.append(f"{meses_es[m.month]} {m.year}")
+        kpi3_data.append(round(float(total), 2))
+
+
+
+    # KPI 4: total COSTO ($) por mes (TODOS los usuarios)
+    kpi4_qs = (
+        RutaOpcion.objects
+        .filter(viaje__usuario__tiporol="USUARIO")
+        .filter(costo_estimado__isnull=False)  # evita nulls
+        .annotate(mes=TruncMonth('viaje__fecha_creacion'))
+        .values('mes')
+        .annotate(total_costo=Sum('costo_estimado'))
+        .order_by('mes')
+    )
+
+    kpi4_labels = []
+    kpi4_data = []
+
+    for r in kpi4_qs:
+        if not r["mes"]:
+            continue
+        m = r["mes"]
+        total = r["total_costo"] or 0
+        kpi4_labels.append(f"{meses_es[m.month]} {m.year}")
+        kpi4_data.append(round(float(total), 2))
+
+
+
+    # KPI 5: pedidos realizados por día
+    dias_labels = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+    kpi5_counts = [0, 0, 0, 0, 0, 0, 0]  # lunes=0 ... domingo=6
+
+    pedidos_por_dia = (
+        Pedido.objects
+        .values('fecha_pedido')
+        .annotate(total=Count('id_pedido'))
+    )
+
+    for p in pedidos_por_dia:
+        fecha = p["fecha_pedido"]
+        if not fecha:
+            continue
+        idx = fecha.weekday()  # lunes=0 ... domingo=6
+        kpi5_counts[idx] += p["total"]
+
+    kpi5_labels = dias_labels
+    kpi5_data = kpi5_counts
+
+
+    # KPI 6: Total litros consumidos por tipo de combustible
+    kpi6_qs = (
+        RutaOpcion.objects
+        .filter(viaje__usuario__tiporol="USUARIO")
+        .filter(combustible_tipo__isnull=False, consumo_litros__isnull=False)
+        .values('combustible_tipo')
+        .annotate(total_litros=Sum('consumo_litros'))
+    )
+    kpi6_map = {"EXTRA": 0, "DIESEL": 0, "ECOPAIS": 0, "SUPER": 0}
+
+    for r in kpi6_qs:
+        tipo = (r["combustible_tipo"] or "").upper()
+        if tipo in kpi6_map:
+            kpi6_map[tipo] = round(float(r["total_litros"] or 0), 2)
+
+    kpi6_labels = list(kpi6_map.keys())
+    kpi6_data = list(kpi6_map.values())
+
+
 
     context = {
         # KPI 1
         'kpi1_labels': json.dumps(kpi1_labels),
         'kpi1_data': json.dumps(kpi1_data),
-
         # KPI 2
-        'kpi2_labels': json.dumps(kpi2_labels),
-        'kpi2_data': json.dumps(kpi2_data),
+        'kpi2_points': json.dumps(kpi2_points),
+        # KPI 3
+        'kpi3_labels': json.dumps(kpi3_labels),
+        'kpi3_data': json.dumps(kpi3_data),
+        # KPI 4
+        'kpi4_labels': json.dumps(kpi4_labels),
+        'kpi4_data': json.dumps(kpi4_data),
+        # KPI 5
+        'kpi5_labels': json.dumps(kpi5_labels),
+        'kpi5_data': json.dumps(kpi5_data),
+        # KPI 6
+        'kpi6_labels': json.dumps(kpi6_labels),
+        'kpi6_data': json.dumps(kpi6_data),
+
     }
 
     return render(request, "administrador/admin_panel.html", context)
+
+
+

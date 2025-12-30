@@ -37,10 +37,47 @@
   </div>
 </div>
 
+<div class="grafico-row">
+  <div class="grafico-card">
+    <h2 style="text-align:center; margin-bottom:20px;">
+      Consumo total (L) por mes (todos los usuarios)
+    </h2>
+    <canvas id="kpi3"></canvas>
+  </div>
+</div>
+
+<div class="grafico-row">
+  <div class="grafico-card">
+    <h2 style="text-align:center; margin-bottom:20px;">
+      Costo total ($) por mes (todos los usuarios)
+    </h2>
+    <canvas id="kpi4"></canvas>
+  </div>
+</div>
+
+<div class="grafico-row">
+  <div class="grafico-card">
+    <h2 style="text-align:center; margin-bottom:20px;">
+      Pedidos realizados por día
+    </h2>
+    <canvas id="kpi5"></canvas>
+  </div>
+</div>
+
+<div class="grafico-row">
+  <div class="grafico-card">
+    <h2 style="text-align:center; margin-bottom:20px;">
+      Litros consumidos por tipo de combustible
+    </h2>
+    <canvas id="kpi6"></canvas>
+  </div>
+</div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+  //kpi1
   const ctx1 = document.getElementById('kpi1');
 
   new Chart(ctx1, {
@@ -79,39 +116,158 @@
   });
 
 
-const ctx2 = document.getElementById('kpi2');
+  // KPI2 
+  const ctx2 = document.getElementById('kpi2');
 
-new Chart(ctx2, {
-  type: 'line',
-  data: {
-    labels: {{ kpi2_labels|safe }},
-    datasets: [{
-      label: 'Litros consumidos',
-      data: {{ kpi2_data|safe }},
-      backgroundColor: '#59a14f',
-      borderWidth: 1
-    }]
-  },
-  options: {
-    responsive: true,
-    scales: {
-      x: {
-        ticks: {
-          display: false      
+  const points = {{ kpi2_points|safe }}; 
+
+  new Chart(ctx2, {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        label: 'Usuario (Velocidad vs Consumo)',
+        data: points
+      }]
+    },
+    options: {
+      responsive: true,
+      parsing: false, 
+      scales: {
+        x: {
+          title: { display: true, text: 'Velocidad (km/h)' }
+        },
+        y: {
+          title: { display: true, text: 'Consumo (L/100km)' },
+          beginAtZero: true
         }
       },
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Litros'
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const p = context.raw;
+              return `${p.nombre}: Vel=${p.x} km/h | Cons=${p.y} L/100km`;
+            }
+          }
         }
       }
     }
-  }
-});
+  });
+  //kpi3
+  const ctx3 = document.getElementById('kpi3');
+
+  new Chart(ctx3, {
+    type: 'line',
+    data: {
+      labels: {{ kpi3_labels|safe }},
+      datasets: [{
+        label: 'Consumo total (L)',
+        data: {{ kpi3_data|safe }},
+        tension: 0.3,
+        borderWidth: 2,
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: {
+          ticks: { autoSkip: true, maxRotation: 0 }
+        },
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Litros (L)' }
+        }
+      }
+    }
+  });
+
+  //kpi4
+  const ctx4 = document.getElementById('kpi4');
+
+  new Chart(ctx4, {
+    type: 'line',
+    data: {
+      labels: {{ kpi4_labels|safe }},
+      datasets: [{
+        label: 'Costo total ($)',
+        data: {{ kpi4_data|safe }},
+        tension: 0.3,
+        borderWidth: 2,
+        fill: true,
+        backgroundColor: 'rgba(54, 162, 235, 0.25)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { ticks: { autoSkip: true, maxRotation: 0 } },
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'USD ($)' }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `Costo total ($): ${Number(ctx.parsed.y).toFixed(2)}`
+          }
+        }
+      }
+    }
+  });
+
+  //kpi5
+  const ctx5 = document.getElementById('kpi5');
+
+  new Chart(ctx5, {
+    type: 'bar',
+    data: {
+      labels: {{ kpi5_labels|safe }},
+      datasets: [{
+        label: 'Pedidos',
+        data: {{ kpi5_data|safe }},
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+
+  //kpi6
+  const ctx6 = document.getElementById('kpi6');
+
+  new Chart(ctx6, {
+    type: 'pie',
+    data: {
+      labels: {{ kpi6_labels|safe }},
+      datasets: [{
+        data: {{ kpi6_data|safe }},
+        backgroundColor: ['#4e79a7', '#f28e2b', '#59a14f', '#e15759']
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.label}: ${Number(ctx.parsed).toFixed(2)} L`
+          }
+        }
+      }
+    }
+  });
 
 
 </script>
+
+
 
 {% endblock %}
