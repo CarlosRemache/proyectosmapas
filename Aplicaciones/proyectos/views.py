@@ -2024,12 +2024,12 @@ def nuevosalvoconducto(request):
         fecha_fin = request.POST['fecha_fin']
         estado = request.POST['estado']
 
-        # validacion fechas
+        #  VALIDACIÓN 1: fechas
         if fecha_fin < fecha_inicio:
             messages.error(request, 'La fecha fin no puede ser menor a la fecha inicio.')
             return redirect('nuevosalvoconducto')
 
-        # validacion checklist del vehículo
+        #  VALIDACIÓN 2: checklist del vehículo
         tiene_checklist = ChecklistVehiculo.objects.filter(
             usuario_id=usuario_id
         ).exists()
@@ -2038,18 +2038,18 @@ def nuevosalvoconducto(request):
             messages.error(request, 'El vehículo no tiene checklist registrado.')
             return redirect('nuevosalvoconducto')
 
-        # validacion de ruta óptima
-        ruta_optima = RutaOpcion.objects.filter(
-            viaje_id=viaje_id,
-            tipo='OPTIMA'
+
+        # VALIDACIÓN 3: viaje ya tiene salvoconducto
+        existe_salvoconducto = Salvoconducto.objects.filter(
+            viaje_id=viaje_id
         ).exists()
 
-        if not ruta_optima:
-            messages.error(request, 'El viaje no tiene ruta óptima calculada.')
+        if existe_salvoconducto:
+            messages.error(request,' Este viaje ya tiene un salvoconducto registrado.')
             return redirect('nuevosalvoconducto')
 
-        # ✅ TODO OK → guardar
-        salvoconducto = Salvoconducto.objects.create(
+        # guardar
+        Salvoconducto.objects.create(
             usuario_id=usuario_id,
             vehiculo_id=vehiculo_id,
             viaje_id=viaje_id,
@@ -2059,13 +2059,15 @@ def nuevosalvoconducto(request):
             estado=estado
         )
 
+        messages.success(request, '✅ Salvoconducto creado correctamente.')
         return redirect('salvoconductos')
 
     return render(request, 'administrador/nuevosalvoconducto.html', {
         'usuarios': Usuario.objects.all(),
         'vehiculos': Vehiculo.objects.all(),
-        'viajes': Viaje.objects.all(),
+        'viajes': obtener_viajes_formateados(),
     })
+
 
 
 
@@ -2095,6 +2097,29 @@ def editarsalvoconducto(request, id):
 def eliminarsalvoconducto(request, id):
     Salvoconducto.objects.get(id_salvoconducto=id).delete()
     return redirect('salvoconductos')
+
+
+def obtener_viajes_formateados():
+    viajes = (
+        Viaje.objects
+        .select_related("usuario", "vehiculo", "destino")
+        .order_by("-fecha_creacion")
+    )
+
+    data = []
+
+    for viaje in viajes:
+        data.append({
+            "id_viaje": viaje.id_viaje,
+            "usuario": f"{viaje.usuario.nombre_usuario} {viaje.usuario.apellido_usuario}",
+            "vehiculo": viaje.vehiculo.matricula_vehiculo,
+            "tipo_combustible": viaje.vehiculo.tipocombustible_vehiculo,
+            "destino": viaje.destino.nombre_Lugarguardado,
+            "fecha": viaje.fecha_creacion
+        })
+
+    return data
+
 
 
 
@@ -2231,30 +2256,9 @@ def validar_salvoconducto(request, id):
 
 
 #reportes----------------------------------------------------------------------------------------------
-
 def reporteviaje(request):
-    viajes = (
-        Viaje.objects
-        .select_related("usuario", "vehiculo", "destino")
-        .prefetch_related("opciones")
-        .order_by("-fecha_creacion")
-    )
-
-    data = []
-
-    for viaje in viajes:
-        data.append({
-            "id_viaje": viaje.id_viaje,
-            "usuario": f"{viaje.usuario.nombre_usuario} {viaje.usuario.apellido_usuario}",
-            "vehiculo": viaje.vehiculo.matricula_vehiculo,
-            "tipo_combustible": viaje.vehiculo.tipocombustible_vehiculo,
-            "destino": viaje.destino.nombre_Lugarguardado,
-            "fecha": viaje.fecha_creacion
-        })
-
-    return render(request, "administrador/reporteviaje.html", {
-        "viajes": data
-    })
+    return render(request,"administrador/reporteviaje.html",
+        {"viajes": obtener_viajes_formateados()})
 
 
 
