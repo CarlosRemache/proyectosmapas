@@ -128,6 +128,7 @@
     <table class="table table-bordered table-striped" id="tbl_viajes">
       <thead>
         <tr>
+          <th>Viaje</th>
           <th>Usuario</th>
           <th>Vehículo</th>
           <th>Combustible</th>
@@ -139,6 +140,7 @@
       <tbody>
         {% for v in viajes %}
         <tr>
+          <td>{{ v.id_viaje }}</td>
           <td>{{ v.usuario }}</td>
           <td>{{ v.vehiculo }}</td>
           <td>{{ v.tipo_combustible }}</td>

@@ -2245,9 +2245,8 @@ def reporteviaje(request):
     data = []
 
     for viaje in viajes:
-        ruta_optima = viaje.opciones.filter(tipo="OPTIMA").first()
-
         data.append({
+            "id_viaje": viaje.id_viaje,
             "usuario": f"{viaje.usuario.nombre_usuario} {viaje.usuario.apellido_usuario}",
             "vehiculo": viaje.vehiculo.matricula_vehiculo,
             "tipo_combustible": viaje.vehiculo.tipocombustible_vehiculo,
