@@ -1,0 +1,105 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<style>
+    .form-container {
+        max-width: 450px;
+        margin: 40px auto;
+        padding: 25px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        font-family: Arial, sans-serif;
+    }
+
+    h3 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    label {
+        font-weight: bold;
+        margin-top: 10px;
+        color: #555;
+        display: block;
+    }
+
+    input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+    }
+
+    input:focus {
+        outline: none;
+        border-color: #007bff;
+    }
+
+    .btn-container {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .btn-save {
+        width: 48%;
+        padding: 10px;
+        font-size: 14px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        background-color: #007BFF;
+        color: white;
+    }
+
+    .btn-save:hover {
+        background-color: #0056b3;
+    }
+
+    .btn-cancel {
+        width: 48%;
+        padding: 10px;
+        font-size: 14px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        background-color: #ccc;
+        color: black;
+        text-align: center;
+        text-decoration: none;
+        line-height: 20px;
+        display: inline-block;
+    }
+
+    .btn-cancel:hover {
+        background-color: #999;
+    }
+</style>
+
+<div class="form-container">
+    <h3>Verificar código</h3>
+
+    <p style="text-align:center; color:#555;">
+        Hemos enviado un código de 4 dígitos a tu correo electrónico.<br>
+        Escríbelo aquí para completar el registro.
+    </p>
+
+    <form action="{% url 'verificar_registro' %}" method="post">
+        {% csrf_token %}
+
+        <label for="codigo">Código de verificación:</label>
+        <input type="text" name="codigo" id="codigo" maxlength="4" required>
+
+        <div class="btn-container">
+            <button type="submit" class="btn-save">Verificar</button>
+            <a href="/nuevousuario/" class="btn-cancel">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

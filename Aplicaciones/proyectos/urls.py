@@ -94,6 +94,44 @@ urlpatterns = [
     path('reportehistorial/', views.reportehistorial, name='reportehistorial'),
 
 
+
+    path('verificar_registro/', views.verificar_registro, name='verificar_registro'),
+
+
+    #factura
+    path('nuevafactura/', views.nuevafactura, name='nuevafactura'),
+    path('crear_factura/', views.crear_factura, name='crear_factura'),
+    path('ver_factura/<int:id_factura>/', views.ver_factura, name='ver_factura'),
+    path('listadofacturas/', views.listado_facturas, name='listado_facturas'),
+    path('eliminarfactura/<int:id>/', views.eliminar_factura, name='eliminar_factura'),
+    path('factura/pdf/<int:id_factura>/', views.factura_pdf, name='factura_pdf'),
+
+
+    #salvoconducto
+    path('salvoconductos/', views.salvoconductos, name='salvoconductos'),
+    path('nuevosalvoconducto/', views.nuevosalvoconducto, name='nuevosalvoconducto'),
+    path('editarsalvoconducto/<int:id>/', views.editarsalvoconducto, name='editarsalvoconducto'),
+    path('eliminarsalvoconducto/<int:id>/', views.eliminarsalvoconducto, name='eliminarsalvoconducto'),
+    path('salvoconducto/pdf/<int:id>/', views.generar_pdf_salvoconducto, name='pdf_salvoconducto'),
+    path('validar/salvoconducto/<int:id>/',views.validar_salvoconducto,name='validar_salvoconducto'),
+
+    #pagos
+    path('pago/<int:id_factura>/', views.registrar_pago, name='registrar_pago'),
+    path('guardar_pago/', views.guardar_pago, name='guardar_pago'),
+    path('pagos/', views.listado_pagos, name='listado_pagos'),
+    path('pagos/ver/<int:id_pago>/', views.ver_pago, name='ver_pago'),
+    path('pagos/editar/<int:id_pago>/', views.editar_pago, name='editar_pago'),
+    path('pagos/eliminar/<int:id_pago>/', views.eliminar_pago, name='eliminar_pago'),
+
+
+
+
+
+
+
+
+
+
 ]
 
 

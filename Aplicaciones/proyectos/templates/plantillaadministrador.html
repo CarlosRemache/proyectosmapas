@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
     <!-- jQuery (solo una vez) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <!-- DataTables -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
@@ -39,6 +39,8 @@
 
     <!-- jQuery Validate -->
     <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/additional-methods.min.js"></script>
 
     <!-- Plantilla CSS -->
     <link href="{% static 'plantilla/assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
@@ -74,9 +76,9 @@
             <li><a href="/agregarproducto/">Agregar Productos</a></li>
           </ul>
         </li>
-        <li><a href="#resume"><i class="bi bi-file-earmark-text navicon"></i>SALVOCONDUCTOS</a></li>
-        <li><a href="#resume"><i class="bi bi-card-checklist navicon"></i> Facturacion</a></li>
-        <li><a href="#resume"><i class="bi bi-card-checklist navicon"></i> Pago</a></li>
+        <li><a href="{% url 'salvoconductos' %}"><i class="bi bi-file-earmark-text navicon"></i>SALVOCONDUCTOS</a></li>
+        <li><a href="/nuevafactura/"><i class="bi bi-card-checklist navicon"></i> Facturacion</a></li>
+        <li><a href="{% url 'listado_pagos' %}"><i class="bi bi-card-checklist navicon"></i> Pago</a></li>
         <li class="dropdown"><a href="#"><i class="bi bi-bar-chart navicon"></i> <span>Reportes</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
           <ul>
             <li><a href="/reporteviaje/">control de viajes</a></li>

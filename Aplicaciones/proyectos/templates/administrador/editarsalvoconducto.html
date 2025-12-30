@@ -1,0 +1,138 @@
+{% extends "plantillaadministrador.html" %}
+{% load static %}
+{% block contener %}
+
+<style>
+
+  body{ background:#ffffff; }
+
+  .box{
+    width:92%;
+    max-width:900px;
+    margin:30px auto;
+    background:#06080D;
+    color:#F3F4F6;
+    padding:22px;
+    border-radius:18px;
+    margin-left:380px;
+    border:1px solid #1F2937;
+    box-shadow:0 12px 30px rgba(0,0,0,0.4);
+  }
+
+  .box h3{
+    margin-bottom:20px;
+    font-weight:700;
+    color:#F3F4F6;
+    text-align:center;
+  }
+
+  .box label{
+    margin-top:12px;
+    font-weight:600;
+    color:#A1A1AA;
+    display:block;
+  }
+
+  .box .form-control{
+    margin-top:6px;
+    background:#06080D;
+    color:#F3F4F6;
+    border:1px solid #1F2937;
+    border-radius:10px;
+    padding:10px;
+  }
+
+  .box .form-control:focus{
+    border-color:#3B82F6;
+    box-shadow:0 0 0 3px rgba(59,130,246,0.25);
+  }
+
+  .contenedor-ver-eventos{
+    text-align:right;
+    margin-bottom:20px;
+  }
+
+  .contenedor-ver-eventos a{
+    padding:10px 16px;
+    border-radius:10px;
+    font-weight:700;
+    background:#3B82F6;
+    color:#ffffff;
+    text-decoration:none;
+  }
+
+  .contenedor-ver-eventos a:hover{
+    background:#2563EB;
+  }
+
+  .btn-save{
+    background:#3B82F6;
+    color:#ffffff;
+    font-weight:700;
+    padding:10px 18px;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+    margin-top:20px;
+  }
+
+  .btn-save:hover{
+    background:#2563EB;
+  }
+
+  @media (max-width:1200px){
+    .box{ margin-left:0; width:96%; }
+  }
+</style>
+
+<div class="box">
+  <h3>Editar Salvoconducto</h3>
+
+  <div class="contenedor-ver-eventos">
+    <a href="{% url 'salvoconductos' %}">Listado de salvoconductos</a>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <label>Usuario</label>
+    <select name="usuario" class="form-control" required>
+      {% for u in usuarios %}
+        <option value="{{ u.id_usuario }}"
+          {% if salvoconducto.usuario_id == u.id_usuario %}selected{% endif %}>
+          {{ u.nombre_usuario }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <label>Vehículo</label>
+    <select name="vehiculo" class="form-control" required>
+      {% for v in vehiculos %}
+        <option value="{{ v.id_vehiculo }}"
+          {% if salvoconducto.vehiculo_id == v.id_vehiculo %}selected{% endif %}>
+          {{ v.matricula_vehiculo }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <label>Motivo</label>
+    <textarea name="motivo" class="form-control" rows="3" required>{{ salvoconducto.motivo }}</textarea>
+
+    <label>Fecha inicio</label>
+    <input type="date" name="fecha_inicio"class="form-control"value="{{ salvoconducto.fecha_inicio|date:'Y-m-d' }}"required>
+
+    <label>Fecha fin</label>
+    <input type="date" name="fecha_fin"class="form-control"value="{{ salvoconducto.fecha_fin|date:'Y-m-d' }}"required>
+
+    <label>Estado</label>
+    <select name="estado" class="form-control">
+      <option value="VIGENTE" {% if salvoconducto.estado == 'VIGENTE' %}selected{% endif %}>VIGENTE</option>
+      <option value="VENCIDO" {% if salvoconducto.estado == 'VENCIDO' %}selected{% endif %}>VENCIDO</option>
+      <option value="ANULADO" {% if salvoconducto.estado == 'ANULADO' %}selected{% endif %}>ANULADO</option>
+    </select>
+
+    <button type="submit" class="btn-save">Actualizar</button>
+  </form>
+</div>
+
+{% endblock %}

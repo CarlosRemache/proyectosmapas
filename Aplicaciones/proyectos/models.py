@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-
+from decimal import Decimal
 
 class Usuario(models.Model):
     id_usuario=models.AutoField(primary_key=True)
@@ -267,11 +267,115 @@ class DetallePedido(models.Model):
 
 
 
+class Factura(models.Model):
+    id_factura = models.AutoField(primary_key=True)
+    cliente_nombre = models.CharField(max_length=150)
+    numero_factura = models.CharField(max_length=30,unique=True,help_text="Ej: 001-001-000000123")
+    fecha_emision = models.DateTimeField(default=timezone.now)
+    pedido = models.ForeignKey(Pedido,on_delete=models.SET_NULL,null=True,blank=True)
+
+    # Totales contables (CIERRE)
+    subtotal = models.DecimalField(max_digits=12,decimal_places=2,default=Decimal("0.00"))
+    iva = models.DecimalField(max_digits=12,decimal_places=2,default=Decimal("0.00"))
+    total = models.DecimalField(max_digits=12,decimal_places=2,default=Decimal("0.00"))
+
+    # Estado de la factura
+    estado_factura = models.CharField(max_length=50,choices=[('PENDIENTE', 'PENDIENTE'),('PAGADA', 'PAGADA'),('ANULADA', 'ANULADA')],default='PENDIENTE')
+
+    def __str__(self):
+        return f"Factura #{self.numero_factura} - {self.cliente_nombre}"
+
+
+    # Método contable (opcional)
+    def recalcular_totales(self):
+        """
+        Recalcula los totales usando los detalles del pedido asociado.
+        Se usa SOLO al crear la factura o bajo control administrativo.
+        """
+        if not self.pedido:
+            return
+
+        detalles = self.pedido.detallepedido_set.all()
+        subtotal = Decimal("0.00")
+        for d in detalles:
+            subtotal += d.subtotal()
+
+        iva = (subtotal * Decimal("0.15")).quantize(Decimal("0.01"))
+        total = (subtotal + iva).quantize(Decimal("0.01"))
+
+        self.subtotal = subtotal
+        self.iva = iva
+        self.total = total
+        self.save()
+
+
+
+class Pago(models.Model):
+    id_pago = models.AutoField(primary_key=True)
+    factura = models.ForeignKey(Factura,on_delete=models.CASCADE,related_name="pagos")
+    metodo_pago = models.CharField(max_length=20,choices=[('EFECTIVO', 'EFECTIVO'),('TRANSFERENCIA', 'TRANSFERENCIA')])
+    monto_pagado = models.DecimalField(max_digits=12,decimal_places=2)
+    banco = models.CharField(max_length=50,blank=True,null=True)
+    referencia = models.CharField(max_length=100,blank=True,null=True,help_text="N° transferencia, depósito, etc.")
+    estado_pago = models.CharField(max_length=20,choices=[('PENDIENTE', 'PENDIENTE'),('CONFIRMADO', 'CONFIRMADO'),('RECHAZADO', 'RECHAZADO')],default='CONFIRMADO')
+    comprobante = models.ImageField(upload_to='comprobantes/',blank=True,null=True)
+    fecha_pago = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"Pago #{self.id_pago} - {self.factura.numero_factura} - {self.monto_pagado}"
 
 
 
 
-#tablas
+class Salvoconducto(models.Model):
+    id_salvoconducto = models.AutoField(primary_key=True)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    vehiculo = models.ForeignKey(Vehiculo, on_delete=models.CASCADE)
+    viaje = models.OneToOneField(Viaje, on_delete=models.CASCADE)
+    motivo = models.TextField()
+    fecha_emision = models.DateTimeField(default=timezone.now)
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    estado = models.CharField(max_length=20,choices=[('VIGENTE', 'VIGENTE'),('VENCIDO', 'VENCIDO'),('ANULADO', 'ANULADO')],default='VIGENTE')
+    codigo_qr = models.ImageField(upload_to='salvoconductos_qr/', blank=True, null=True)
+    documento_pdf = models.FileField(upload_to='salvoconductos_pdf/', blank=True, null=True)
+
+
+    def __str__(self):
+        return f"Salvoconducto #{self.id_salvoconducto} - {self.vehiculo.matricula_vehiculo}"
+
+
+    def estado_actual(self):
+        """Estado calculado en tiempo real."""
+        if self.estado == 'ANULADO':
+            return 'ANULADO'
+        if timezone.now().date() > self.fecha_fin:
+            return 'VENCIDO'
+        return 'VIGENTE'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#tablas extra
 
 
 class PrecioCombustible(models.Model):

@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion,EventoAdmin,Administrador,AsignacionEvento,Proveedor,Pedido,DetallePedido,ChecklistVehiculo
+from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion,EventoAdmin,Administrador,AsignacionEvento,Proveedor,Pedido,DetallePedido,ChecklistVehiculo,Pago,Salvoconducto,Factura
 from Aplicaciones.proyectos.rutas_utils import (construir_grafo,dijkstra,calcular_metricas_ruta,nodo_mas_cercano,nodos_mas_cercanos,calcular_ruta_larga,construir_grafo_seguro,calcular_ruta_segura)
 from django.utils.dateparse import parse_date, parse_time
 from django.db.models.functions import Round
 from datetime import datetime,timedelta
+from django.core.mail import send_mail
 from django.utils.timezone import now
 from django.db.models import Sum,Count
 from django.http import JsonResponse
@@ -12,6 +13,7 @@ from django.utils import timezone
 from decimal import Decimal
 import json
 import requests
+import random
 
 from django.views.decorators.http import require_GET
 from Aplicaciones.proyectos.models import NodoMapa
@@ -80,9 +82,7 @@ def admin_panel(request):
     if request.session.get('usuario_tiporol') != 'ADMINISTRADOR':
         messages.error(request, "No tienes permisos para acceder.")
         return redirect('/inicio')
-
     return render(request, "administrador/admin_panel.html")
-
 
 
 
@@ -95,7 +95,6 @@ def logout_usuario(request):
 
 
 
-
 def inicio(request):
     # Proteger el inicio: solo usuarios logueados
     if not request.session.get('usuario_id'):
@@ -103,7 +102,6 @@ def inicio(request):
     
     usuario_id = request.session.get('usuario_id')
     vehiculo = Vehiculo.objects.filter(usuario_id=usuario_id).first()
-
     return render(request, 'inicio.html', {'vehiculo': vehiculo})
 
 
@@ -113,20 +111,48 @@ def nuevousuario(request):
 
 
 def guardarusuario(request):
-    nombre_usuario = request.POST['txt_nombre']
-    apellido_usuario = request.POST['txt_apellido']
-    correo_usuario = request.POST['txt_correo']
-    contrasena_usuario = request.POST['txt_contrasena']
-    nuevousuario=Usuario.objects.create(nombre_usuario=nombre_usuario,apellido_usuario=apellido_usuario,correo_usuario=correo_usuario,contrasena_usuario=contrasena_usuario,tiporol='USUARIO')
-    messages.success(request, "Usuario creado correctamente. Inicia sesión.")
-    return redirect('/login')
+    if request.method == 'POST':
+        nombre_usuario = request.POST['txt_nombre']
+        apellido_usuario = request.POST['txt_apellido']
+        correo_usuario = request.POST['txt_correo']
+        contrasena_usuario = request.POST['txt_contrasena']
 
+        # Generar código de 4 dígitos
+        codigo = str(random.randint(1000, 9999))
+
+        # Guardar los datos del registro y el código en la sesión
+        request.session['registro_usuario'] = {
+            'nombre': nombre_usuario,
+            'apellido': apellido_usuario,
+            'correo': correo_usuario,
+            'contrasena': contrasena_usuario,
+            'codigo': codigo,
+        }
+
+        # Enviar el correo con el código
+        try:
+            send_mail(
+                'Código de verificación',
+                f'Tu código de verificación es: {codigo}',
+                'carlos.remache5649@utc.edu.ec',  # remitente (EMAIL_HOST_USER)
+                [correo_usuario],                  # destinatario: el correo que ingresó el usuario
+                fail_silently=False,
+            )
+        except Exception as e:
+            messages.error(request, f"No se pudo enviar el correo: {e}")
+            return redirect('/nuevousuario/')
+
+        # 4) Avisar y redirigir a la página donde se ingresa el código
+        messages.success(request, "Te hemos enviado un código de verificación a tu correo. Revísalo e ingrésalo.")
+        return redirect('/verificar_registro/')
+    return redirect('/nuevousuario/')
 
 
 
 def editarusuario(request, id):
     usuario = Usuario.objects.get(id_usuario=id)
     return render(request, 'editarusuario.html', {'usuario': usuario})
+
 
 
 
@@ -154,6 +180,44 @@ def perfilusuario(request):
     usuario = Usuario.objects.get(id_usuario=usuario_id) #busca el usuario en la base de datos
     return render(request, 'perfilusuario.html', {'usuario': usuario})
 
+
+def verificar_registro(request):
+    # Leer datos guardados en la sesión
+    datos = request.session.get('registro_usuario')
+    if not datos:
+        messages.error(request, "No hay datos de registro pendientes. Intenta nuevamente.")
+        return redirect('/nuevousuario/')
+
+    if request.method == 'POST':
+        codigo_ingresado = request.POST.get('codigo', '').strip()
+
+        # Comparar código
+        if codigo_ingresado == datos['codigo']:
+            # Verificar que no exista ya un usuario con ese correo
+            if Usuario.objects.filter(correo_usuario=datos['correo']).exists():
+                messages.error(request, "Ya existe un usuario con ese correo.")
+                # limpiamos sesión para que no se quede basura
+                del request.session['registro_usuario']
+                return redirect('/login')
+
+            # Crear el usuario
+            nuevousuario = Usuario.objects.create(
+                nombre_usuario=datos['nombre'],
+                apellido_usuario=datos['apellido'],
+                correo_usuario=datos['correo'],
+                contrasena_usuario=datos['contrasena'],
+                tiporol='USUARIO'
+            )
+
+            # Limpiar los datos de la sesión
+            del request.session['registro_usuario']
+
+            messages.success(request, "Usuario creado correctamente. Ahora puedes iniciar sesión.")
+            return redirect('/login')
+        else:
+            messages.error(request, "Código incorrecto, inténtalo nuevamente.")
+    #mostrar formulario para ingresar el código
+    return render(request, 'verificar_registro.html')
 
 #documento---------------------------------------------------------------------------------------------------
 
@@ -1648,6 +1712,527 @@ def redirigir_detalle_lista(request):
 
 
 
+#factura------------------------------------------------------------------------------------------------------------------------------------
+
+def nuevafactura(request):
+    pedidos = Pedido.objects.all()
+    return render(request, 'administrador/nuevafactura.html', {
+        'pedidos': pedidos
+    })
+
+
+
+def crear_factura(request):
+    if request.method == "POST":
+        cliente_nombre = request.POST["cliente_nombre"]
+        pedido_id = request.POST["pedido_id"]
+        pedido = Pedido.objects.get(id_pedido=pedido_id)
+        ultimo = Factura.objects.count() + 1
+        numero_factura = f"001-001-{str(ultimo).zfill(9)}"
+
+        # Crear factura
+        factura = Factura.objects.create(
+            cliente_nombre=cliente_nombre,
+            numero_factura=numero_factura,
+            pedido=pedido
+        )
+        # Calcular y guardar totales
+        factura.recalcular_totales()
+        # Redirigir a vista SOLO LECTURA
+        return redirect('ver_factura', id_factura=factura.id_factura)
+
+
+
+def ver_factura(request, id_factura):
+    factura = Factura.objects.get(id_factura=id_factura)
+    detalles = factura.pedido.detallepedido_set.all()
+    return render(request, 'administrador/ver_factura.html', {
+        'factura': factura,
+        'detalles': detalles
+    })
+
+
+
+
+def listado_facturas(request):
+    facturas = Factura.objects.all().order_by('-fecha_emision')
+    return render(request, 'administrador/listadofacturas.html', {
+        'facturas': facturas
+    })
+
+
+
+def eliminar_factura(request, id):
+    factura = Factura.objects.get(id_factura=id)
+    if factura.estado_factura == "PAGADA":
+        messages.error(request, "No se puede eliminar una factura PAGADA.")
+        return redirect('/listadofacturas/')
+
+    factura.delete()
+    messages.success(request, "Factura eliminada correctamente.")
+    return redirect('/listadofacturas/')
+
+
+
+
+#crea la factura en formato pdf -----------
+
+from django.http import HttpResponse
+from reportlab.platypus import (SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer)
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+from reportlab.lib import colors
+from decimal import Decimal
+from .models import Factura
+
+
+def factura_pdf(request, id_factura):
+    factura = Factura.objects.get(id_factura=id_factura)
+    detalles = factura.pedido.detallepedido_set.all()
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = (f'attachment; filename="Factura_{factura.numero_factura}.pdf"')
+
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=A4,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=40
+    )
+
+    styles = getSampleStyleSheet()
+
+    styles.add(ParagraphStyle(
+        name='Titulo',
+        fontSize=18,
+        alignment=TA_CENTER,
+        spaceAfter=20,
+        bold=True
+    ))
+
+    styles.add(ParagraphStyle(
+        name='Derecha',
+        alignment=TA_RIGHT
+    ))
+
+    elementos = []
+
+    # TÍTULO
+    elementos.append(Paragraph("FACTURA", styles['Titulo']))
+
+
+    # DATOS GENERALES (TABLA)
+    info = [
+        ["N° Factura:", factura.numero_factura],
+        ["Cliente:", factura.cliente_nombre],
+        ["Fecha:", factura.fecha_emision.strftime("%Y-%m-%d")],
+        ["Estado:", factura.estado_factura],
+    ]
+
+    tabla_info = Table(info, colWidths=[100, 350])
+    tabla_info.setStyle(TableStyle([
+        ('FONT', (0,0), (-1,-1), 'Helvetica'),
+        ('BACKGROUND', (0,0), (0,-1), colors.whitesmoke),
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('PADDING', (0,0), (-1,-1), 6),
+    ]))
+
+    elementos.append(tabla_info)
+    elementos.append(Spacer(1, 20))
+
+    # TABLA DE DETALLES
+    data = [["Descripción", "Cantidad", "Precio Unitario", "Subtotal"]]
+
+    for d in detalles:
+        data.append([
+            d.descripcion_item,
+            str(d.cantidad),
+            f"$ {d.precio_unitario}",
+            f"$ {d.subtotal()}"
+        ])
+
+    tabla_detalles = Table(
+        data,
+        colWidths=[230, 70, 100, 100]
+    )
+
+    tabla_detalles.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+        ('ALIGN', (1,1), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('PADDING', (0,0), (-1,-1), 6),
+    ]))
+
+    elementos.append(tabla_detalles)
+    elementos.append(Spacer(1, 20))
+
+
+    # TOTALES (TABLA DERECHA)
+    totales = [
+        ["Subtotal:", f"$ {factura.subtotal}"],
+        ["IVA (15%):", f"$ {factura.iva}"],
+        ["TOTAL:", f"$ {factura.total}"],
+    ]
+
+    tabla_totales = Table(
+        totales,
+        colWidths=[100, 120],
+        hAlign='RIGHT'
+    )
+
+    tabla_totales.setStyle(TableStyle([
+        ('FONT', (0,0), (-1,-1), 'Helvetica-Bold'),
+        ('BACKGROUND', (0,2), (-1,2), colors.lightgrey),
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('ALIGN', (1,0), (-1,-1), 'RIGHT'),
+        ('PADDING', (0,0), (-1,-1), 6),
+    ]))
+
+    elementos.append(tabla_totales)
+
+    # CONSTRUIR PDF
+    doc.build(elementos)
+    return response
+
+
+
+
+
+
+#pago----------------------------------------------------------------------------------------------------
+
+def registrar_pago(request, id_factura):
+    factura = Factura.objects.get(id_factura=id_factura)
+    if factura.estado_factura == 'PAGADA':
+        messages.warning(request, "Esta factura ya fue pagada.")
+        return redirect('ver_factura', factura.id_factura)
+
+    return render(request, "administrador/registrar_pago.html", {
+        "factura": factura
+    })
+
+
+def guardar_pago(request):
+    if request.method != 'POST':
+        return redirect('listado_pagos')
+    
+    factura = Factura.objects.get(id_factura=request.POST['factura_id'])
+    monto = Decimal(request.POST['monto'])
+    metodo = request.POST['metodo']
+    referencia = request.POST.get('referencia')
+    comprobante=request.FILES.get('comprobante')
+    banco = request.POST.get('banco')
+
+    if monto != factura.total:
+        messages.error(request, 'El monto debe ser igual al total de la factura.')
+        return redirect('registrar_pago', factura.id_factura)
+
+    Pago.objects.create(
+        factura=factura,
+        metodo_pago=metodo,
+        monto_pagado=monto,
+        banco=banco,
+        referencia=referencia,
+        comprobante=comprobante,
+        estado_pago='CONFIRMADO'
+    )
+
+    factura.estado_factura = 'PAGADA'
+    factura.save()
+
+    messages.success(request, 'Pago registrado correctamente.')
+    return redirect('ver_factura', factura.id_factura)
+
+
+
+
+def listado_pagos(request):
+    pagos = Pago.objects.select_related('factura').order_by('-fecha_pago')
+    return render(request, 'administrador/listado_pagos.html', {
+        'pagos': pagos
+    })
+
+
+
+def ver_pago(request, id_pago):
+    pago = Pago.objects.select_related('factura').get(id_pago=id_pago)
+    return render(request, 'administrador/ver_pago.html', {
+        'pago': pago
+    })
+
+
+
+def editar_pago(request, id_pago):
+    pago = Pago.objects.get(id_pago=id_pago)
+
+    if request.method == 'POST':
+        pago.metodo_pago = request.POST['metodo_pago']
+        pago.monto_pagado = request.POST['monto_pagado']
+        pago.banco = request.POST.get('banco')
+        pago.referencia = request.POST.get('referencia')
+        pago.estado_pago = request.POST['estado_pago']
+
+        if request.FILES.get('comprobante'):
+            pago.comprobante = request.FILES['comprobante']
+
+        pago.save()
+        messages.success(request, 'Pago actualizado correctamente.')
+        return redirect('listado_pagos')
+
+    return render(request, 'administrador/editar_pago.html', {
+        'pago': pago
+    })
+
+
+
+
+def eliminar_pago(request, id_pago):
+    pago = Pago.objects.get(id_pago=id_pago)
+    factura = pago.factura
+    pago.delete()
+    factura.estado_factura = 'PENDIENTE'
+    factura.save()
+    messages.success(request, 'Pago eliminado y factura reabierta.')
+    return redirect('listado_pagos')
+
+
+
+#salcovconducto--------------------------------------------------------------------------------
+
+def salvoconductos(request):
+    salvoconductos = Salvoconducto.objects.select_related(
+        'usuario', 'vehiculo'
+    )
+    return render(
+        request,
+        'administrador/salvoconductos.html',
+        {'salvoconductos': salvoconductos}
+    )
+
+
+def nuevosalvoconducto(request):
+    if request.method == 'POST':
+        usuario_id = request.POST['usuario']
+        vehiculo_id = request.POST['vehiculo']
+        viaje_id = request.POST['viaje']
+        motivo = request.POST['motivo']
+        fecha_inicio = request.POST['fecha_inicio']
+        fecha_fin = request.POST['fecha_fin']
+        estado = request.POST['estado']
+
+        # validacion fechas
+        if fecha_fin < fecha_inicio:
+            messages.error(request, 'La fecha fin no puede ser menor a la fecha inicio.')
+            return redirect('nuevosalvoconducto')
+
+        # validacion checklist del vehículo
+        tiene_checklist = ChecklistVehiculo.objects.filter(
+            usuario_id=usuario_id
+        ).exists()
+
+        if not tiene_checklist:
+            messages.error(request, 'El vehículo no tiene checklist registrado.')
+            return redirect('nuevosalvoconducto')
+
+        # validacion de ruta óptima
+        ruta_optima = RutaOpcion.objects.filter(
+            viaje_id=viaje_id,
+            tipo='OPTIMA'
+        ).exists()
+
+        if not ruta_optima:
+            messages.error(request, 'El viaje no tiene ruta óptima calculada.')
+            return redirect('nuevosalvoconducto')
+
+        # ✅ TODO OK → guardar
+        salvoconducto = Salvoconducto.objects.create(
+            usuario_id=usuario_id,
+            vehiculo_id=vehiculo_id,
+            viaje_id=viaje_id,
+            motivo=motivo,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin,
+            estado=estado
+        )
+
+        return redirect('salvoconductos')
+
+    return render(request, 'administrador/nuevosalvoconducto.html', {
+        'usuarios': Usuario.objects.all(),
+        'vehiculos': Vehiculo.objects.all(),
+        'viajes': Viaje.objects.all(),
+    })
+
+
+
+def editarsalvoconducto(request, id):
+    salvoconducto = Salvoconducto.objects.get(id_salvoconducto=id)
+    if request.method == 'POST':
+        salvoconducto.usuario_id = request.POST['usuario']
+        salvoconducto.vehiculo_id = request.POST['vehiculo']
+        salvoconducto.motivo = request.POST['motivo']
+        salvoconducto.fecha_inicio = request.POST['fecha_inicio']
+        salvoconducto.fecha_fin = request.POST['fecha_fin']
+        salvoconducto.estado = request.POST['estado']
+        salvoconducto.save()
+        return redirect('salvoconductos')
+
+    return render(
+        request,
+        'administrador/editarsalvoconducto.html',
+        {
+            'salvoconducto': salvoconducto,
+            'usuarios': Usuario.objects.all(),
+            'vehiculos': Vehiculo.objects.all(),
+        }
+    )
+
+
+def eliminarsalvoconducto(request, id):
+    Salvoconducto.objects.get(id_salvoconducto=id).delete()
+    return redirect('salvoconductos')
+
+
+
+#pdf de salvoconducto--------------------------------------------------
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib.colors import HexColor, black
+from reportlab.lib.utils import ImageReader
+from django.http import HttpResponse
+from django.utils.timezone import now
+
+def generar_pdf_salvoconducto(request, id):
+    s = Salvoconducto.objects.select_related(
+        'usuario','vehiculo','viaje','viaje__origen','viaje__destino'
+    ).get(id_salvoconducto=id)
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename=salvoconducto_{id}.pdf'
+
+    p = canvas.Canvas(response, pagesize=A4)
+    width, height = A4
+
+    azul = HexColor("#1F4FD8")
+    gris = HexColor("#444444")
+
+
+    # ENCABEZADO
+    p.setFont("Helvetica-Bold", 16)
+    p.setFillColor(azul)
+    p.drawString(50, height - 50, "SALVOCONDUCTO DE MOVILIZACIÓN")
+
+    p.setFont("Helvetica", 10)
+    p.setFillColor(black)
+    p.drawString(50, height - 70, "Empresa:")
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(110, height - 70, "DISTRIC")
+
+    p.line(50, height - 80, width - 50, height - 80)
+
+    # CUERPO
+    y = height - 120
+    label_x = 50
+    value_x = 180
+    salto = 22
+
+    def campo(etiqueta, valor):
+        nonlocal y
+        p.setFont("Helvetica-Bold", 10)
+        p.drawString(label_x, y, etiqueta)
+        p.setFont("Helvetica", 10)
+        p.drawString(value_x, y, valor)
+        y -= salto
+
+    campo("Conductor:", f"{s.usuario.nombre_usuario} {s.usuario.apellido_usuario}")
+    campo("Vehículo:", f"{s.vehiculo.matricula_vehiculo} ({s.vehiculo.tipovehiculo_vehiculo})")
+    campo("Destino:", s.viaje.destino.nombre_Lugarguardado)
+    campo("Vigencia:", f"{s.fecha_inicio} al {s.fecha_fin}")
+    campo("Estado:", s.estado_actual()) 
+
+
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(label_x, y, "Motivo:")
+    y -= 16
+    p.setFont("Helvetica", 10)
+    p.drawString(label_x, y, s.motivo)
+
+
+    # QR REAL
+    qr_buffer = generar_qr_salvoconducto(s.id_salvoconducto)
+    qr_image = ImageReader(qr_buffer)
+
+    qr_x = width - 170
+    qr_y = 130
+    qr_size = 120
+
+    p.drawImage(
+        qr_image,
+        qr_x,
+        qr_y,
+        width=qr_size,
+        height=qr_size,
+        mask='auto'
+    )
+
+    p.setFont("Helvetica", 8)
+    p.drawCentredString(qr_x + qr_size / 2, qr_y - 12, "Escanee para validar")
+
+
+    # PIE de pagina
+    p.line(50, 120, 250, 120)
+    p.drawString(50, 105, "Firma responsable")
+
+    p.setFont("Helvetica", 9)
+    p.setFillColor(gris)
+    p.drawString(50, 80, f"Documento generado el {now().strftime('%Y-%m-%d %H:%M')}")
+
+    p.showPage()
+    p.save()
+
+    return response
+
+
+#qr-------------------------------------------------------------------
+import qrcode
+from io import BytesIO
+
+def generar_qr_salvoconducto(id):
+    url = f"http://127.0.0.1:8000/validar/salvoconducto/{id}/"
+
+    qr = qrcode.QRCode(
+        version=2,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=10,
+        border=2,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer
+
+
+
+def validar_salvoconducto(request, id):
+    s = Salvoconducto.objects.get(id_salvoconducto=id)
+    estado_real = s.estado_actual()  
+    return render(request, "administrador/validar_salvoconducto.html", {
+        "salvoconducto": s,
+        "estado_real": estado_real
+    })
+
+
+
+
 #reportes----------------------------------------------------------------------------------------------
 
 def reporteviaje(request):
@@ -1700,11 +2285,14 @@ def reportehistorial(request):
             "tiempo": ruta.tiempo_min if ruta else 0,
             "distancia": ruta.distancia_km if ruta else 0,
             "consumo": ruta.consumo_litros if ruta and ruta.consumo_litros else 0,
+            "costo": ruta.costo_estimado if ruta and ruta.costo_estimado else 0,
+
         })
 
     return render(request, "administrador/reportehistorial.html", {
         "viajes": data
     })
+
 
 
 

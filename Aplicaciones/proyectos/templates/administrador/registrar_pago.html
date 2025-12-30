@@ -1,0 +1,171 @@
+{% extends "plantillaadministrador.html" %}
+{% load static %}
+{% block contener %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+    <!-- bootstrap-fileinput -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-fileinput@5.5.3/css/fileinput.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-fileinput@5.5.3/js/fileinput.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-fileinput@5.5.3/js/locales/es.js"></script>
+
+    <!-- Font Awesome (íconos) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
+
+<style>
+
+  body{
+    background:#ffffff;
+  }
+
+
+  .box{
+    width:92%;
+    max-width:900px;
+    margin:30px auto;
+    background:#06080D;
+    color:#F3F4F6;
+    padding:22px;
+    border-radius:18px;
+    margin-left:380px;
+    border:1px solid #1F2937;
+    box-shadow:0 12px 30px rgba(0,0,0,0.4);
+  }
+
+  .box h3{
+    margin-bottom:20px;
+    font-weight:700;
+    color:#F3F4F6;
+    text-align:center;
+  }
+
+  .box label{
+    margin-top:12px;
+    font-weight:600;
+    color:#A1A1AA;
+    display:block;
+  }
+
+  .form-control{
+    margin-top:6px;
+    background:#06080D;
+    color:#F3F4F6;
+    border:1px solid #1F2937;
+    border-radius:10px;
+    padding:10px;
+    outline:none;
+  }
+
+  .form-control:focus{
+    border-color:#1F2937;
+    box-shadow:none;
+    background:#0B0F17;
+    color:#F3F4F6;
+    outline:none;
+  }
+
+  select.form-control option{
+    background:#0B0F17;
+    color:#F3F4F6;
+  }
+
+
+  .info-factura{
+    margin-bottom:14px;
+    color:#E5E7EB;
+  }
+
+  .info-factura strong{
+    color:#A1A1AA;
+  }
+
+
+  .btn-save{
+    background:#3B82F6;
+    color:#ffffff;
+    font-weight:700;
+    padding:10px 18px;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+    margin-top:18px;
+  }
+
+  .btn-save:hover{
+    background:#2563EB;
+  }
+
+  
+  @media (max-width:1200px){
+    .box{
+      margin-left:0;
+      width:96%;
+      max-width:100%;
+    }
+  }
+
+  @media (max-width:768px){
+    .box{
+      padding:14px;
+    }
+  }
+</style>
+
+</head>
+<body>
+
+    <div class="box">
+      <h3>Registrar Pago</h3>
+      <div class="info-factura">
+        <p><strong>Factura:</strong> {{ factura.numero_factura }}</p>
+        <p><strong>Cliente:</strong> {{ factura.cliente_nombre }}</p>
+        <p><strong>Total a pagar:</strong> $ {{ factura.total }}</p>
+      </div>
+      <form action="{% url 'guardar_pago' %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <input type="hidden" name="factura_id" value="{{ factura.id_factura }}">
+
+        <label>Método de pago</label>
+        <select name="metodo" class="form-control" required>
+          <option value="EFECTIVO">EFECTIVO</option>
+          <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+        </select>
+
+        <label>Monto pagado</label>
+        <input type="number" step="0.01"name="monto"class="form-control"value="{{ factura.total }}"required>
+
+        <label>Banco (solo transferencia)</label>
+        <input type="text"name="banco"class="form-control"placeholder="Ej: Banco Pichincha">
+
+        <label>Referencia</label>
+        <input type="text"name="referencia"class="form-control"placeholder="N° transferencia / comprobante">
+
+        <label for="comprobante" class="form-label">Comprobante de pago:</label>
+        <input type="file" id="comprobante" name="comprobante" class="form-control" accept="image/*">
+
+
+        <button class="btn-save" type="submit">
+          Confirmar Pago
+        </button>
+    </form>
+</div>
+
+
+<script>
+    $("#comprobante").fileinput({
+        language: "es",
+        allowedFileExtensions: ["png", "jpg", "jpeg"],
+        showCaption: false,
+        dropZoneEnabled: true,
+        showClose: false
+    });
+</script>
+
+</body>
+</html>
+
+
+{% endblock %}

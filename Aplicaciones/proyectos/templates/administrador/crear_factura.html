@@ -1,0 +1,72 @@
+{% extends "plantillaadministrador.html" %}
+{% load static %}
+{% block contener %}
+
+<style>
+  .box{
+    width:90%;
+    max-width:700px;
+    margin:40px auto;
+    background:#06080D;
+    color:#F3F4F6;
+    padding:24px;
+    border-radius:16px;
+    border:1px solid #1F2937;
+  }
+  label{ font-weight:700; margin-top:12px; display:block; }
+  select, button{
+    width:100%;
+    padding:10px;
+    margin-top:6px;
+    border-radius:10px;
+    border:none;
+  }
+  button{
+    background:#3B82F6;
+    color:white;
+    font-weight:700;
+    margin-top:20px;
+  }
+</style>
+
+<div class="box">
+  <h3 style="text-align:center;">Crear Factura</h3>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <label>Usuario</label>
+    <select name="usuario" required>
+      <option value="">Seleccione</option>
+      {% for u in usuarios %}
+        <option value="{{ u.id_usuario }}">
+          {{ u.nombre_usuario }} {{ u.apellido_usuario }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <label>Vehículo (opcional)</label>
+    <select name="vehiculo">
+      <option value="">-- Ninguno --</option>
+      {% for v in vehiculos %}
+        <option value="{{ v.id_vehiculo }}">
+          {{ v.matricula_vehiculo }} - {{ v.modelo_vehiculo }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <label>Viaje (opcional)</label>
+    <select name="viaje">
+      <option value="">-- Ninguno --</option>
+      {% for vi in viajes %}
+        <option value="{{ vi.id_viaje }}">
+          Viaje #{{ vi.id_viaje }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <button type="submit">Crear Factura</button>
+  </form>
+</div>
+
+{% endblock %}
