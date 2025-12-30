@@ -355,29 +355,7 @@ class Salvoconducto(models.Model):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #tablas extra
-
-
 class PrecioCombustible(models.Model):
     TIPO_CHOICES = [('EXTRA', 'EXTRA'),('DIESEL', 'DIESEL'),('SUPER', 'SUPER'),('ECOPAIS', 'ECOPAIS'),]
     id_precio = models.AutoField(primary_key=True)
