@@ -1,5 +1,5 @@
 {% load static %}
-const CACHE_NAME = "distric-pwa-v2";
+const CACHE_NAME = "distric-pwa-v3";
 
 const URLS_TO_CACHE = [
   "/",              // login (si la raíz redirige ahí)
@@ -8,6 +8,13 @@ const URLS_TO_CACHE = [
   "/offline/",
   "/historial/",
   "/perfilusuario/",
+  "/reporteviaje/",
+  "/reportehistorial/",
+  "/nuevopedido/",
+  "/nuevoproveedor/",
+  "/buscarlugares/",
+  "/rutas/",
+  "/recorrido/",
   "/creardocumento/",
   "/nuevovehiculo/",
   "/listadovehiculo/",
