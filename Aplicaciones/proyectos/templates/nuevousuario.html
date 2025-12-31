@@ -3,107 +3,150 @@
 {% block contenido %}
 
 <style>
-    body {
-        margin: 0;
-        padding: 0;
-        background-color: #f4f4f4;
-        font-family: Arial, sans-serif;
-    }
 
-    .form-container {
-        max-width: 450px;
-        margin: 40px auto;
-        padding: 25px;
-        background-color: white;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
+body {
+    background: radial-gradient(
+        circle at top,
+        #1e3a8a 0%,
+        #0f172a 45%,
+        #020617 100%
+    );
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+}
 
-    h3 {
-        text-align: center;
-        margin-bottom: 20px;
-        color: #333;
-    }
+.form-container {
+    max-width: 450px;
+    margin: 80px auto;
+    padding: 35px 30px;
+    background-color: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+}
 
-    label {
-        font-weight: bold;
-        margin-top: 10px;
-        color: #555;
-        display: block;
-    }
+.form-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 6px;
+    width: 100%;
+    background: linear-gradient(90deg, #2563eb, #1e40af);
+}
 
-    input[type="text"],
-    input[type="email"],
-    input[type="password"] {
-        width: 100%;
-        padding: 10px;
-        margin-top: 5px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        font-size: 14px;
-    }
+.form-container h3 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #111827;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
 
-    input:focus {
-        outline: none;
-        border-color: #007bff;
-    }
+.form-container label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: #374151;
+}
 
-    .btn-container {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
-    }
+.form-container input {
+    width: 100%;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+}
 
-    button {
-        width: 48%;
-        padding: 10px;
-        font-size: 14px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
+.form-container input:focus {
+    outline: none;
+    border-color: #2563eb;
+    background: #ffffff;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+}
 
-    .btn-save {
-        background-color: #007BFF;
-        color: white;
-    }
+.btn-container {
+    margin-top: 16px;
+}
 
-    .btn-save:hover {
-        background-color: #0056b3;
-    }
+.btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    color: #ffffff;
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
-    .btn-cancel {
-        background-color: #ccc;
-        color: black;
-    }
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(37,99,235,0.4);
+}
 
-    .btn-cancel:hover {
-        background-color: #999;
-    }
+.btn-secondary{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    color: #111827;
+    background: #e5e7eb;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-secondary:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+    background: #d1d5db;
+}
+
 </style>
 
 <div class="form-container">
 
-    <h3>Crear Nuevo Usuario</h3>
+    <h3>Crear nuevo usuario</h3>
 
     <form action="/guardarusuario/" method="post">
         {% csrf_token %}
 
-        <label for="txt_nombre">Nombres:</label>
+        <label for="txt_nombre">Nombres</label>
         <input type="text" name="txt_nombre" id="txt_nombre" required>
 
-        <label for="txt_apellido">Apellidos:</label>
+        <label for="txt_apellido">Apellidos</label>
         <input type="text" name="txt_apellido" id="txt_apellido" required>
 
-        <label for="txt_correo">Correo:</label>
+        <label for="txt_correo">Correo electrónico</label>
         <input type="email" name="txt_correo" id="txt_correo" required>
 
-        <label for="txt_contrasena">Contraseña:</label>
+        <label for="txt_contrasena">Contraseña</label>
         <input type="password" name="txt_contrasena" id="txt_contrasena" required>
 
         <div class="btn-container">
-            <button type="submit" class="btn-save">Guardar</button>
-            <button type="reset" class="btn-cancel">Cancelar</button>
+            <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+        <div class="btn-container">
+            <button type="reset" class="btn-secondary">Cancelar</button>
+        </div>
+        <div class="btn-container">
+            <a href="/login/" class="btn-primary">Regresar</a>
         </div>
     </form>
 </div>

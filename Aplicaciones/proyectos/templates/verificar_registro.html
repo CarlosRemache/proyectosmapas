@@ -3,97 +3,136 @@
 {% block contenido %}
 
 <style>
-    .form-container {
-        max-width: 450px;
-        margin: 40px auto;
-        padding: 25px;
-        background-color: white;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        font-family: Arial, sans-serif;
-    }
 
-    h3 {
-        text-align: center;
-        margin-bottom: 20px;
-        color: #333;
-    }
+body {
+    background: radial-gradient(
+        circle at top,
+        #1e3a8a 0%,
+        #0f172a 45%,
+        #020617 100%
+    );
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+}
 
-    label {
-        font-weight: bold;
-        margin-top: 10px;
-        color: #555;
-        display: block;
-    }
+.form-container {
+    max-width: 420px;
+    margin: 80px auto;
+    padding: 35px 30px;
+    background-color: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+}
 
-    input[type="text"] {
-        width: 100%;
-        padding: 10px;
-        margin-top: 5px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        font-size: 14px;
-    }
+.form-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 6px;
+    width: 100%;
+    background: linear-gradient(90deg, #2563eb, #1e40af);
+}
 
-    input:focus {
-        outline: none;
-        border-color: #007bff;
-    }
 
-    .btn-container {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
-    }
+.form-container h3 {
+    text-align: center;
+    margin-bottom: 12px;
+    color: #111827;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
 
-    .btn-save {
-        width: 48%;
-        padding: 10px;
-        font-size: 14px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        background-color: #007BFF;
-        color: white;
-    }
+.form-container p {
+    text-align: center;
+    color: #4b5563;
+    font-size: 14px;
+    margin-bottom: 22px;
+    line-height: 1.5;
+}
 
-    .btn-save:hover {
-        background-color: #0056b3;
-    }
+.form-container label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: #374151;
+}
 
-    .btn-cancel {
-        width: 48%;
-        padding: 10px;
-        font-size: 14px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        background-color: #ccc;
-        color: black;
-        text-align: center;
-        text-decoration: none;
-        line-height: 20px;
-        display: inline-block;
-    }
+.form-container input[type="text"] {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    font-size: 18px;
+    text-align: center;
+    letter-spacing: 6px;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+}
 
-    .btn-cancel:hover {
-        background-color: #999;
-    }
+.form-container input:focus {
+    outline: none;
+    border-color: #2563eb;
+    background: #ffffff;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+}
+
+.btn-container {
+    margin-top: 10px;
+    display: flex;
+    gap: 12px;
+}
+
+button,
+.btn-cancel {
+    flex: 1;
+    padding: 13px;
+    font-size: 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-save {
+    border: none;
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    color: #ffffff;
+}
+
+.btn-save:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(37,99,235,0.4);
+}
+
+.btn-cancel {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.btn-cancel:hover {
+    background: #d1d5db;
+}
 </style>
 
 <div class="form-container">
     <h3>Verificar código</h3>
 
-    <p style="text-align:center; color:#555;">
-        Hemos enviado un código de 4 dígitos a tu correo electrónico.<br>
-        Escríbelo aquí para completar el registro.
+    <p>
+        Hemos enviado un código de <strong>4 dígitos</strong> a tu correo electrónico.<br>
+        Escríbelo a continuación para completar el registro.
     </p>
 
     <form action="{% url 'verificar_registro' %}" method="post">
         {% csrf_token %}
 
-        <label for="codigo">Código de verificación:</label>
-        <input type="text" name="codigo" id="codigo" maxlength="4" required>
+        <label for="codigo">Código de verificación</label>
+        <input type="text" name="codigo" id="codigo" maxlength="4" required autocomplete="off">
 
         <div class="btn-container">
             <button type="submit" class="btn-save">Verificar</button>
