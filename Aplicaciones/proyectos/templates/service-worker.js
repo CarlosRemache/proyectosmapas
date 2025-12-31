@@ -1,17 +1,34 @@
 {% load static %}
-const CACHE_NAME = "distric-pwa-v1";
+const CACHE_NAME = "distric-pwa-v2";
 
 const URLS_TO_CACHE = [
-  "/",
+  "/",              // login (si la raíz redirige ahí)
+  "/login/",
   "/inicio/",
-  "/adminpanel/",
   "/offline/",
+  "/historial/",
+  "/perfilusuario/",
+  "/creardocumento/",
+  "/nuevovehiculo/",
+  "/listadovehiculo/",
+  "/pedidosusuario/",
+  "/adminpanel/",
   "/panel/calendario/",
-  "/reporteviaje/",
-  "/reportehistorial/",
+  "/panel/calendario/lista/",
+  "/lista_asignaciones/",
+  "/listadoproveedor/",
+  "/listadopedido/",
+  "/listadofacturas/",
+  "/listado_pagos/",
+  "/salvoconductos/",
   "{% static 'plantilla/assets/css/main.css' %}",
-  "{% static 'plantilla/assets/js/main.js' %}"
+  "{% static 'plantilla/assets/js/main.js' %}",
+  "{% static 'plantilla/assets/img/icon-192.png' %}",
+  "{% static 'plantilla/assets/img/icon-512.png' %}",
+  "{% static 'plantilla/assets/manifest.webmanifest' %}",
 ];
+
+
 
 // Instalar: guardar en caché
 self.addEventListener("install", (event) => {
