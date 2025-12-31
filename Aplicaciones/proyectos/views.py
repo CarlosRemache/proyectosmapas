@@ -2511,4 +2511,24 @@ def admin_panel(request):
     return render(request, "administrador/admin_panel.html", context)
 
 
+#PWA ------------------------------------------------------------------------
+from django.views.generic import TemplateView
+
+class ManifestView(TemplateView):
+    template_name = "manifest.webmanifest"
+    content_type = "application/manifest+json"
+
+
+class ServiceWorkerView(TemplateView):
+    template_name = "service-worker.js"
+    content_type = "application/javascript"
+
+
+
+from django.shortcuts import render
+
+def offline(request):
+    return render(request, "offline.html")
+
+
 

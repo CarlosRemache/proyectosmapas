@@ -6,6 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seguimiento de Hábitos de Estudio </title>
 
+
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="{% url 'manifest' %}">
+
+    <!-- Colores para la barra del navegador/móvil -->
+    <meta name="theme-color" content="#000000">
+    <meta name="background-color" content="#000000">
+
+    <!-- Icono para navegadores -->
+    <link rel="icon" href="{% static 'icons/icon-192x192.png' %}">
+
+
+
+
         <!-- calendario -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
@@ -190,6 +204,23 @@
 
   <!-- Main JS File -->
   <script src="{% static 'plantilla/assets/js/main.js' %}"> </script>
+
+
+    <!-- Registro del Service Worker PWA -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function() {
+        navigator.serviceWorker.register("/service-worker.js")
+          .then(function(registration) {
+            console.log("ServiceWorker registrado con scope:", registration.scope);
+          })
+          .catch(function(error) {
+            console.log("Error al registrar el ServiceWorker:", error);
+          });
+      });
+    }
+  </script>
+
 
 
 </body>

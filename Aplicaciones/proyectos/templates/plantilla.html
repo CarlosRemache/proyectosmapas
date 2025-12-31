@@ -5,6 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seguimiento de Hábitos de Estudio </title>
+
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="{% url 'manifest' %}">
+
+    <!-- Colores para la barra del navegador/móvil -->
+    <meta name="theme-color" content="#000000">
+    <meta name="background-color" content="#000000">
+
+    <!-- Icono para navegadores -->
+    <link rel="icon" href="{% static 'icons/icon-192x192.png' %}">
+
+
     <!--Importado jquery -->
     <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
 
@@ -139,6 +151,20 @@
         }, "Este campo solo acepta letras"); 
   </script>
 
+  <!-- Registro del Service Worker PWA -->
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+      navigator.serviceWorker.register("/service-worker.js")
+        .then(function(registration) {
+          console.log("ServiceWorker registrado con scope:", registration.scope);
+        })
+        .catch(function(error) {
+          console.log("Error al registrar el ServiceWorker:", error);
+        });
+    });
+  }
+</script>
 
   
 </body>

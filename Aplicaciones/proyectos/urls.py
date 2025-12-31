@@ -1,6 +1,6 @@
 from django.urls import path
 from.import views
-
+from .views import ManifestView, ServiceWorkerView, offline
 
 
 urlpatterns = [
@@ -125,14 +125,13 @@ urlpatterns = [
 
 
 
+    #pwa
+    path("manifest.webmanifest", ManifestView.as_view(), name="manifest"),
+    
+    path("service-worker.js", ServiceWorkerView.as_view(), name="service-worker"),
 
-
-
-
-
+    path("offline/", offline, name="offline"),
 
 
 ]
-
-
 
