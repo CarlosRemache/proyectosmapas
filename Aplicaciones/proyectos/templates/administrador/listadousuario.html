@@ -1,0 +1,138 @@
+{% extends "plantillaadministrador.html" %}
+{% load static %}
+{% block contener %}
+
+<style>
+
+.content-wrapper{
+    margin-left:380px;
+    padding:30px;
+}
+
+.resume-container {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.resume-card {
+    flex: 1;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+    text-align: center;
+}
+
+.resume-card h4 {
+    margin: 0;
+    font-size: 16px;
+    color: #374151;
+}
+
+.resume-card p {
+    margin-top: 10px;
+    font-size: 32px;
+    font-weight: bold;
+    color: #1f2937;
+}
+
+.table-container {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead {
+    background: #1f2937;
+    color: #ffffff;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+tbody tr:nth-child(even) {
+    background: #f3f4f6;
+}
+
+tbody tr:hover {
+    background: #e5e7eb;
+}
+
+.rol-admin {
+    color: #dc2626;
+    font-weight: bold;
+}
+
+.rol-user {
+    color: #2563eb;
+    font-weight: bold;
+}
+
+
+@media (max-width:1200px){
+    .content-wrapper{
+        margin-left:0;
+        padding:20px;
+    }
+}
+
+
+</style>
+
+<div class="content-wrapper">
+    <div class="resume-container">
+        <div class="resume-card">
+            <h4>Total Usuarios</h4>
+            <p>{{ total_usuarios }}</p>
+        </div>
+
+        <div class="resume-card">
+            <h4>Total Administradores</h4>
+            <p>{{ total_admins }}</p>
+        </div>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombres</th>
+                    <th>Correo</th>
+                    <th>Rol</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr>
+                    <td>{{ u.nombre_usuario }} {{ u.apellido_usuario }}</td>
+                    <td>{{ u.correo_usuario }}</td>
+                    <td>
+                        {% if u.tiporol == "ADMINISTRADOR" %}
+                            <span class="rol-admin">{{ u.tiporol }}</span>
+                        {% else %}
+                            <span class="rol-user">{{ u.tiporol }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" style="text-align:center;">
+                        No existen usuarios registrados
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

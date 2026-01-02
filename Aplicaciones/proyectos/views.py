@@ -172,6 +172,22 @@ def procesareditarusuario(request):
 
 
 
+def listadousuario(request):
+    usuarios = Usuario.objects.all()
+    # Conteos por rol
+    total_usuarios = Usuario.objects.filter(tiporol='USUARIO').count()
+    total_admins = Usuario.objects.filter(tiporol='ADMINISTRADOR').count()
+
+    return render(request, 'administrador/listadousuario.html', {
+        'usuarios': usuarios,
+        'total_usuarios': total_usuarios,
+        'total_admins': total_admins
+    })
+
+
+
+
+
 
 def perfilusuario(request):
     usuario_id = request.session.get('usuario_id') #obtiene el id del usuario creado

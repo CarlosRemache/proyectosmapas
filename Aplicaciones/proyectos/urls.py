@@ -16,7 +16,8 @@ urlpatterns = [
     path('perfilusuario/',views.perfilusuario),
     path('guardarusuario/',views.guardarusuario),
     path('editarusuario/<int:id>',views.editarusuario),
-    path('procesareditarusuario/', views.procesareditarusuario),  
+    path('procesareditarusuario/', views.procesareditarusuario),
+    path('listadousuario/', views.listadousuario),  
     #documento
     path('creardocumento/', views.creardocumento, name='creardocumento'),
 
