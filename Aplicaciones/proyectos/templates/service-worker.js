@@ -1,8 +1,8 @@
 {% load static %}
-const CACHE_NAME = "distric-pwa-v3";
+const CACHE_NAME = "distric-pwa-v4";
 
 const URLS_TO_CACHE = [
-  "/",              // login (si la raíz redirige ahí)
+  "/",              
   "/login/",
   "/inicio/",
   "/offline/",
@@ -26,13 +26,15 @@ const URLS_TO_CACHE = [
   "/listadoproveedor/",
   "/listadopedido/",
   "/listadofacturas/",
-  "/listado_pagos/",
+  "/pagos/",
   "/salvoconductos/",
+  "{% url 'manifest' %}",
+
   "{% static 'plantilla/assets/css/main.css' %}",
   "{% static 'plantilla/assets/js/main.js' %}",
-  "{% static 'plantilla/assets/img/icon-192.png' %}",
-  "{% static 'plantilla/assets/img/icon-512.png' %}",
-  "{% static 'plantilla/assets/manifest.webmanifest' %}",
+  "{% static 'icons/icon-192x192.png' %}",
+  "{% static 'icons/icon-512x512.png' %}",
+
 ];
 
 
