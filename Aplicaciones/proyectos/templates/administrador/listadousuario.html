@@ -3,7 +3,6 @@
 {% block contener %}
 
 <style>
-
 .content-wrapper{
     margin-left:380px;
     padding:30px;
@@ -86,9 +85,57 @@ tbody tr:hover {
 }
 
 
+@media (max-width: 768px) {
+
+    .resume-container {
+        flex-direction: column;
+    }
+
+    .resume-card {
+        padding: 16px;
+    }
+
+    .resume-card p {
+        font-size: 26px;
+    }
+
+
+    .table-container {
+        padding: 14px;
+        overflow-x: auto;
+    }
+
+    table {
+        min-width: 500px;
+        font-size: 14px;
+    }
+
+    th, td {
+        padding: 10px;
+    }
+}
+
+
+@media (max-width: 480px) {
+
+    .resume-card h4 {
+        font-size: 14px;
+    }
+
+    .resume-card p {
+        font-size: 22px;
+    }
+
+    table {
+        font-size: 13px;
+    }
+}
+
 </style>
 
 <div class="content-wrapper">
+
+    <!-- ===== RESUMEN ===== -->
     <div class="resume-container">
         <div class="resume-card">
             <h4>Total Usuarios</h4>
@@ -100,6 +147,8 @@ tbody tr:hover {
             <p>{{ total_admins }}</p>
         </div>
     </div>
+
+    <!-- ===== TABLA ===== -->
     <div class="table-container">
         <table>
             <thead>
