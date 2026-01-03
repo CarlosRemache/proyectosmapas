@@ -128,6 +128,7 @@
     <table class="table table-bordered table-striped" id="tbl_viajes">
       <thead>
         <tr>
+          <th>ID</th>
           <th>Usuario</th>
           <th>Fecha</th>
           <th>Origen</th>
@@ -144,6 +145,7 @@
       <tbody>
         {% for v in viajes %}
         <tr>
+          <td data-order="{{ v.id }}">{{ v.id }}</td>
           <td>{{ v.usuario }}</td>
           <td>{{ v.fecha }}</td>
           <td>{{ v.origen }}</td>

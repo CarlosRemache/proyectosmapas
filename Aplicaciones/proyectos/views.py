@@ -2091,7 +2091,7 @@ def nuevosalvoconducto(request):
             estado=estado
         )
 
-        messages.success(request, '✅ Salvoconducto creado correctamente.')
+        messages.success(request, 'Salvoconducto creado correctamente.')
         return redirect('salvoconductos')
 
     return render(request, 'administrador/nuevosalvoconducto.html', {
@@ -2308,6 +2308,7 @@ def reportehistorial(request):
     for viaje in viajes:
         ruta = viaje.opciones.filter(tipo="OPTIMA").first()
         data.append({
+            "id": viaje.id_viaje,
             "usuario": f"{viaje.usuario.nombre_usuario} {viaje.usuario.apellido_usuario}",
             "fecha": viaje.fecha_creacion,
             "origen": f"{viaje.origen.latitud}, {viaje.origen.longitud}",
