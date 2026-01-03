@@ -206,6 +206,7 @@
       <table class="table table-bordered table-striped" id="tbl_rutas">
         <thead>
           <tr>
+            <th>ID</th> 
             <th>Tipo</th>
             <th>Viaje</th>
             <th>Distancia (km)</th>
@@ -221,6 +222,7 @@
         <tbody>
           {% for r in rutas %}
             <tr>
+              <td><strong>#{{ r.id_ruta_opcion }}</strong></td> 
               <td>{{ r.get_tipo_display }}</td>
               <td>{{ r.viaje.id_viaje }}</td>
               <td>{{ r.distancia_km|floatformat:2 }}</td>
@@ -266,6 +268,7 @@
 <script>
 $(document).ready(function () {
   $('#tbl_rutas').DataTable({
+    order: [[0, 'asc']],
     dom: 'Bfrtip',
     buttons: [
       { extend: 'copy', text: 'Copiar' },

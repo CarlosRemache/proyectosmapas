@@ -292,6 +292,7 @@
       <table class="table table-bordered table-striped" id="tbl_historial">
         <thead>
           <tr>
+            <th>ID</th>
             <th>Lugar</th>
             <th>Guardado por</th>
             <th>Fecha</th>
@@ -302,6 +303,7 @@
         <tbody>
           {% for item in historial %}
             <tr>
+              <td data-order="{{ item.id_Lugarguardado }}"></td>
               <td><b>{{ item.nombre_Lugarguardado }}</b></td>
               <td>
                 <span class="guardado-por">
@@ -329,6 +331,10 @@
 <script>
 $(document).ready(function () {
   $('#tbl_historial').DataTable({
+    order: [[0, 'asc']],
+    columnDefs: [
+      { targets: 0, visible: false } 
+    ],
     dom: 'Bfrtip',
     buttons: [
       { extend: 'copy', text: 'Copiar' },
