@@ -51,6 +51,18 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
 
+
+#pagona de cloudbinary para imagenes
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -61,6 +73,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'channels', #activar el chanel django
+    'cloudinary',
+    'cloudinary_storage',
     'Aplicaciones.proyectos'
 ]
 
@@ -196,11 +210,6 @@ if not DEBUG:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
-
-
-#CONFIGURANDO CARPETA PARA SUBIR ARCHIVOS
-MEDIA_URL='/media/'
-MEDIA_ROOT=(os.path.join(BASE_DIR,'proyectos/media/'))
 
 
 
