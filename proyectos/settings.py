@@ -204,7 +204,8 @@ if not DEBUG:
 
 #CONFIGURANDO CARPETA PARA SUBIR ARCHIVOS
 MEDIA_URL='/media/'
-MEDIA_ROOT=(os.path.join(BASE_DIR,'proyectos/media/'))
+MEDIA_ROOT = '/var/data/media'
+
 
 
 

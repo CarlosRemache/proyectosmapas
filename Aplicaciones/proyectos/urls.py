@@ -133,6 +133,10 @@ urlpatterns = [
 
     path("offline/", offline, name="offline"),
 
+    #imagen
+    path('media/<path:path>/', views.media_view),
+
+
 
 ]
 
