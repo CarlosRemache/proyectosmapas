@@ -29,7 +29,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', default='your secret key')
 DEBUG = 'RENDER' not in os.environ
 
 ALLOWED_HOSTS = [
-    'proyectodistric.onrender.com',
+    'proyectodistric-rhiw.onrender.com',
     os.environ.get('RENDER_EXTERNAL_HOSTNAME', ''),
     'localhost',
     '127.0.0.1'
@@ -43,7 +43,7 @@ if RENDER_EXTERNAL_HOSTNAME:
 
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://proyectodistric.onrender.com',
+    'https://proyectodistric-rhiw.onrender.com',
 ]
 
 
@@ -110,7 +110,7 @@ CHANNEL_LAYERS = {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
             'hosts': [(
-                os.environ.get('REDIS_URL', 'redis://red-d4thaummcj7s73bsllv0:6379')
+                os.environ.get('REDIS_URL', 'redis://red-d5ej2l56ubrc73ct0cc0:6379')
             )],
         },
     },
@@ -126,13 +126,15 @@ CHANNEL_LAYERS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'mapadistric',
-        'USER': 'mapadistric_user',
-        'PASSWORD': 'yF1lna5gBwXg3Vo4qJGaskWU4QrDutGP',
-        'HOST': 'dpg-d4tha3c9c44c73bocc0g-a.oregon-postgres.render.com',
+        'NAME': 'mapadistric_lrgp',
+        'USER': 'mapadistric_lrgp_user',
+        'PASSWORD': 'pWNZtySTxBIJlU8W4eGIRxhypTmGJl6t',
+        'HOST': 'dpg-d5ej25u3jp1c73fpvrv0-a.oregon-postgres.render.com',
         'PORT': '5432',
     }
 }
+
+
 
 
 
