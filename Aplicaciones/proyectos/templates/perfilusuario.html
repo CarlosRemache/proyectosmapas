@@ -38,6 +38,15 @@
         color: #c5c5c5;
     }
 
+    .avatar-perfil {
+        display: block;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin: 15px auto 20px auto;  /* centrado y con espacio arriba/abajo */
+    }
+
     .btn-editar {
         display: inline-block;
         margin-top: 20px;
@@ -62,20 +71,20 @@
     <div class="usuario-texto">
         {% if usuario.foto_usuario %}
             <img src="{{ usuario.foto_usuario.url }}"
-                alt="Foto de perfil"
-                style="width:120px; height:120px; border-radius:50%; object-fit:cover; margin-top:10px; margin-bottom:15px;">
+                 alt="Foto de perfil"
+                 class="avatar-perfil">
         {% endif %}
 
         <b>Nombre:</b>
         <br>
         {{ usuario.nombre_usuario }}
-        <br>
-        <br>
+        <br><br>
+
         <b>Apellido:</b>
         <br>
         {{ usuario.apellido_usuario }}
-        <br>
-        <br>        
+        <br><br>
+
         <b>Correo:</b>
         <br>
         {{ usuario.correo_usuario }}
