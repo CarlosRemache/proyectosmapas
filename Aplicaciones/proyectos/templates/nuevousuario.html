@@ -1,6 +1,18 @@
 {% extends "./plantilla.html" %}
 {% load static %}
 {% block contenido %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+    <!-- bootstrap-fileinput -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-fileinput@5.5.3/css/fileinput.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-fileinput@5.5.3/js/fileinput.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-fileinput@5.5.3/js/locales/es.js"></script>
+
+    <!-- Font Awesome (íconos) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
 
 <style>
 
@@ -120,11 +132,14 @@ body {
 
 </style>
 
+</head>
+<body>
+
 <div class="form-container">
 
     <h3>Crear nuevo usuario</h3>
 
-    <form action="/guardarusuario/" method="post">
+    <form action="/guardarusuario/" method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
         <label for="txt_nombre">Nombres</label>
@@ -139,6 +154,10 @@ body {
         <label for="txt_contrasena">Contraseña</label>
         <input type="password" name="txt_contrasena" id="txt_contrasena" required>
 
+        <label for="foto_usuario" >foto:</label>
+        <input type="file" id="foto_usuario" name="foto_usuario" accept="image/*">
+
+
         <div class="btn-container">
             <button type="submit" class="btn-primary">Guardar</button>
         </div>
@@ -150,5 +169,21 @@ body {
         </div>
     </form>
 </div>
+
+
+<script>
+    $("#foto_usuario").fileinput({
+        language: "es",
+        allowedFileExtensions: ["png", "jpg", "jpeg"],
+        showCaption: false,
+        dropZoneEnabled: true,
+        showClose: false,
+        browseLabel: "Seleccionar imagen"
+    });
+</script>
+
+</body>
+</html>
+
 
 {% endblock %}

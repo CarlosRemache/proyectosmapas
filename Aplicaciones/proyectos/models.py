@@ -8,6 +8,7 @@ class Usuario(models.Model):
     apellido_usuario=models.CharField(max_length=100)
     correo_usuario=models.EmailField(unique=True)
     contrasena_usuario = models.CharField(max_length=128)
+    foto_usuario = models.ImageField(upload_to='usuarios/',blank=True,null=True)
     tiporol  = models.CharField(max_length=20, choices=[('USUARIO', 'USUARIO'), ('ADMINISTRADOR', 'ADMINISTRADOR')])
 
 
