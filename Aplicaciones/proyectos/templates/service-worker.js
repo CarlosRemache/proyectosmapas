@@ -1,5 +1,5 @@
 {% load static %}
-const CACHE_NAME = "distric-pwa-v4";
+const CACHE_NAME = "distric-pwa-v5";
 
 const URLS_TO_CACHE = [
   "/",              
