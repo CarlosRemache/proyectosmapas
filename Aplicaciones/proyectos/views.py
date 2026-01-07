@@ -1239,7 +1239,7 @@ def usuario_cambiar_estado(request, asig_id):
         timezone.get_current_timezone()
     )
 
-    # COMPLETADO: solo cuando ya terminó y dentro de 5 minutos
+    # COMPLETADO: solo cuando ya terminó y dentro de 3 minutos
 
     if nuevo_estado == "COMPLETADO":
 
@@ -1253,11 +1253,11 @@ def usuario_cambiar_estado(request, asig_id):
             messages.error(request, "El evento aún no ha iniciado.")
             return redirect("pedidosusuario")
 
-        # Después de fin + 5 minutos 
-        if ahora > fin_dt + timedelta(minutes=5):
+        # Después de fin + 3 minutos 
+        if ahora > fin_dt + timedelta(minutes=3):
             messages.error(
                 request,
-                "El tiempo para marcar como completado ya terminó (5 minutos después del fin)."
+                "El tiempo para marcar como completado ya terminó (3 minutos después del fin)."
             )
             return redirect("pedidosusuario")
 
