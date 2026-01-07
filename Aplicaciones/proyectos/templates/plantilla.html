@@ -68,18 +68,22 @@
 
 
 <!--verificacion y mostrando mensajes-->
-
 {% if messages %}
-    {% for mesajeConfirmacion in messages %}
+    {% for msg in messages %}
         <script>
-            // Verifica si el tag del mensaje es "success"
-            if ("{{ mesajeConfirmacion.tags }}" === "success") {
+            {% if msg.tags == 'success' %}
                 iziToast.success({
                     title: 'CONFIRMACIÓN',
-                    message: "{{ mesajeConfirmacion }}", // Corregido: "messages" a "message"
+                    message: "{{ msg|escapejs }}",
                     position: 'topRight'
                 });
-            }
+            {% elif msg.tags == 'error' %}
+                iziToast.error({
+                    title: 'ERROR',
+                    message: "{{ msg|escapejs }}",
+                    position: 'topRight'
+                });
+            {% endif %}
         </script>
     {% endfor %}
 {% endif %}
