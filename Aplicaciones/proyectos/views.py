@@ -254,6 +254,32 @@ def verificar_registro(request):
 
 #documento---------------------------------------------------------------------------------------------------
 
+
+# CAMPOS OBLIGATORIOS CHECKLIST
+CAMPOS_CHECKLIST = [
+    # Documentos
+    'licencia_conducir', 'tarjeta_circulacion', 'poliza_impresa',
+    'poliza_digital', 'verificacion_vehicular', 'factura_propiedad',
+
+    # Chequeo mecánico
+    'llantas', 'frenos', 'luces', 'fluidos_aceite', 'fluido_agua',
+    'bateria_general', 'cinturones', 'limpiaparabrisas',
+
+    # Motor
+    'motor_aceite', 'motor_refrigerante', 'motor_temperatura',
+    'motor_bateria', 'motor_filtro_aire', 'motor_fugas',
+    'motor_combustible',
+
+    # Suspensión
+    'amortiguadores', 'alineacion', 'soportes_motor', 'caja', 'embrague',
+
+    # Seguridad
+    'triangulo', 'chaleco', 'extintor', 'gato_llave', 'botiquin',
+    'linterna', 'cables_corriente', 'tacos_ruedas', 'llanta_reparacion'
+]
+
+
+
 def creardocumento(request):
     id_usuario = request.session.get('usuario_id')
     if not id_usuario:
@@ -272,6 +298,26 @@ def creardocumento(request):
 
     if request.method == 'POST':
         data = request.POST
+
+        faltantes = []
+
+        for campo in CAMPOS_CHECKLIST:
+            if not data.get(campo):
+                faltantes.append(campo)
+
+        if faltantes:
+            messages.error(
+                request,
+                "Debes completar TODOS los ítems marcando SI o NO antes de guardar."
+            )
+            return render(request, 'creardocumento.html', {
+                'usuario': usuario,
+                'checklist': checklist,
+                'bloqueado': False,
+                'edit_mode': True,
+            })
+
+
 
         if checklist:
             c = checklist
@@ -383,8 +429,6 @@ def creardocumento(request):
         'bloqueado': bloqueado,
         'edit_mode': edit_mode,
     })
-
-
 
 # Vehiculo-------------------------------------------------------------
 

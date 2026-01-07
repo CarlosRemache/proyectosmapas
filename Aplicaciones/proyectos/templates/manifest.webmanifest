@@ -1,6 +1,6 @@
 {
   "name": "DISTRIC Rutas Inteligentes",
-  "short_name": "DISTRIC",
+  "short_name": "OPTIMIZACIÓN DE RUTAS",
   "description": "PWA para la optimización de recursos de combustible en rutas de transporte en Latacunga.",
   "start_url": "/inicio/",
   "scope": "/",
