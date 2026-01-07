@@ -16,6 +16,7 @@ from decimal import Decimal
 import json
 import requests
 import random
+from django.core.files.storage import default_storage
 
 
 
@@ -115,6 +116,12 @@ def guardarusuario(request):
         correo_usuario = request.POST['txt_correo']
         contrasena_usuario = request.POST['txt_contrasena']
 
+        foto = request.FILES.get('foto_usuario')
+        foto_path = None
+
+        if foto:
+            foto_path = default_storage.save(f'usuarios/{foto.name}', foto)
+
         # Generar código de 4 dígitos
         codigo = str(random.randint(1000, 9999))
 
@@ -125,6 +132,7 @@ def guardarusuario(request):
             'correo': correo_usuario,
             'contrasena': contrasena_usuario,
             'codigo': codigo,
+            'foto_path': foto_path, 
         }
 
         # Enviar el correo con el código
@@ -216,6 +224,8 @@ def verificar_registro(request):
                 # limpiamos sesión para que no se quede basura
                 del request.session['registro_usuario']
                 return redirect('/login')
+            
+            foto_path = datos.get('foto_path')
 
             # Crear el usuario
             nuevousuario = Usuario.objects.create(
@@ -225,6 +235,12 @@ def verificar_registro(request):
                 contrasena_usuario=datos['contrasena'],
                 tiporol='USUARIO'
             )
+            
+            if foto_path:
+                nuevousuario.foto_usuario.name = foto_path
+
+            # Ahora sí guardamos
+            nuevousuario.save()
 
             # Limpiar los datos de la sesión
             del request.session['registro_usuario']
