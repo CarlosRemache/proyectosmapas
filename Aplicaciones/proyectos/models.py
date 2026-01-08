@@ -274,7 +274,7 @@ class Factura(models.Model):
     numero_factura = models.CharField(max_length=30,unique=True,help_text="Ej: 001-001-000000123")
     fecha_emision = models.DateTimeField(default=timezone.now)
     pedido = models.ForeignKey(Pedido,on_delete=models.SET_NULL,null=True,blank=True)
-
+    numero_cuenta = models.CharField(max_length=30,blank=True,null=True)
     # Totales contables (CIERRE)
     subtotal = models.DecimalField(max_digits=12,decimal_places=2,default=Decimal("0.00"))
     iva = models.DecimalField(max_digits=12,decimal_places=2,default=Decimal("0.00"))

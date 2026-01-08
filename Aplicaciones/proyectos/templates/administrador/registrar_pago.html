@@ -121,6 +121,7 @@
       <div class="info-factura">
         <p><strong>Factura:</strong> {{ factura.numero_factura }}</p>
         <p><strong>Cliente:</strong> {{ factura.cliente_nombre }}</p>
+        <p><strong>Numero de Cuenta:</strong> {{ factura.numero_cuenta }}</p>    
         <p><strong>Total a pagar:</strong> $ {{ factura.total }}</p>
       </div>
       <form action="{% url 'guardar_pago' %}" method="POST" enctype="multipart/form-data">

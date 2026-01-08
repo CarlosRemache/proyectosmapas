@@ -53,6 +53,7 @@
   <div class="info">
     <p><strong>Factura:</strong> {{ pago.factura.numero_factura }}</p>
     <p><strong>Cliente:</strong> {{ pago.factura.cliente_nombre }}</p>
+    <p><strong>Numero de Cuenta:</strong> {{ pago.factura.numero_cuenta }}</p>
     <p><strong>Método:</strong> {{ pago.metodo_pago }}</p>
     <p><strong>Monto:</strong> $ {{ pago.monto_pagado }}</p>
     <p><strong>Banco:</strong> {{ pago.banco|default:"-" }}</p>

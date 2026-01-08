@@ -119,11 +119,11 @@
     {% csrf_token %}
 
     <label>Nombre del Cliente</label>
-    <input type="text"
-           name="cliente_nombre"
-           class="form-control"
-           placeholder="Ej: Juan Pérez"
-           required>
+    <input type="text"name="cliente_nombre"class="form-control"placeholder="Ej: Juan Pérez" required>
+    
+    <label>Numero de cuenta</label>
+    <input type="text" name="numero_cuenta" class="form-control"  required>
+
 
     <label>Seleccionar Pedido</label>
     <select name="pedido_id" class="form-control" required>

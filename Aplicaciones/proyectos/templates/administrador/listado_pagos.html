@@ -130,6 +130,7 @@
       <thead>
         <tr>
           <th>ID</th>
+          <th>"N° Cuenta</th>
           <th>Factura</th>
           <th>Método</th>
           <th>Monto</th>
@@ -145,6 +146,7 @@
         {% for p in pagos %}
         <tr>
           <td>{{ p.id_pago }}</td>
+          <td>{{ p.factura.numero_cuenta }}</td>
           <td>{{ p.factura.numero_factura }}</td>
           <td>{{ p.metodo_pago }}</td>
           <td>$ {{ p.monto_pagado }}</td>

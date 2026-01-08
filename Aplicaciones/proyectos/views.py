@@ -1823,11 +1823,14 @@ def crear_factura(request):
         ultimo = Factura.objects.count() + 1
         numero_factura = f"001-001-{str(ultimo).zfill(9)}"
 
+        numero_cuenta = request.POST.get("numero_cuenta", "").strip()
+
         # Crear factura
         factura = Factura.objects.create(
             cliente_nombre=cliente_nombre,
             numero_factura=numero_factura,
-            pedido=pedido
+            pedido=pedido,
+            numero_cuenta=numero_cuenta 
         )
         # Calcular y guardar totales
         factura.recalcular_totales()
@@ -1922,6 +1925,7 @@ def factura_pdf(request, id_factura):
         ["Cliente:", factura.cliente_nombre],
         ["Fecha:", factura.fecha_emision.strftime("%Y-%m-%d")],
         ["Estado:", factura.estado_factura],
+        ["Numero de cuenta:",factura.numero_cuenta],
     ]
 
     tabla_info = Table(info, colWidths=[100, 350])
