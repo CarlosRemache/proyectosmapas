@@ -2225,6 +2225,8 @@ from reportlab.lib.colors import HexColor, black
 from reportlab.lib.utils import ImageReader
 from django.http import HttpResponse
 from django.utils.timezone import now
+from django.conf import settings
+import os
 
 def generar_pdf_salvoconducto(request, id):
     s = Salvoconducto.objects.select_related(
@@ -2248,11 +2250,14 @@ def generar_pdf_salvoconducto(request, id):
 
     p.setFont("Helvetica", 10)
     p.setFillColor(black)
-    p.drawString(50, height - 70, "Empresa:")
-    p.setFont("Helvetica-Bold", 10)
-    p.drawString(110, height - 70, "DISTRIC")
 
-    p.line(50, height - 80, width - 50, height - 80)
+    logo_path = os.path.join(settings.BASE_DIR, "proyectos", "static", "imagenes", "logo.png")
+    logo = ImageReader(logo_path)
+
+    # x, y = coordenadas | w, h = tamaño ancho/alto
+    p.drawImage(logo, 50, height - 120, width=100, height=60, mask='auto')
+    p.line(50, height - 105, width - 50, height - 105)
+
 
     # CUERPO
     y = height - 120
