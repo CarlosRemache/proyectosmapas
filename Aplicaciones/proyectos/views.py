@@ -2365,7 +2365,7 @@ def reporteviaje(request):
 def reportehistorial(request):
     viajes = (
         Viaje.objects
-        .select_related("usuario", "vehiculo", "origen", "destino")
+        .select_related("usuario", "vehiculo", "destino")
         .prefetch_related("opciones")
         .order_by("-fecha_creacion")
     )
@@ -2378,7 +2378,6 @@ def reportehistorial(request):
             "id": viaje.id_viaje,
             "usuario": f"{viaje.usuario.nombre_usuario} {viaje.usuario.apellido_usuario}",
             "fecha": viaje.fecha_creacion,
-            "origen": f"{viaje.origen.latitud}, {viaje.origen.longitud}",
             "destino": viaje.destino.nombre_Lugarguardado,
             "vehiculo": viaje.vehiculo.matricula_vehiculo,
             "ruta": ruta.tipo if ruta else "N/A",
