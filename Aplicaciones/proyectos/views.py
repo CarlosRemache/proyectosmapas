@@ -2325,9 +2325,8 @@ def generar_pdf_salvoconducto(request, id):
 #qr-------------------------------------------------------------------
 import qrcode
 from io import BytesIO
-
 def generar_qr_salvoconducto(id):
-    url = f"https://proyectodistric.onrender.com/validar/salvoconducto/{id}/"
+    url = f"https://proyectodistric-rhiw.onrender.com/validar/salvoconducto/{id}/"
     qr = qrcode.QRCode(
         version=2,
         error_correction=qrcode.constants.ERROR_CORRECT_M,
