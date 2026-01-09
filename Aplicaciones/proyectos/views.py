@@ -1196,10 +1196,12 @@ def usuario_eventos_json(request):
 
 
 
+
+
 def usuario_cambiar_estado(request, asig_id):
-    # Cambia el estado: COMPLETADO / ATRASADO / NO_COMPLETADO
+    # Cambia el estado: SOLO COMPLETADO desde este endpoint
     if request.method != "POST":
-        return redirect("pedidosusuario") 
+        return redirect("pedidosusuario")
 
     if not _solo_usuario(request):
         messages.error(request, "No tienes permisos.")
@@ -1211,8 +1213,8 @@ def usuario_cambiar_estado(request, asig_id):
         return redirect("/login")
 
     nuevo_estado = request.POST.get("estado")
-    if nuevo_estado not in ["COMPLETADO", "ATRASADO", "NO_COMPLETADO"]:
-        messages.error(request, "Estado inválido.")
+    if nuevo_estado != "COMPLETADO":
+        messages.error(request, "Solo puedes marcar COMPLETADO desde aquí.")
         return redirect("pedidosusuario")
 
     asign = (
@@ -1228,7 +1230,6 @@ def usuario_cambiar_estado(request, asig_id):
 
     e = asign.evento
 
-    # Validación: debe existir fin
     if not (e.fin_fecha and e.fin_hora):
         messages.error(request, "Este evento no tiene fecha/hora fin.")
         return redirect("pedidosusuario")
@@ -1239,47 +1240,26 @@ def usuario_cambiar_estado(request, asig_id):
         timezone.get_current_timezone()
     )
 
-    # COMPLETADO: solo cuando ya terminó y dentro de 3 minutos
+    # Validaciones COMPLETADO
+    inicio_dt = timezone.make_aware(
+        datetime.combine(e.inicio_fecha, e.inicio_hora),
+        timezone.get_current_timezone()
+    )
 
-    if nuevo_estado == "COMPLETADO":
+    if ahora < inicio_dt:
+        messages.error(request, "El evento aún no ha iniciado.")
+        return redirect("pedidosusuario")
 
-        inicio_dt = timezone.make_aware(
-            datetime.combine(e.inicio_fecha, e.inicio_hora),
-            timezone.get_current_timezone()
-        )
+    if ahora > fin_dt + timedelta(minutes=5):
+        messages.error(request,"El tiempo para marcar como completado ya terminó (5 minutos después del fin).")
+        return redirect("pedidosusuario")
 
-        # Antes del inicio 
-        if ahora < inicio_dt:
-            messages.error(request, "El evento aún no ha iniciado.")
-            return redirect("pedidosusuario")
-
-        # Después de fin + 3 minutos 
-        if ahora > fin_dt + timedelta(minutes=3):
-            messages.error(
-                request,
-                "El tiempo para marcar como completado ya terminó (3 minutos después del fin)."
-            )
-            return redirect("pedidosusuario")
-
-
-
-
-    # ATRASADO / NO_COMPLETADO: solo después de fin
-    if nuevo_estado in ["ATRASADO", "NO_COMPLETADO"]:
-        if ahora < fin_dt:
-            messages.error(request, "Aún no termina el evento.")
-            return redirect("pedidosusuario")
-
-    # Guardar en BD (requiere campos estado y estado_fecha en AsignacionEvento)
-    asign.estado = nuevo_estado
+    asign.estado = "COMPLETADO"
     asign.estado_fecha = timezone.now()
     asign.save(update_fields=["estado", "estado_fecha"])
 
-    messages.success(request, f"Estado actualizado a: {nuevo_estado}.")
+    messages.success(request, "Estado actualizado a COMPLETADO.")
     return redirect("pedidosusuario")
-
-
-
 
 
 
@@ -1322,6 +1302,165 @@ def reporte_asignaciones(request):
         "total_pendientes": total_pendientes,
     }
     return render(request, "administrador/reporte_asignaciones.html", contexto)
+
+
+
+
+
+def usuario_motivo_atrasado(request, asig_id):
+    if not _solo_usuario(request):
+        messages.error(request, "No tienes permisos.")
+        return redirect("/login")
+
+    usuario_id = request.session.get("usuario_id")
+    if not usuario_id:
+        messages.error(request, "Sesión no válida.")
+        return redirect("/login")
+
+    asign = (
+        AsignacionEvento.objects
+        .select_related("evento")
+        .filter(id_usuario_evento=asig_id, usuario_id=usuario_id)
+        .first()
+    )
+    if not asign:
+        messages.error(request, "Asignación no encontrada.")
+        return redirect("pedidosusuario")
+
+    e = asign.evento
+
+    if not (e.fin_fecha and e.fin_hora):
+        messages.error(request, "Este evento no tiene fecha/hora fin.")
+        return redirect("pedidosusuario")
+
+    tz = timezone.get_current_timezone()
+    fin_dt = timezone.make_aware(datetime.combine(e.fin_fecha, e.fin_hora), tz)
+    ahora = timezone.localtime()
+
+    if ahora < fin_dt:
+        messages.error(request, "Aún no termina el evento.")
+        return redirect("pedidosusuario")
+    
+    if request.method == "GET":
+        contexto = {
+            "asign": asign,
+            "motivo_actual": asign.motivo_atrasado or "",
+        }
+        return render(request, "usuario_motivo_atrasado.html", contexto)
+
+    motivo = request.POST.get("motivo", "").strip()
+    if not motivo:
+        messages.error(request, "Debes escribir un motivo.")
+        return redirect(request.path)
+
+    asign.estado = "ATRASADO"
+    asign.estado_fecha = timezone.now()
+    asign.motivo_atrasado = motivo     
+    asign.save(update_fields=["estado", "estado_fecha", "motivo_atrasado"])
+
+    messages.success(request, "Estado actualizado a ATRASADO con motivo registrado.")
+    return redirect("pedidosusuario")
+
+
+
+
+# MOTIVO NO COMPLETADO
+def usuario_motivo_no_completado(request, asig_id):
+    if not _solo_usuario(request):
+        messages.error(request, "No tienes permisos.")
+        return redirect("/login")
+
+    usuario_id = request.session.get("usuario_id")
+    if not usuario_id:
+        messages.error(request, "Sesión no válida.")
+        return redirect("/login")
+
+    asign = (
+        AsignacionEvento.objects
+        .select_related("evento")
+        .filter(id_usuario_evento=asig_id, usuario_id=usuario_id)
+        .first()
+    )
+    if not asign:
+        messages.error(request, "Asignación no encontrada.")
+        return redirect("pedidosusuario")
+
+    e = asign.evento
+
+    if not (e.fin_fecha and e.fin_hora):
+        messages.error(request, "Este evento no tiene fecha/hora fin.")
+        return redirect("pedidosusuario")
+
+    tz = timezone.get_current_timezone()
+    fin_dt = timezone.make_aware(datetime.combine(e.fin_fecha, e.fin_hora), tz)
+    ahora = timezone.localtime()
+
+    if ahora < fin_dt:
+        messages.error(request, "Aún no termina el evento.")
+        return redirect("pedidosusuario")
+
+    # GET va a formulario
+    if request.method == "GET":
+        contexto = {
+            "asign": asign,
+            # pasamos solo el motivo de NO COMPLETADO
+            "motivo_actual": asign.motivo_no_completado or "",
+        }
+        return render(request, "usuario_motivo_no_completado.html", contexto)
+
+    # POST va a guardar
+    motivo = request.POST.get("motivo", "").strip()
+    if not motivo:
+        messages.error(request, "Debes escribir un motivo.")
+        return redirect(request.path)
+
+    asign.estado = "NO_COMPLETADO"
+    asign.estado_fecha = timezone.now()
+    asign.motivo_no_completado = motivo  
+    asign.save(update_fields=["estado", "estado_fecha", "motivo_no_completado"])
+
+    messages.success(request, "Estado actualizado a NO COMPLETADO con motivo registrado.")
+    return redirect("pedidosusuario")
+
+
+
+def reporte_ver_motivo(request, asig_id):
+
+    if not _solo_admin(request):
+        messages.error(request, "No tienes permisos.")
+        return redirect('/login')
+
+    asign = (
+        AsignacionEvento.objects
+        .select_related("usuario", "evento", "evento__creado_por", "evento__creado_por__usuario")
+        .filter(id_usuario_evento=asig_id)
+        .first()
+    )
+
+    if not asign:
+        messages.error(request, "Asignación no encontrada.")
+        return redirect("reporte_asignaciones")
+
+    # Determinar estado y motivo a mostrar
+    if asign.estado == "ATRASADO":
+        estado_label = "Atrasado"
+        motivo = asign.motivo_atrasado
+    elif asign.estado == "NO_COMPLETADO":
+        estado_label = "No completado"
+        motivo = asign.motivo_no_completado
+    elif asign.estado == "COMPLETADO":
+        estado_label = "Completado"
+        motivo = asign.estado_motivo
+    else:
+        estado_label = "Pendiente"
+        motivo = asign.estado_motivo
+
+    contexto = {
+        "asign": asign,
+        "estado_label": estado_label,
+        "motivo": motivo,
+    }
+    return render(request, "administrador/reporte_ver_motivo.html", contexto)
 
 
 

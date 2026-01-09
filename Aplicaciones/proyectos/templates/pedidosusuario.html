@@ -265,19 +265,15 @@
                   {% csrf_token %}
                   <input type="hidden" name="estado" value="COMPLETADO">
                   <button type="submit" class="btn btn-success btn-sm">Completado</button>
-                </form>
-
-                <form method="POST" action="{% url 'usuario_cambiar_estado' a.id_usuario_evento %}" style="display:inline;">
-                  {% csrf_token %}
-                  <input type="hidden" name="estado" value="ATRASADO">
-                  <button type="submit" class="btn btn-danger btn-sm">Atrasado</button>
-                </form>
-
-                <form method="POST" action="{% url 'usuario_cambiar_estado' a.id_usuario_evento %}" style="display:inline;">
-                  {% csrf_token %}
-                  <input type="hidden" name="estado" value="NO_COMPLETADO">
-                  <button type="submit" class="btn btn-info btn-sm">No completado</button>
-                </form>
+                </form>                
+                  <a href="{% url 'usuario_motivo_atrasado' a.id_usuario_evento %}"
+                    class="btn btn-danger btn-sm">
+                    Atrasado
+                  </a>
+                  <a href="{% url 'usuario_motivo_no_completado' a.id_usuario_evento %}"
+                    class="btn btn-info btn-sm">
+                    No completado
+                  </a>
               </td>
             </tr>
               {% empty %}

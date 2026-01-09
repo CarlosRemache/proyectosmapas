@@ -90,6 +90,11 @@ urlpatterns = [
     path("usuario/asignacion/<int:asig_id>/estado/", views.usuario_cambiar_estado, name="usuario_cambiar_estado"),
     path("panel/asignaciones/reporte/", views.reporte_asignaciones, name="reporte_asignaciones"),
 
+    path('usuario/asignacion/<int:asig_id>/motivo-atrasado/',views.usuario_motivo_atrasado,name='usuario_motivo_atrasado'),
+    path('usuario/asignacion/<int:asig_id>/motivo-no-completado/',views.usuario_motivo_no_completado,name='usuario_motivo_no_completado'),
+    path("panel/asignaciones/<int:asig_id>/motivo/",views.reporte_ver_motivo,name="reporte_ver_motivo"),
+
+
     #reportes
     path('reporteviaje/', views.reporteviaje, name='reporteviaje'),
     path('reportehistorial/', views.reportehistorial, name='reportehistorial'),

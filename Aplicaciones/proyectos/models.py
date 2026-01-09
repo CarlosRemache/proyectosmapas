@@ -214,7 +214,9 @@ class AsignacionEvento(models.Model):
     ESTADOS = (('PENDIENTE', 'PENDIENTE'),('COMPLETADO', 'COMPLETADO'),('ATRASADO', 'ATRASADO'),('NO COMPLETADO', 'NO COMPLETADO'),)
     estado = models.CharField(max_length=20, choices=ESTADOS, default='PENDIENTE')
     estado_fecha = models.DateTimeField(null=True, blank=True)  # cuándo cambió el estado
-
+    motivo_atrasado = models.TextField(null=True, blank=True)
+    motivo_no_completado = models.TextField(null=True, blank=True)
+    
     class Meta:
         unique_together = ('usuario', 'evento')
 
