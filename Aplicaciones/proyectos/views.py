@@ -115,7 +115,18 @@ def guardarusuario(request):
         apellido_usuario = request.POST['txt_apellido']
         correo_usuario = request.POST['txt_correo']
         contrasena_usuario = request.POST['txt_contrasena']
+        rol = request.POST.get('rol', '').strip() 
 
+        if rol not in ('USUARIO', 'ADMINISTRADOR'):
+            messages.error(request, "Debes seleccionar un rol válido.")
+            return redirect('/nuevousuario/')
+
+        # ✅ Regla: solo puede existir 1 ADMINISTRADOR en todo el sistema
+        if rol == 'ADMINISTRADOR' and Administrador.objects.exists():
+            messages.error(request, "Ya existe un administrador. No se puede crear otro.")
+            return redirect('/nuevousuario/')
+
+        
         foto = request.FILES.get('foto_usuario')
         foto_path = None
 
@@ -133,6 +144,7 @@ def guardarusuario(request):
             'contrasena': contrasena_usuario,
             'codigo': codigo,
             'foto_path': foto_path, 
+            'rol': rol,
         }
 
         # Enviar el correo con el código
@@ -225,6 +237,14 @@ def verificar_registro(request):
                 del request.session['registro_usuario']
                 return redirect('/login')
             
+            rol = datos.get('rol', 'USUARIO')
+
+            if rol == 'ADMINISTRADOR' and Administrador.objects.exists():
+                messages.error(request, "Ya existe un administrador. No se puede crear otro.")
+                del request.session['registro_usuario']
+                return redirect('/login')
+                        
+            
             foto_path = datos.get('foto_path')
 
             # Crear el usuario
@@ -233,9 +253,12 @@ def verificar_registro(request):
                 apellido_usuario=datos['apellido'],
                 correo_usuario=datos['correo'],
                 contrasena_usuario=datos['contrasena'],
-                tiporol='USUARIO'
+                 tiporol=rol
             )
-            
+
+            if rol == 'ADMINISTRADOR':
+                Administrador.objects.create(usuario=nuevousuario)
+
             if foto_path:
                 nuevousuario.foto_usuario.name = foto_path
 
@@ -244,7 +267,6 @@ def verificar_registro(request):
 
             # Limpiar los datos de la sesión
             del request.session['registro_usuario']
-
             messages.success(request, "Usuario creado correctamente. Ahora puedes iniciar sesión.")
             return redirect('/login')
         else:
