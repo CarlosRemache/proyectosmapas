@@ -202,7 +202,16 @@ tbody tr:hover {
                 <tr>
                     <td>{{ u.nombre_usuario }} {{ u.apellido_usuario }}</td>
                     <td>{{ u.correo_usuario }}</td>
-                    <td>{{ u.foto_usuario }}</td>
+                    <td>
+                        {% if u.foto_usuario  %}
+                        <a href="{{ u.foto_usuario .url }}" target="_blank">
+                            <img src="{{ u.foto_usuario .url }}"
+                                style="height:45px; border-radius:6px; border:1px solid #1F2937;">
+                        </a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
                     <td>
                         {% if u.tiporol == "ADMINISTRADOR" %}
                             <span class="rol-admin">{{ u.tiporol }}</span>
