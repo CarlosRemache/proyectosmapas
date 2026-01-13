@@ -204,8 +204,8 @@ tbody tr:hover {
                     <td>{{ u.correo_usuario }}</td>
                     <td>
                         {% if u.foto_usuario  %}
-                        <a href="{{ u.foto_usuario .url }}" target="_blank">
-                            <img src="{{ u.foto_usuario .url }}"
+                        <a href="{{ u.foto_usuario.url }}" target="_blank">
+                            <img src="{{ u.foto_usuario.url }}"
                                 style="height:45px; border-radius:6px; border:1px solid #1F2937;">
                         </a>
                         {% else %}
