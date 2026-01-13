@@ -193,6 +193,7 @@ tbody tr:hover {
                 <tr>
                     <th>Nombres</th>
                     <th>Correo</th>
+                    <th>Foto</th>
                     <th>Rol</th>
                 </tr>
             </thead>
@@ -201,6 +202,7 @@ tbody tr:hover {
                 <tr>
                     <td>{{ u.nombre_usuario }} {{ u.apellido_usuario }}</td>
                     <td>{{ u.correo_usuario }}</td>
+                    <td>{{ u.foto_usuario }}</td>
                     <td>
                         {% if u.tiporol == "ADMINISTRADOR" %}
                             <span class="rol-admin">{{ u.tiporol }}</span>
