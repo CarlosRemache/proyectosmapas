@@ -115,34 +115,34 @@ def guardarusuario(request):
         apellido_usuario = request.POST['txt_apellido']
         correo_usuario = request.POST['txt_correo']
         contrasena_usuario = request.POST['txt_contrasena']
-        rol = request.POST.get('rol', '').strip() 
 
-        if rol not in ('USUARIO', 'ADMINISTRADOR'):
-            messages.error(request, "Debes seleccionar un rol válido.")
+        # ✅ FORZAR rol USUARIO (no se elige en el formulario)
+        rol = 'USUARIO'
+
+        # ✅ evitar correo repetido (porque es unique=True)
+        if Usuario.objects.filter(correo_usuario=correo_usuario).exists():
+            messages.error(request, "Ya existe un usuario con ese correo.")
             return redirect('/nuevousuario/')
 
-        # ✅ Regla: solo puede existir 1 ADMINISTRADOR en todo el sistema
-        if rol == 'ADMINISTRADOR' and Administrador.objects.exists():
-            messages.error(request, "Ya existe un administrador. No se puede crear otro.")
-            return redirect('/nuevousuario/')
+        # ✅ crear usuario en la BD
+        nuevo = Usuario.objects.create(
+            nombre_usuario=nombre_usuario,
+            apellido_usuario=apellido_usuario,
+            correo_usuario=correo_usuario,
+            contrasena_usuario=contrasena_usuario,
+            tiporol=rol
+        )
 
-        
+        # ✅ guardar foto si viene
         foto = request.FILES.get('foto_usuario')
-        foto_path = None
-
         if foto:
-            foto_path = default_storage.save(f'usuarios/{foto.name}', foto)
+            nuevo.foto_usuario = foto
+            nuevo.save()
 
+        messages.success(request, "Usuario creado correctamente.")
+        return redirect('/listadousuario/')
 
-        # Guardar los datos del registro y el código en la sesión
-        request.session['registro_usuario'] = {
-            'nombre': nombre_usuario,
-            'apellido': apellido_usuario,
-            'correo': correo_usuario,
-            'contrasena': contrasena_usuario,
-            'foto_path': foto_path, 
-            'rol': rol,
-        }
+    return redirect('/nuevousuario/')
 
 
 
