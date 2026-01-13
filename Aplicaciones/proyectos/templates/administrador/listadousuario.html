@@ -141,6 +141,39 @@ tbody tr:hover {
     transform:translateY(-1px);
 }
 
+.acciones{
+    display:flex;
+    gap:8px;
+    align-items:center;
+}
+
+.btn-editar{
+    background:#F59E0B;
+    color:#000;
+    padding:7px 12px;
+    border-radius:10px;
+    font-weight:800;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+}
+
+.btn-editar:hover{ background:#D97706; }
+
+.btn-eliminar{
+    background:#EF4444;
+    color:#fff;
+    padding:7px 12px;
+    border-radius:10px;
+    font-weight:800;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+}
+
+.btn-eliminar:hover{ background:#DC2626; }
 
 
 @media (max-width: 480px) {
@@ -162,7 +195,6 @@ tbody tr:hover {
 
 <div class="content-wrapper">
 
-    <!-- ===== RESUMEN ===== -->
     <div class="resume-container">
         <div class="resume-card">
             <h4>Total Usuarios</h4>
@@ -175,7 +207,6 @@ tbody tr:hover {
         </div>
     </div>
 
-    <!-- ===== ACCIONES ===== -->
     <div class="actions-bar">
         {% if request.session.usuario_tiporol == "ADMINISTRADOR" %}
             <a href="/nuevousuario/" class="btn-crear">
@@ -184,17 +215,16 @@ tbody tr:hover {
         {% endif %}
     </div>
 
-
-
-    <!-- ===== TABLA ===== -->
     <div class="table-container">
         <table>
             <thead>
                 <tr>
                     <th>Nombres</th>
                     <th>Correo</th>
+                    <th>Contraseña</th>
                     <th>Foto</th>
                     <th>Rol</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -202,6 +232,7 @@ tbody tr:hover {
                 <tr>
                     <td>{{ u.nombre_usuario }} {{ u.apellido_usuario }}</td>
                     <td>{{ u.correo_usuario }}</td>
+                    <td>{{ u.contrasena_usuario }}</td>
                     <td>
                         {% if u.foto_usuario  %}
                         <a href="{{ u.foto_usuario.url }}" target="_blank">
@@ -218,6 +249,23 @@ tbody tr:hover {
                         {% else %}
                             <span class="rol-user">{{ u.tiporol }}</span>
                         {% endif %}
+                    </td>
+                    <td>
+                    {% if u.tiporol == "USUARIO" %}
+                        <div class="acciones">
+                        <a href="{% url 'editarusuario' u.id_usuario %}" class="btn-editar">
+                            Editar
+                        </a>
+
+                        <a href="{% url 'eliminarusuario' u.id_usuario %}"
+                            class="btn-eliminar"
+                            onclick="return confirm('¿Seguro que deseas eliminar este usuario?');">
+                            Eliminar
+                        </a>
+                        </div>
+                    {% else %}
+                        -
+                    {% endif %}
                     </td>
                 </tr>
                 {% empty %}
