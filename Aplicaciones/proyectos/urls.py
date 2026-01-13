@@ -101,8 +101,6 @@ urlpatterns = [
 
 
 
-    path('verificar_registro/', views.verificar_registro, name='verificar_registro'),
-
 
     #factura
     path('nuevafactura/', views.nuevafactura, name='nuevafactura'),

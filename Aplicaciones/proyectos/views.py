@@ -133,8 +133,6 @@ def guardarusuario(request):
         if foto:
             foto_path = default_storage.save(f'usuarios/{foto.name}', foto)
 
-        # Generar código de 4 dígitos
-        codigo = str(random.randint(1000, 9999))
 
         # Guardar los datos del registro y el código en la sesión
         request.session['registro_usuario'] = {
@@ -142,28 +140,9 @@ def guardarusuario(request):
             'apellido': apellido_usuario,
             'correo': correo_usuario,
             'contrasena': contrasena_usuario,
-            'codigo': codigo,
             'foto_path': foto_path, 
             'rol': rol,
         }
-
-        # Enviar el correo con el código
-        try:
-            send_mail(
-                'Código de verificación',
-                f'Tu código de verificación es: {codigo}',
-                'carlos.remache5649@utc.edu.ec',  # remitente (EMAIL_HOST_USER)
-                [correo_usuario],                  # destinatario: el correo que ingresó el usuario
-                fail_silently=False,
-            )
-        except Exception as e:
-            messages.error(request, f"No se pudo enviar el correo: {e}")
-            return redirect('/nuevousuario/')
-
-        # 4) Avisar y redirigir a la página donde se ingresa el código
-        messages.success(request, "Te hemos enviado un código de verificación a tu correo. Revísalo e ingrésalo.")
-        return redirect('/verificar_registro/')
-    return redirect('/nuevousuario/')
 
 
 
@@ -218,61 +197,9 @@ def perfilusuario(request):
     return render(request, 'perfilusuario.html', {'usuario': usuario})
 
 
-def verificar_registro(request):
-    # Leer datos guardados en la sesión
-    datos = request.session.get('registro_usuario')
-    if not datos:
-        messages.error(request, "No hay datos de registro pendientes. Intenta nuevamente.")
-        return redirect('/nuevousuario/')
 
-    if request.method == 'POST':
-        codigo_ingresado = request.POST.get('codigo', '').strip()
 
-        # Comparar código
-        if codigo_ingresado == datos['codigo']:
-            # Verificar que no exista ya un usuario con ese correo
-            if Usuario.objects.filter(correo_usuario=datos['correo']).exists():
-                messages.error(request, "Ya existe un usuario con ese correo.")
-                # limpiamos sesión para que no se quede basura
-                del request.session['registro_usuario']
-                return redirect('/login')
-            
-            rol = datos.get('rol', 'USUARIO')
 
-            if rol == 'ADMINISTRADOR' and Administrador.objects.exists():
-                messages.error(request, "Ya existe un administrador. No se puede crear otro.")
-                del request.session['registro_usuario']
-                return redirect('/login')
-                        
-            
-            foto_path = datos.get('foto_path')
-
-            # Crear el usuario
-            nuevousuario = Usuario.objects.create(
-                nombre_usuario=datos['nombre'],
-                apellido_usuario=datos['apellido'],
-                correo_usuario=datos['correo'],
-                contrasena_usuario=datos['contrasena'],
-                 tiporol=rol
-            )
-
-            if rol == 'ADMINISTRADOR':
-                Administrador.objects.create(usuario=nuevousuario)
-
-            if foto_path:
-                nuevousuario.foto_usuario.name = foto_path
-
-            # Ahora sí guardamos
-            nuevousuario.save()
-
-            # Limpiar los datos de la sesión
-            del request.session['registro_usuario']
-            messages.success(request, "Usuario creado correctamente. Ahora puedes iniciar sesión.")
-            return redirect('/login')
-        else:
-            messages.error(request, "Código incorrecto, inténtalo nuevamente.")
-    #mostrar formulario para ingresar el código
-    return render(request, 'verificar_registro.html')
 
 #documento---------------------------------------------------------------------------------------------------
 
