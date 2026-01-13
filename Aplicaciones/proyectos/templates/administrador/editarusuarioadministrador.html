@@ -1,0 +1,186 @@
+{% extends "plantillaadministrador.html" %}
+{% load static %}
+{% block contener %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+  <!-- bootstrap-fileinput -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-fileinput@5.5.3/css/fileinput.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap-fileinput@5.5.3/js/fileinput.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap-fileinput@5.5.3/js/locales/es.js"></script>
+
+
+<style>
+  body{
+    background:#ffffff;
+    min-height:100vh;
+    font-family:'Segoe UI', Tahoma, sans-serif;
+  }
+
+  .box{
+    width:92%;
+    max-width:900px;
+    margin:30px auto;
+    background:#06080D;
+    color:#F3F4F6;
+    padding:22px;
+    border-radius:18px;
+    border:1px solid #1F2937;
+    box-shadow:0 12px 30px rgba(0,0,0,0.4);
+  }
+
+  .box h3{
+    margin-bottom:18px;
+    font-weight:800;
+    color:#F3F4F6;
+    text-align:center;
+  }
+
+  .box label{
+    margin-top:12px;
+    font-weight:700;
+    color:#A1A1AA;
+    display:block;
+  }
+
+  .box .form-control{
+    margin-top:6px;
+    background:#06080D;
+    color:#F3F4F6;
+    border:1px solid #1F2937;
+    border-radius:10px;
+    padding:10px;
+    outline:none;
+    width:100%;
+  }
+
+  .box .form-control:focus{
+    border-color:#3B82F6;
+    box-shadow:0 0 0 3px rgba(59,130,246,0.25);
+  }
+
+  .hint{
+    font-size:12px;
+    color:#9CA3AF;
+    margin-top:6px;
+  }
+
+  .actions{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+    flex-wrap:wrap;
+  }
+
+  .btn-save{
+    background:#3B82F6;
+    color:#ffffff;
+    font-weight:800;
+    padding:10px 18px;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+  }
+  .btn-save:hover{ background:#2563EB; }
+
+  .btn-cancel{
+    background:#111827;
+    color:#ffffff;
+    font-weight:800;
+    padding:10px 18px;
+    border-radius:10px;
+    border:1px solid #1F2937;
+    cursor:pointer;
+  }
+  .btn-cancel:hover{ background:#0B1220; }
+
+  .btn-link{
+    background:#111827;
+    color:#ffffff;
+    font-weight:800;
+    padding:10px 18px;
+    border-radius:10px;
+    border:1px solid #1F2937;
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .btn-link:hover{
+    background:#0B1220;
+    color:#ffffff;
+    text-decoration:none;
+  }
+
+  @media (max-width:768px){
+    .box{ padding:14px; }
+  }
+</style>
+
+</head>
+<body>
+
+<div class="box">
+  <h3>Editar usuario</h3>
+
+  <form action="/procesareditarusuarioadministrador/" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <input type="hidden" name="id_usuario" value="{{ usuario.id_usuario }}">
+
+    <label for="txt_nombre">Nombres</label>
+    <input type="text" name="txt_nombre" id="txt_nombre" class="form-control" required
+           value="{{ usuario.nombre_usuario }}">
+
+    <label for="txt_apellido">Apellidos</label>
+    <input type="text" name="txt_apellido" id="txt_apellido" class="form-control" required
+           value="{{ usuario.apellido_usuario }}">
+
+    <label for="txt_correo">Correo electrónico</label>
+    <input type="email" name="txt_correo" id="txt_correo" class="form-control" required
+           value="{{ usuario.correo_usuario }}">
+
+    <label for="txt_contrasena">Nueva contraseña (opcional)</label>
+    <input type="password" name="txt_contrasena" id="txt_contrasena" class="form-control"
+           placeholder="Deja vacío si no deseas cambiarla">
+    <div class="hint">Si dejas vacío, se mantiene la contraseña actual.</div>
+
+    <label for="foto_usuario">Foto (opcional)</label>
+
+    {% if usuario.foto_usuario %}
+      <div style="margin-top:10px; display:flex; gap:12px; align-items:center;">
+        <a href="{{ usuario.foto_usuario.url }}" target="_blank" style="text-decoration:none;">
+          <img src="{{ usuario.foto_usuario.url }}" style="height:70px; border-radius:10px; border:1px solid #1F2937;">
+        </a>
+        <div class="hint">Foto actual (clic para abrir).</div>
+      </div>
+    {% endif %}
+
+    <input type="file" id="foto_usuario" name="foto_usuario" class="form-control" accept="image/*">
+
+    <div class="actions">
+      <button class="btn-save" type="submit">Guardar cambios</button>
+      <button class="btn-cancel" type="reset">Cancelar</button>
+      <a href="/listadousuario/" class="btn-link">Regresar</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  $("#foto_usuario").fileinput({
+    language: "es",
+    allowedFileExtensions: ["png", "jpg", "jpeg"],
+    showCaption: false,
+    dropZoneEnabled: true,
+    showClose: false,
+    browseLabel: "Seleccionar imagen"
+  });
+</script>
+
+</body>
+</html>
+
+{% endblock %}

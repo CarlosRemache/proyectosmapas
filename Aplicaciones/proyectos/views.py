@@ -198,6 +198,90 @@ def perfilusuario(request):
 
 
 
+def editarusuarioadministrador(request, id):
+    # Proteger: solo ADMIN
+    if not request.session.get('usuario_id'):
+        return redirect('/login')
+    if request.session.get('usuario_tiporol') != 'ADMINISTRADOR':
+        messages.error(request, "No tienes permisos para acceder.")
+        return redirect('/inicio')
+
+    usuario = Usuario.objects.get(id_usuario=id)
+    return render(request, 'administrador/editarusuarioadministrador.html', {'usuario': usuario})
+
+
+def procesareditarusuarioadministrador(request):
+    # Proteger: solo ADMIN
+    if not request.session.get('usuario_id'):
+        return redirect('/login')
+    if request.session.get('usuario_tiporol') != 'ADMINISTRADOR':
+        messages.error(request, "No tienes permisos para acceder.")
+        return redirect('/inicio')
+
+    if request.method != 'POST':
+        return redirect('/listadousuario/')
+
+    usuario = Usuario.objects.get(id_usuario=request.POST['id_usuario'])
+
+    usuario.nombre_usuario = request.POST['txt_nombre'].strip()
+    usuario.apellido_usuario = request.POST['txt_apellido'].strip()
+    usuario.correo_usuario = request.POST['txt_correo'].strip()
+
+    # Contraseña opcional (si viene llena, se cambia)
+    nueva_contra = request.POST.get('txt_contrasena', '').strip()
+    if nueva_contra:
+        usuario.contrasena_usuario = nueva_contra
+
+    # Foto opcional: si sube una nueva, reemplaza (y borra la anterior si existe)
+    if 'foto_usuario' in request.FILES:
+        nueva_foto = request.FILES['foto_usuario']
+        # borrar foto anterior (si existía)
+        if usuario.foto_usuario and default_storage.exists(usuario.foto_usuario.name):
+            try:
+                default_storage.delete(usuario.foto_usuario.name)
+            except Exception:
+                pass
+
+        usuario.foto_usuario = nueva_foto
+
+    usuario.save()
+    messages.success(request, "Usuario actualizado correctamente.")
+    return redirect('/listadousuario/')
+
+
+def eliminarusuarioadministrador(request, id):
+    # Proteger: solo ADMIN
+    if not request.session.get('usuario_id'):
+        return redirect('/login')
+    if request.session.get('usuario_tiporol') != 'ADMINISTRADOR':
+        messages.error(request, "No tienes permisos para acceder.")
+        return redirect('/inicio')
+
+    # evitar que el admin se elimine a sí mismo (opcional pero recomendado)
+    if int(request.session.get('usuario_id')) == int(id):
+        messages.error(request, "No puedes eliminar tu propio usuario.")
+        return redirect('/listadousuario/')
+
+    usuario = Usuario.objects.get(id_usuario=id)
+
+    # Si es ADMIN y existe en tabla Administrador -> borrar primero ese perfil
+    if usuario.tiporol == 'ADMINISTRADOR':
+        Administrador.objects.filter(usuario=usuario).delete()
+
+    # borrar foto del storage
+    if usuario.foto_usuario and default_storage.exists(usuario.foto_usuario.name):
+        try:
+            default_storage.delete(usuario.foto_usuario.name)
+        except Exception:
+            pass
+
+    usuario.delete()
+    messages.success(request, "Usuario eliminado correctamente.")
+    return redirect('/listadousuario/')
+
+
+
+
 #documento---------------------------------------------------------------------------------------------------
 
 

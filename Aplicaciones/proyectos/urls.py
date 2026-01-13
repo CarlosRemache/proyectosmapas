@@ -10,6 +10,10 @@ urlpatterns = [
     path('logout/', views.logout_usuario, name='logout'),
     path('adminpanel/', views.admin_panel, name='admin_panel'),
 
+    path('editarusuarioadministrador/<int:id>/', views.editarusuarioadministrador, name='editarusuarioadministrador'),
+    path('procesareditarusuarioadministrador/', views.procesareditarusuarioadministrador, name='procesareditarusuarioadministrador'),
+    path('eliminarusuarioadministrador/<int:id>/', views.eliminarusuarioadministrador, name='eliminarusuarioadministrador'),
+
     #usuario
     path('inicio/', views.inicio, name='inicio'),
     path('nuevousuario/', views.nuevousuario),
