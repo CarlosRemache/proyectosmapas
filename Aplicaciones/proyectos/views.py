@@ -188,9 +188,6 @@ def listadousuario(request):
 
 
 
-
-
-
 def perfilusuario(request):
     usuario_id = request.session.get('usuario_id') #obtiene el id del usuario creado
     usuario = Usuario.objects.get(id_usuario=usuario_id) #busca el usuario en la base de datos

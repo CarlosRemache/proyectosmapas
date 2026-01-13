@@ -116,6 +116,33 @@ tbody tr:hover {
 }
 
 
+.actions-bar{
+    display:flex;
+    justify-content:flex-end;
+    margin-bottom:16px;
+}
+
+.btn-crear{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 14px;
+    border-radius:12px;
+    background:#111827;
+    color:#ffffff;
+    font-weight:700;
+    text-decoration:none;
+    box-shadow:0 8px 18px rgba(0,0,0,0.15);
+    transition:transform .12s ease, opacity .12s ease;
+}
+
+.btn-crear:hover{
+    opacity:.92;
+    transform:translateY(-1px);
+}
+
+
+
 @media (max-width: 480px) {
 
     .resume-card h4 {
@@ -147,6 +174,17 @@ tbody tr:hover {
             <p>{{ total_admins }}</p>
         </div>
     </div>
+
+    <!-- ===== ACCIONES ===== -->
+    <div class="actions-bar">
+        {% if request.session.usuario_tiporol == "ADMINISTRADOR" %}
+            <a href="/nuevousuario/" class="btn-crear">
+                + Crear usuario
+            </a>
+        {% endif %}
+    </div>
+
+
 
     <!-- ===== TABLA ===== -->
     <div class="table-container">
