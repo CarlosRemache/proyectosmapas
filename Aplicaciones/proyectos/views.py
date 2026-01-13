@@ -19,7 +19,7 @@ import random
 from django.core.files.storage import default_storage
 
 
-
+#este es para login
 def login_usuario(request):
     if request.session.get('usuario_id'):
         if request.session.get('usuario_tiporol') == 'ADMINISTRADOR':
@@ -72,19 +72,6 @@ def login_usuario(request):
     return render(request, 'login.html')
 
 
-
-
-def admin_panel(request):
-    if not request.session.get('usuario_id'):
-        return redirect('/login')
-
-    if request.session.get('usuario_tiporol') != 'ADMINISTRADOR':
-        messages.error(request, "No tienes permisos para acceder.")
-        return redirect('/inicio')
-    return render(request, "administrador/admin_panel.html")
-
-
-
 #sirve para cerrar la cesion 
 def logout_usuario(request):
     request.session.flush()
@@ -94,6 +81,7 @@ def logout_usuario(request):
 
 
 
+#usuario---------
 def inicio(request):
     # Proteger el inicio: solo usuarios logueados
     if not request.session.get('usuario_id'):
@@ -105,44 +93,10 @@ def inicio(request):
 
 
 
-def nuevousuario(request):
-    return render(request, 'nuevousuario.html')
-
-
-def guardarusuario(request):
-    if request.method == 'POST':
-        nombre_usuario = request.POST['txt_nombre']
-        apellido_usuario = request.POST['txt_apellido']
-        correo_usuario = request.POST['txt_correo']
-        contrasena_usuario = request.POST['txt_contrasena']
-
-        # ✅ FORZAR rol USUARIO (no se elige en el formulario)
-        rol = 'USUARIO'
-
-        # ✅ evitar correo repetido (porque es unique=True)
-        if Usuario.objects.filter(correo_usuario=correo_usuario).exists():
-            messages.error(request, "Ya existe un usuario con ese correo.")
-            return redirect('/nuevousuario/')
-
-        # ✅ crear usuario en la BD
-        nuevo = Usuario.objects.create(
-            nombre_usuario=nombre_usuario,
-            apellido_usuario=apellido_usuario,
-            correo_usuario=correo_usuario,
-            contrasena_usuario=contrasena_usuario,
-            tiporol=rol
-        )
-
-        # ✅ guardar foto si viene
-        foto = request.FILES.get('foto_usuario')
-        if foto:
-            nuevo.foto_usuario = foto
-            nuevo.save()
-
-        messages.success(request, "Usuario creado correctamente.")
-        return redirect('/listadousuario/')
-
-    return redirect('/nuevousuario/')
+def perfilusuario(request):
+    usuario_id = request.session.get('usuario_id') #obtiene el id del usuario creado
+    usuario = Usuario.objects.get(id_usuario=usuario_id) #busca el usuario en la base de datos
+    return render(request, 'perfilusuario.html', {'usuario': usuario})
 
 
 
@@ -151,15 +105,11 @@ def editarusuario(request, id):
     return render(request, 'editarusuario.html', {'usuario': usuario})
 
 
-
-
-
 def procesareditarusuario(request):
     usuario = Usuario.objects.get(id_usuario=request.POST['id_usuario'])
     usuario.nombre_usuario = request.POST['txt_nombre']
     usuario.apellido_usuario = request.POST['txt_apellido']
     usuario.correo_usuario = request.POST['txt_correo']
-
 
     if 'foto_usuario' in request.FILES:
         usuario.foto_usuario = request.FILES['foto_usuario']
@@ -168,6 +118,18 @@ def procesareditarusuario(request):
 
     messages.success(request, "Usuario actualizado correctamente")
     return redirect('/perfilusuario/')
+
+
+
+#administrador----
+def admin_panel(request):
+    if not request.session.get('usuario_id'):
+        return redirect('/login')
+
+    if request.session.get('usuario_tiporol') != 'ADMINISTRADOR':
+        messages.error(request, "No tienes permisos para acceder.")
+        return redirect('/inicio')
+    return render(request, "administrador/admin_panel.html")
 
 
 
@@ -185,18 +147,48 @@ def listadousuario(request):
 
 
 
-def perfilusuario(request):
-    usuario_id = request.session.get('usuario_id') #obtiene el id del usuario creado
-    usuario = Usuario.objects.get(id_usuario=usuario_id) #busca el usuario en la base de datos
-    return render(request, 'perfilusuario.html', {'usuario': usuario})
+def nuevousuario(request):
+    return render(request, 'nuevousuario.html')
 
 
+
+def guardarusuario(request):
+    if request.method == 'POST':
+        nombre_usuario = request.POST['txt_nombre']
+        apellido_usuario = request.POST['txt_apellido']
+        correo_usuario = request.POST['txt_correo']
+        contrasena_usuario = request.POST['txt_contrasena']
+
+        rol = 'USUARIO'
+
+        if Usuario.objects.filter(correo_usuario=correo_usuario).exists():
+            messages.error(request, "Ya existe un usuario con ese correo.")
+            return redirect('/nuevousuario/')
+
+
+        nuevo = Usuario.objects.create(
+            nombre_usuario=nombre_usuario,
+            apellido_usuario=apellido_usuario,
+            correo_usuario=correo_usuario,
+            contrasena_usuario=contrasena_usuario,
+            tiporol=rol
+        )
+
+        foto = request.FILES.get('foto_usuario')
+        if foto:
+            nuevo.foto_usuario = foto
+            nuevo.save()
+
+        messages.success(request, "Usuario creado correctamente.")
+        return redirect('/listadousuario/')
+
+    return redirect('/nuevousuario/')
 
 
 
 
 def editarusuarioadministrador(request, id):
-    # Proteger: solo ADMIN
+
     if not request.session.get('usuario_id'):
         return redirect('/login')
     if request.session.get('usuario_tiporol') != 'ADMINISTRADOR':
@@ -207,8 +199,9 @@ def editarusuarioadministrador(request, id):
     return render(request, 'administrador/editarusuarioadministrador.html', {'usuario': usuario})
 
 
+
+
 def procesareditarusuarioadministrador(request):
-    # Proteger: solo ADMIN
     if not request.session.get('usuario_id'):
         return redirect('/login')
     if request.session.get('usuario_tiporol') != 'ADMINISTRADOR':
@@ -219,20 +212,18 @@ def procesareditarusuarioadministrador(request):
         return redirect('/listadousuario/')
 
     usuario = Usuario.objects.get(id_usuario=request.POST['id_usuario'])
-
+    
     usuario.nombre_usuario = request.POST['txt_nombre'].strip()
     usuario.apellido_usuario = request.POST['txt_apellido'].strip()
     usuario.correo_usuario = request.POST['txt_correo'].strip()
-
-    # Contraseña opcional (si viene llena, se cambia)
     nueva_contra = request.POST.get('txt_contrasena', '').strip()
+
     if nueva_contra:
         usuario.contrasena_usuario = nueva_contra
 
-    # Foto opcional: si sube una nueva, reemplaza (y borra la anterior si existe)
     if 'foto_usuario' in request.FILES:
         nueva_foto = request.FILES['foto_usuario']
-        # borrar foto anterior (si existía)
+        # borrar foto anterior
         if usuario.foto_usuario and default_storage.exists(usuario.foto_usuario.name):
             try:
                 default_storage.delete(usuario.foto_usuario.name)
@@ -246,6 +237,7 @@ def procesareditarusuarioadministrador(request):
     return redirect('/listadousuario/')
 
 
+
 def eliminarusuarioadministrador(request, id):
     # Proteger: solo ADMIN
     if not request.session.get('usuario_id'):
@@ -254,14 +246,12 @@ def eliminarusuarioadministrador(request, id):
         messages.error(request, "No tienes permisos para acceder.")
         return redirect('/inicio')
 
-    # evitar que el admin se elimine a sí mismo (opcional pero recomendado)
     if int(request.session.get('usuario_id')) == int(id):
         messages.error(request, "No puedes eliminar tu propio usuario.")
         return redirect('/listadousuario/')
 
     usuario = Usuario.objects.get(id_usuario=id)
 
-    # Si es ADMIN y existe en tabla Administrador -> borrar primero ese perfil
     if usuario.tiporol == 'ADMINISTRADOR':
         Administrador.objects.filter(usuario=usuario).delete()
 
