@@ -149,38 +149,33 @@
 </head>
 <body>
 
-<div class="form-container">
+<div class="box">
+  <h3>Crear nuevo usuario</h3>
 
-    <h3>Crear nuevo usuario</h3>
+  <form action="/guardarusuario/" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
 
-    <form action="/guardarusuario/" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
+    <label for="txt_nombre">Nombres</label>
+    <input type="text" name="txt_nombre" id="txt_nombre" class="form-control" required>
 
-        <label for="txt_nombre">Nombres</label>
-        <input type="text" name="txt_nombre" id="txt_nombre" required>
+    <label for="txt_apellido">Apellidos</label>
+    <input type="text" name="txt_apellido" id="txt_apellido" class="form-control" required>
 
-        <label for="txt_apellido">Apellidos</label>
-        <input type="text" name="txt_apellido" id="txt_apellido" required>
+    <label for="txt_correo">Correo electrónico</label>
+    <input type="email" name="txt_correo" id="txt_correo" class="form-control" required>
 
-        <label for="txt_correo">Correo electrónico</label>
-        <input type="email" name="txt_correo" id="txt_correo" required>
+    <label for="txt_contrasena">Contraseña</label>
+    <input type="password" name="txt_contrasena" id="txt_contrasena" class="form-control" required>
 
-        <label for="txt_contrasena">Contraseña</label>
-        <input type="password" name="txt_contrasena" id="txt_contrasena" required>
+    <label for="foto_usuario">Foto</label>
+    <input type="file" id="foto_usuario" name="foto_usuario" class="form-control" accept="image/*">
 
-        <label for="foto_usuario" >foto:</label>
-        <input type="file" id="foto_usuario" name="foto_usuario" accept="image/*">
-        <br>        
-        <div class="btn-container">
-            <button type="submit" class="btn-primary">Guardar</button>
-        </div>
-        <div class="btn-container">
-            <button type="reset" class="btn-secondary">Cancelar</button>
-        </div>
-        <div class="btn-container">
-            <a href="/listadousuario/" class="btn-primary">Regresar</a>
-        </div>
-    </form>
+    <div class="actions">
+      <button class="btn-save" type="submit">Guardar</button>
+      <button class="btn-cancel" type="reset">Cancelar</button>
+      <a href="/listadousuario/" class="btn-link">Regresar</a>
+    </div>
+  </form>
 </div>
 
 
