@@ -191,8 +191,9 @@ tbody tr:hover {
                     <th>Contraseña</th>
                     <th>Foto</th>
                     <th>Rol</th>
+                    {% if request.session.usuario_tiporol == "ADMINISTRADOR" %}
                     <th>Acciones</th>
-
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -218,22 +219,26 @@ tbody tr:hover {
                             <span class="rol-user">{{ u.tiporol }}</span>
                         {% endif %}
                     </td>
+                    {% if request.session.usuario_tiporol == "ADMINISTRADOR" %}
                     <td>
-                        {% if request.session.usuario_tiporol == "ADMINISTRADOR" %}
-                            <div style="display:flex; gap:10px;">
+                        {% if u.tiporol != "ADMINISTRADOR" %}
+                        <div style="display:flex; gap:10px;">
                             <a href="{% url 'editarusuarioadministrador' u.id_usuario %}"
-                                style="background:#2563EB; color:#fff; padding:8px 14px; border-radius:10px; text-decoration:none; font-weight:700;">
-                                editar
+                            style="background:#2563EB; color:#fff; padding:8px 14px; border-radius:10px; text-decoration:none; font-weight:700;">
+                            editar
                             </a>
 
                             <a href="{% url 'eliminarusuarioadministrador' u.id_usuario %}"
-                                style="background:#1F2937; color:#fff; padding:8px 14px; border-radius:10px; text-decoration:none; font-weight:700;">
-                                eliminar
+                            onclick="return confirm('¿Seguro que deseas eliminar este usuario?');"
+                            style="background:#1F2937; color:#fff; padding:8px 14px; border-radius:10px; text-decoration:none; font-weight:700;">
+                            eliminar
                             </a>
-                            </div>
+                        </div>
+                        {% else %}
+                        -
                         {% endif %}
                     </td>
-
+                    {% endif %}
                 </tr>
                 {% empty %}
                 <tr>
