@@ -160,9 +160,6 @@ def procesareditarusuario(request):
     usuario.apellido_usuario = request.POST['txt_apellido']
     usuario.correo_usuario = request.POST['txt_correo']
 
-    nueva_contra = request.POST['txt_contrasena']
-    if nueva_contra != "":
-        usuario.contrasena_usuario = nueva_contra
 
     if 'foto_usuario' in request.FILES:
         usuario.foto_usuario = request.FILES['foto_usuario']
