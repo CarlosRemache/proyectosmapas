@@ -76,12 +76,14 @@ tbody tr:hover {
     font-weight: bold;
 }
 
+
 @media (max-width:1200px){
     .content-wrapper{
         margin-left:0;
         padding:20px;
     }
 }
+
 
 @media (max-width: 768px) {
 
@@ -97,13 +99,14 @@ tbody tr:hover {
         font-size: 26px;
     }
 
+
     .table-container {
         padding: 14px;
         overflow-x: auto;
     }
 
     table {
-        min-width: 650px;
+        min-width: 500px;
         font-size: 14px;
     }
 
@@ -111,6 +114,7 @@ tbody tr:hover {
         padding: 10px;
     }
 }
+
 
 .actions-bar{
     display:flex;
@@ -137,52 +141,23 @@ tbody tr:hover {
     transform:translateY(-1px);
 }
 
-.acciones{
-    display:flex;
-    gap:8px;
-    align-items:center;
-    justify-content:flex-start;
-}
 
-.btn-editar{
-    background:#F59E0B;
-    color:#000;
-    padding:7px 12px;
-    border-radius:10px;
-    font-weight:800;
-    text-decoration:none;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-}
-
-.btn-editar:hover{ background:#D97706; }
-
-.btn-eliminar{
-    background:#EF4444;
-    color:#fff;
-    padding:7px 12px;
-    border-radius:10px;
-    font-weight:800;
-    text-decoration:none;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-}
-
-.btn-eliminar:hover{ background:#DC2626; }
-
-/* botón eliminar en form */
-.btn-eliminar.btn-submit{
-    border:none;
-    cursor:pointer;
-}
 
 @media (max-width: 480px) {
-    .resume-card h4 { font-size: 14px; }
-    .resume-card p { font-size: 22px; }
-    table { font-size: 13px; }
+
+    .resume-card h4 {
+        font-size: 14px;
+    }
+
+    .resume-card p {
+        font-size: 22px;
+    }
+
+    table {
+        font-size: 13px;
+    }
 }
+
 </style>
 
 <div class="content-wrapper">
@@ -216,7 +191,6 @@ tbody tr:hover {
                     <th>Contraseña</th>
                     <th>Foto</th>
                     <th>Rol</th>
-                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -226,13 +200,13 @@ tbody tr:hover {
                     <td>{{ u.correo_usuario }}</td>
                     <td>{{ u.contrasena_usuario }}</td>
                     <td>
-                        {% if u.foto_usuario %}
-                            <a href="{{ u.foto_usuario.url }}" target="_blank">
-                                <img src="{{ u.foto_usuario.url }}"
-                                     style="height:45px; width:45px; object-fit:cover; border-radius:10px; border:1px solid #1F2937;">
-                            </a>
+                        {% if u.foto_usuario  %}
+                        <a href="{{ u.foto_usuario.url }}" target="_blank">
+                            <img src="{{ u.foto_usuario.url }}"
+                                style="height:45px; border-radius:6px; border:1px solid #1F2937;">
+                        </a>
                         {% else %}
-                            -
+                        -
                         {% endif %}
                     </td>
                     <td>
@@ -242,31 +216,10 @@ tbody tr:hover {
                             <span class="rol-user">{{ u.tiporol }}</span>
                         {% endif %}
                     </td>
-
-                    <td>
-                        {% if u.tiporol == "USUARIO" %}
-                            <div class="acciones">
-                                <a href="{% url 'editarusuario' u.id_usuario %}" class="btn-editar">
-                                    Editar
-                                </a>
-
-                                <form action="{% url 'eliminarusuario' u.id_usuario %}"
-                                      method="post" style="display:inline;">
-                                    {% csrf_token %}
-                                    <button type="submit"
-                                            class="btn-eliminar btn-submit">
-                                        Eliminar
-                                    </button>
-                                </form>
-                            </div>
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" style="text-align:center;">
+                    <td colspan="3" style="text-align:center;">
                         No existen usuarios registrados
                     </td>
                 </tr>
