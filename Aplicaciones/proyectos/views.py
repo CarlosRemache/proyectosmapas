@@ -472,17 +472,34 @@ def guardarvehiculo(request):
     tipocomb = request.POST['txt_tipo_combustible']
     matricula = request.POST['txt_matricula']
     modelo = request.POST['txt_modelo']
+    numero_placa = request.POST['txt_numero_placa']
+    numero_cedula = request.POST['txt_numero_cedula']
+    numero_motor = request.POST['txt_numero_motor']
+    numero_chasis = request.POST['txt_numero_chasis']
+    descripcion_auto = request.POST['txt_descripcion_auto']
+    cilindraje = request.POST['txt_cilindraje']
+
     usuario = Usuario.objects.get(id_usuario=id_usuario)
+
     Vehiculo.objects.create(
         usuario=usuario,
         tipovehiculo_vehiculo=tipovehi,
         tipocombustible_vehiculo=tipocomb,
         matricula_vehiculo=matricula,
-        modelo_vehiculo=modelo
+        modelo_vehiculo=modelo,
+
+        # NUEVOS CAMPOS
+        numero_placa=numero_placa,
+        numero_cedula=numero_cedula,
+        numero_motor=numero_motor,
+        numero_chasis=numero_chasis,
+        descripcion_auto=descripcion_auto,
+        cilindraje=cilindraje
     )
 
     messages.success(request, "Vehículo guardado")
     return redirect('/listadovehiculo')
+
 
 
 
@@ -524,6 +541,13 @@ def procesareditarvehiculo(request):
     vehiculo.tipocombustible_vehiculo = request.POST['txt_tipo_combustible']
     vehiculo.matricula_vehiculo = request.POST['txt_matricula']
     vehiculo.modelo_vehiculo = request.POST['txt_modelo']
+    vehiculo.numero_placa = request.POST['txt_numero_placa']
+    vehiculo.numero_cedula = request.POST['txt_numero_cedula']
+    vehiculo.numero_motor = request.POST['txt_numero_motor']
+    vehiculo.numero_chasis = request.POST['txt_numero_chasis']
+    vehiculo.descripcion_auto = request.POST['txt_descripcion_auto']
+    vehiculo.cilindraje = request.POST['txt_cilindraje']
+
     vehiculo.save()
 
     messages.success(request, "Vehículo editado exitosamente")

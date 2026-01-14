@@ -114,6 +114,38 @@
         {{ vehiculo.modelo_vehiculo }}
     </div>
 
+    <div class="texto">
+    <b>Número de Placa:</b><br>
+    {{ vehiculo.numero_placa }}
+    </div>
+
+    <div class="texto">
+    <b>Número de Cédula:</b><br>
+    {{ vehiculo.numero_cedula }}
+    </div>
+
+    <div class="texto">
+    <b>Número de Motor:</b><br>
+    {{ vehiculo.numero_motor }}
+    </div>
+
+    <div class="texto">
+    <b>Número de Chasis:</b><br>
+    {{ vehiculo.numero_chasis }}
+    </div>
+
+    <div class="texto">
+    <b>Descripción:</b><br>
+    {{ vehiculo.descripcion_auto }}
+    </div>
+
+    <div class="texto">
+    <b>Cilindraje:</b><br>
+    {{ vehiculo.cilindraje }}
+    </div>
+
+
+
     <a href="/editarvehiculo/{{ vehiculo.id_vehiculo }}" class="btn-editar">Editar Vehículo</a>
     <a href="/eliminarvehiculo/{{ vehiculo.id_vehiculo }}" class="btn-editar">Eliminar Vehículo</a>
 

@@ -142,6 +142,25 @@
         <label>Modelo:</label>
         <input type="text" name="txt_modelo" value="{{ vehiculo.modelo_vehiculo }}">
 
+        <label>Número de Placa:</label>
+        <input type="text" name="txt_numero_placa" value="{{ vehiculo.numero_placa }}" required>
+
+        <label>Número de Cédula (Propietario):</label>
+        <input type="text" name="txt_numero_cedula" value="{{ vehiculo.numero_cedula }}" required>
+
+        <label>Número de Motor:</label>
+        <input type="text" name="txt_numero_motor" value="{{ vehiculo.numero_motor }}" required>
+
+        <label>Número de Chasis:</label>
+        <input type="text" name="txt_numero_chasis" value="{{ vehiculo.numero_chasis }}" required>
+
+        <label>Descripción del Auto:</label>
+        <input type="text" name="txt_descripcion_auto" value="{{ vehiculo.descripcion_auto }}">
+
+        <label>Cilindraje:</label>
+        <input type="text" name="txt_cilindraje" value="{{ vehiculo.cilindraje }}">
+
+
         <div class="btn-container">
             <button type="submit" class="btn-save">Guardar Cambios</button>
             <a href="/listadovehiculo/" class="btn-cancel">Cancelar</a>

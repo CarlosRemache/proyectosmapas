@@ -123,10 +123,11 @@
 
         <label>Tipo de Vehículo:</label>
         <select name="txt_tipo_vehiculo" required>
-            <option value="PRIVADO">PRIVADO</option>
+            <option value="PERSONAL">PERSONAL</option>
             <option value="TAXI">TAXI</option>
             <option value="MOTOCICLETA">MOTOCICLETA</option>
             <option value="CAMION">CAMION</option>
+            <option value="CAMIONETA">CAMIONETA</option>
         </select>
 
         <label>Tipo de Combustible:</label>
@@ -142,6 +143,24 @@
 
         <label>Modelo:</label>
         <input type="text" name="txt_modelo">
+
+        <label>Número de Placa:</label>
+        <input type="text" name="txt_numero_placa" required>
+
+        <label>Número de Cédula (Propietario):</label>
+        <input type="text" name="txt_numero_cedula" required>
+
+        <label>Número de Motor:</label>
+        <input type="text" name="txt_numero_motor" required>
+
+        <label>Número de Chasis:</label>
+        <input type="text" name="txt_numero_chasis" required>
+
+        <label>Descripción del Auto:</label>
+        <input type="text" name="txt_descripcion_auto" >
+
+        <label>Cilindraje:</label>
+        <input type="text" name="txt_cilindraje" >
 
         <div class="btn-container">
             <button type="submit" class="btn-save"
