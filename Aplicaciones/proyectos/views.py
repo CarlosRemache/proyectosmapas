@@ -664,10 +664,11 @@ def es_significativamente_mas_larga(dist_opt, t_opt, dist_larga, t_larga):
 
 # Rendimientos aproximados (km por litro) por tipo de vehículo
 RENDIMIENTOS_KM_LITRO = {
-    "PRIVADO": 12.0,
+    "PERSONAL": 12.0,
     "TAXI": 11.0,
     "MOTOCICLETA": 30.0,
     "CAMION": 5.0,
+    "CAMIONETA": 9.0,
 }
 
 
