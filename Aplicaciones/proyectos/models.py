@@ -376,7 +376,7 @@ class PrecioCombustible(models.Model):
 
 
 class RendimientoVehiculoTipo(models.Model):
-    tipo  = models.CharField(max_length=20, choices=[('PERSONAL', 'PERSONAL'), ('TAXI', 'TAXI'), ('MOTOCICLETA', 'MOTOCICLETA'), ('CAMION', 'CAMION')])
+    tipo  = models.CharField(max_length=20, choices=[('PERSONAL', 'PERSONAL'), ('TAXI', 'TAXI'), ('MOTOCICLETA', 'MOTOCICLETA'), ('CAMION', 'CAMION'), ('CAMIONETA', 'CAMIONETA')])
     # km por litro en contexto urbano / carretera
     km_l_ciudad = models.FloatField()
     km_l_carretera = models.FloatField()
