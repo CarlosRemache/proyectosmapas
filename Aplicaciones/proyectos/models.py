@@ -377,14 +377,9 @@ class PrecioCombustible(models.Model):
 
 class RendimientoVehiculoTipo(models.Model):
     tipo  = models.CharField(max_length=20, choices=[('PERSONAL', 'PERSONAL'), ('TAXI', 'TAXI'), ('MOTOCICLETA', 'MOTOCICLETA'), ('CAMION', 'CAMION'), ('CAMIONETA', 'CAMIONETA')])
-    # km por litro en contexto urbano / carretera
-    km_l_ciudad = models.FloatField()
-    km_l_carretera = models.FloatField()
-
-    # litros por hora en ralentí (motor encendido sin avanzar / stop&go)
-    idle_l_h = models.FloatField(default=0.8)
+    # kmpromedio
+    km_l_promedio = models.FloatField(help_text="Rendimiento promedio en km/L")
 
     def __str__(self):
-        return f"{self.tipo} (ciudad {self.km_l_ciudad} km/L, carretera {self.km_l_carretera} km/L, idle {self.idle_l_h} L/h)"
-
+        return f"{self.tipo} - {self.km_l_promedio} km/L"
 

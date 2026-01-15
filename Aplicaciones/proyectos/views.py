@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion,EventoAdmin,Administrador,AsignacionEvento,Proveedor,Pedido,DetallePedido,ChecklistVehiculo,Pago,Salvoconducto,Factura
+from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion,EventoAdmin,Administrador,AsignacionEvento,Proveedor,Pedido,DetallePedido,ChecklistVehiculo,Pago,Salvoconducto,Factura,RendimientoVehiculoTipo
 from Aplicaciones.proyectos.rutas_utils import (construir_grafo,dijkstra,calcular_metricas_ruta,nodo_mas_cercano,nodos_mas_cercanos,calcular_ruta_larga,construir_grafo_seguro,calcular_ruta_segura)
 from django.utils.dateparse import parse_date, parse_time
 from django.views.decorators.http import require_GET
@@ -662,15 +662,6 @@ def es_significativamente_mas_larga(dist_opt, t_opt, dist_larga, t_larga):
     return dist_ok or tiempo_ok
 
 
-# Rendimientos aproximados (km por litro) por tipo de vehículo
-RENDIMIENTOS_KM_LITRO = {
-    "PERSONAL": 12.0,
-    "TAXI": 11.0,
-    "MOTOCICLETA": 30.0,
-    "CAMION": 5.0,
-    "CAMIONETA": 9.0,
-}
-
 
 def rutas(request):
     usuario_id = request.session.get("usuario_id")
@@ -784,9 +775,15 @@ def rutas(request):
         messages.error(request, "Debes registrar un vehículo antes de calcular la ruta.")
         return redirect('/inicio')  
 
-    rendimiento_km_litro = RENDIMIENTOS_KM_LITRO.get(
-        vehiculo.tipovehiculo_vehiculo
-    )
+    rend_obj = RendimientoVehiculoTipo.objects.filter(
+        tipo=vehiculo.tipovehiculo_vehiculo
+    ).first()
+
+    if not rend_obj:
+        messages.error(request, "No se ha configurado el rendimiento para este tipo de vehículo.")
+        return redirect('/inicio')
+
+    rendimiento_km_litro = rend_obj.km_l_promedio
 
     precio_obj = PrecioCombustible.objects.filter(
         tipo=vehiculo.tipocombustible_vehiculo
@@ -1024,15 +1021,19 @@ def recorrido(request):
     costo_estimado = None
 
     if vehiculo:
-        rendimiento = RENDIMIENTOS_KM_LITRO.get(vehiculo.tipovehiculo_vehiculo)
-        if rendimiento:
+        rend_obj = RendimientoVehiculoTipo.objects.filter(
+            tipo=vehiculo.tipovehiculo_vehiculo
+        ).first()
+
+        if rend_obj:
+            rendimiento = rend_obj.km_l_promedio
             precio_obj = PrecioCombustible.objects.filter(
                 tipo=vehiculo.tipocombustible_vehiculo
             ).first()
-            if precio_obj:
+
+            if precio_obj and rendimiento:
                 consumo_litros = distancia_km / rendimiento
                 costo_estimado = consumo_litros * precio_obj.precio_por_litro
-
 
     viaje = None
     viaje_id = request.session.get('viaje_id')
