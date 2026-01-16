@@ -636,6 +636,60 @@ def eliminar_lugar(request, id):
 
 
 #rutas ----------------------------------------------------------------------------------------------------------------------------
+# ---- NUEVO: modelo simple para el efecto del peso ----
+
+# peso de referencia por tipo de vehículo (en kg)
+PESOS_REFERENCIA_VEHICULO = {
+    "TAXI": 1300,
+    "AUTOMOVIL": 1200,
+    "MOTOCICLETA": 180,
+    "CAMION": 5000,
+    "CAMIONETA": 1800,
+}
+
+ALFA_PESO = 0.5  # sensibilidad del consumo al peso (0 = no afecta, 1 = afecta totalmente)
+
+
+def calcular_factor_peso(vehiculo):
+    """
+    Devuelve (factor_peso, peso_actual_kg, peso_ref_kg).
+
+    - factor_peso > 1  -> más consumo que el vehículo de referencia
+    - factor_peso < 1  -> menos consumo (vehículo más liviano)
+    - factor_peso = 1  -> igual que el de referencia
+    """
+    # Si no hay peso registrado, no aplicamos ajuste
+    if vehiculo.peso_auto is None:
+        return 1.0, None, None
+
+    try:
+        # asumimos que peso_auto está en toneladas (ej: 0.78 -> 780 kg)
+        peso_actual_kg = float(vehiculo.peso_auto) * 1000.0
+    except (TypeError, ValueError):
+        return 1.0, None, None
+
+    peso_ref_kg = PESOS_REFERENCIA_VEHICULO.get(
+        vehiculo.tipovehiculo_vehiculo,
+        1300  # valor por defecto si no encontramos el tipo
+    )
+
+    if peso_ref_kg <= 0:
+        return 1.0, peso_actual_kg, peso_ref_kg
+
+    diferencia_rel = (peso_actual_kg - peso_ref_kg) / peso_ref_kg
+    factor_peso = 1.0 + ALFA_PESO * diferencia_rel
+
+    # por seguridad, que nunca sea <= 0
+    if factor_peso < 0.1:
+        factor_peso = 0.1
+
+    return factor_peso, peso_actual_kg, peso_ref_kg
+
+
+
+
+
+
 
 UMBRAL_DISTANCIA_REL = 0.10   # 10% más distancia
 UMBRAL_DISTANCIA_ABS = 0.3    # o al menos 0.3 km más
@@ -806,6 +860,27 @@ def rutas(request):
             costo_segura_monto = consumo_segura * precio_litro
 
 
+    # ---- NUEVO: ajustar consumo según peso del vehículo ----
+    factor_peso, peso_actual_kg, peso_ref_kg = calcular_factor_peso(vehiculo)
+
+    # Estos serán consumos ajustados por peso (además de los originales)
+    consumo_opt_ajustado = consumo_larga_ajustado = consumo_segura_ajustado = None
+    delta_opt_litros = delta_larga_litros = delta_segura_litros = None
+
+    if factor_peso != 1.0 and consumo_opt is not None:
+        consumo_opt_ajustado = consumo_opt * factor_peso
+        delta_opt_litros = consumo_opt_ajustado - consumo_opt
+
+    if factor_peso != 1.0 and consumo_larga is not None:
+        consumo_larga_ajustado = consumo_larga * factor_peso
+        delta_larga_litros = consumo_larga_ajustado - consumo_larga
+
+    if factor_peso != 1.0 and consumo_segura is not None:
+        consumo_segura_ajustado = consumo_segura * factor_peso
+        delta_segura_litros = consumo_segura_ajustado - consumo_segura
+
+
+
     viaje = Viaje.objects.create(
         usuario_id=usuario_id,
         vehiculo=vehiculo,
@@ -824,6 +899,10 @@ def rutas(request):
         "tipo": "optima",
         "consumo_litros": consumo_opt,
         "costo_ruta": costo_opt,
+        # ---- NUEVOS CAMPOS (opcional, para la vista o para tu tesis) ----
+        "consumo_litros_ajustado": consumo_opt_ajustado,
+        "delta_litros_peso": delta_opt_litros,
+        "factor_peso": factor_peso,
     })
 
     # Ruta Larga (solo si realmente existe)
@@ -834,6 +913,9 @@ def rutas(request):
             "tipo": "larga",
             "consumo_litros": consumo_larga,
             "costo_ruta": costo_larga,
+            "consumo_litros_ajustado": consumo_larga_ajustado,
+            "delta_litros_peso": delta_larga_litros,
+            "factor_peso": factor_peso,
         })
 
     # Ruta Segura (solo si realmente existe y es distinta)
@@ -844,6 +926,9 @@ def rutas(request):
             "tipo": "segura",
             "consumo_litros": consumo_segura,
             "costo_ruta": costo_segura_monto,
+            "consumo_litros_ajustado": consumo_segura_ajustado,
+            "delta_litros_peso": delta_segura_litros,
+            "factor_peso": factor_peso,
         })
 
 
