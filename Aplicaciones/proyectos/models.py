@@ -86,7 +86,7 @@ class Vehiculo(models.Model):
     numero_cedula = models.CharField(max_length=100, unique=True, null=True, blank=True)
     numero_motor = models.CharField(max_length=100, unique=True, null=True, blank=True)
     numero_chasis = models.CharField(max_length=100, unique=True, null=True, blank=True)
-    descripcion_auto= models.CharField(max_length=50, blank=True)
+    peso_auto = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     cilindraje= models.CharField(max_length=50, blank=True)
 
 

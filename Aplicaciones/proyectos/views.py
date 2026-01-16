@@ -475,7 +475,7 @@ def guardarvehiculo(request):
     numero_cedula = request.POST['txt_numero_cedula']
     numero_motor = request.POST['txt_numero_motor']
     numero_chasis = request.POST['txt_numero_chasis']
-    descripcion_auto = request.POST['txt_descripcion_auto']
+    peso_auto = request.POST['txt_peso_auto']
     cilindraje = request.POST['txt_cilindraje']
 
     usuario = Usuario.objects.get(id_usuario=id_usuario)
@@ -489,7 +489,7 @@ def guardarvehiculo(request):
         numero_cedula=numero_cedula,
         numero_motor=numero_motor,
         numero_chasis=numero_chasis,
-        descripcion_auto=descripcion_auto,
+        peso_auto=peso_auto,
         cilindraje=cilindraje
     )
 
@@ -540,7 +540,7 @@ def procesareditarvehiculo(request):
     vehiculo.numero_cedula = request.POST['txt_numero_cedula']
     vehiculo.numero_motor = request.POST['txt_numero_motor']
     vehiculo.numero_chasis = request.POST['txt_numero_chasis']
-    vehiculo.descripcion_auto = request.POST['txt_descripcion_auto']
+    vehiculo.peso_auto = request.POST['txt_peso_auto']
     vehiculo.cilindraje = request.POST['txt_cilindraje']
 
     vehiculo.save()
