@@ -190,6 +190,20 @@
             <p>Costo estimado: {{ r.costo_ruta|floatformat:2 }}</p>
             {% endif %}
 
+            {# ---------- NUEVO: consumo ajustado por peso ---------- #}
+            {% if r.consumo_litros_ajustado %}
+                <p>
+                    Combustible ajustado por peso:
+                    {{ r.consumo_litros_ajustado|floatformat:2 }} L
+                    (Δ {{ r.delta_litros_peso|floatformat:2 }} L)
+                </p>
+                <p>
+                    Factor por peso del vehículo:
+                    {{ r.factor_peso|floatformat:2 }}×
+                </p>
+            {% endif %}
+            {# ------------------------------------------------------ #}
+
             {% if r.tipo == "optima" %}
                 <p class="pill-tipo pill-optima texto-arriba ">Ruta </p>
                 <p class="pill-tipo pill-optima texto-arriba ">Óptima</p>
