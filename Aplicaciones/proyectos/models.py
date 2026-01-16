@@ -83,7 +83,6 @@ class Vehiculo(models.Model):
     tipocombustible_vehiculo  = models.CharField(max_length=50, choices=[('EXTRA', 'EXTRA'), ('DIESEL', 'DIESEL'), ('SUPER', 'SUPER'), ('ECOPAIS', 'ECOPAIS')])
     matricula_vehiculo  = models.CharField(max_length=100, unique=True)
     modelo_vehiculo  = models.CharField(max_length=50, blank=True)
-    numero_placa = models.CharField(max_length=100, unique=True, null=True, blank=True)
     numero_cedula = models.CharField(max_length=100, unique=True, null=True, blank=True)
     numero_motor = models.CharField(max_length=100, unique=True, null=True, blank=True)
     numero_chasis = models.CharField(max_length=100, unique=True, null=True, blank=True)

@@ -472,7 +472,6 @@ def guardarvehiculo(request):
     tipocomb = request.POST['txt_tipo_combustible']
     matricula = request.POST['txt_matricula']
     modelo = request.POST['txt_modelo']
-    numero_placa = request.POST['txt_numero_placa']
     numero_cedula = request.POST['txt_numero_cedula']
     numero_motor = request.POST['txt_numero_motor']
     numero_chasis = request.POST['txt_numero_chasis']
@@ -487,9 +486,6 @@ def guardarvehiculo(request):
         tipocombustible_vehiculo=tipocomb,
         matricula_vehiculo=matricula,
         modelo_vehiculo=modelo,
-
-        # NUEVOS CAMPOS
-        numero_placa=numero_placa,
         numero_cedula=numero_cedula,
         numero_motor=numero_motor,
         numero_chasis=numero_chasis,
@@ -541,7 +537,6 @@ def procesareditarvehiculo(request):
     vehiculo.tipocombustible_vehiculo = request.POST['txt_tipo_combustible']
     vehiculo.matricula_vehiculo = request.POST['txt_matricula']
     vehiculo.modelo_vehiculo = request.POST['txt_modelo']
-    vehiculo.numero_placa = request.POST['txt_numero_placa']
     vehiculo.numero_cedula = request.POST['txt_numero_cedula']
     vehiculo.numero_motor = request.POST['txt_numero_motor']
     vehiculo.numero_chasis = request.POST['txt_numero_chasis']
