@@ -182,13 +182,11 @@
             } else {
                 phoneMarker.setLatLng(coords);
             }
-            map.panTo(coords);
         };
 
         socket.onclose = function(e) {
             console.error('Conexión WebSocket cerrada inesperadamente');
         };
-
 
 
 
