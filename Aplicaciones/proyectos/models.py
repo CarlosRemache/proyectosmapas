@@ -79,7 +79,7 @@ class ChecklistVehiculo(models.Model):
 class Vehiculo(models.Model): 
     id_vehiculo = models.AutoField(primary_key=True)
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="vehiculos")
-    tipovehiculo_vehiculo  = models.CharField(max_length=50, choices=[('PERSONAL', 'PERSONAL'), ('TAXI', 'TAXI'), ('MOTOCICLETA', 'MOTOCICLETA'), ('CAMION', 'CAMION'), ('CAMIONETA', 'CAMIONETA')])
+    tipovehiculo_vehiculo  = models.CharField(max_length=50, choices=[('AUTOMOVIL', 'AUTOMOVIL'), ('TAXI', 'TAXI'), ('MOTOCICLETA', 'MOTOCICLETA'), ('CAMION', 'CAMION'), ('CAMIONETA', 'CAMIONETA')])
     tipocombustible_vehiculo  = models.CharField(max_length=50, choices=[('EXTRA', 'EXTRA'), ('DIESEL', 'DIESEL'), ('SUPER', 'SUPER'), ('ECOPAIS', 'ECOPAIS')])
     matricula_vehiculo  = models.CharField(max_length=100, unique=True)
     modelo_vehiculo  = models.CharField(max_length=50, blank=True)
@@ -375,7 +375,7 @@ class PrecioCombustible(models.Model):
 
 
 class RendimientoVehiculoTipo(models.Model):
-    tipo  = models.CharField(max_length=20, choices=[('PERSONAL', 'PERSONAL'), ('TAXI', 'TAXI'), ('MOTOCICLETA', 'MOTOCICLETA'), ('CAMION', 'CAMION'), ('CAMIONETA', 'CAMIONETA')])
+    tipo  = models.CharField(max_length=20, choices=[('AUTOMOVIL', 'AUTOMOVIL'), ('TAXI', 'TAXI'), ('MOTOCICLETA', 'MOTOCICLETA'), ('CAMION', 'CAMION'), ('CAMIONETA', 'CAMIONETA')])
     # kmpromedio
     km_l_promedio = models.FloatField(help_text="Rendimiento promedio en km/L")
 
