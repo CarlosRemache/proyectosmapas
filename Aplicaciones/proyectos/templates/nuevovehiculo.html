@@ -42,7 +42,7 @@
         color: #ddd;
     }
 
-    select, input[type="text"] {
+    select, input[type="text"], input[type="number"] {
         width: 100%;
         padding: 12px;
         margin-top: 5px;
@@ -51,6 +51,7 @@
         background-color: #444;
         color: white;
         font-size: 14px;
+        box-sizing: border-box;
     }
 
     select option {
@@ -85,8 +86,8 @@
     }
 
     .btn-save[disabled] {
-        background-color: #777 !important;
-        cursor: not-allowed !important;
+        background-color: #777;
+        cursor: not-allowed;
     }
 
     .btn-cancel {
@@ -105,37 +106,27 @@
         background-color: #0aa330;
     }
 
-
-    .form-container input,
-    .form-container select {
-        width: 100%;
-        padding: 12px;
-        margin-top: 5px;
-        border: none;
-        border-radius: 8px;
-        background-color: #444;
-        color: #fff;
-        font-size: 14px;
-        box-sizing: border-box;
-    }
-
-
-    .form-container input::placeholder {
-        color: #aaa;
-    }
-
-
     .form-container input:focus,
     .form-container select:focus {
         outline: none;
         box-shadow: 0 0 0 2px rgba(12, 203, 58, 0.35);
     }
 
-
     .form-container input[type="number"]{
-    color-scheme: dark;
+        color-scheme: dark;
     }
 
+
+    .error {
+        color: #ff6b6b;
+        font-size: 12px;
+        margin-top: 6px;
+        text-align: left;
+        display: block;
+    }
+    input.error, select.error {
+        box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.35);
+    }
 </style>
 
 
@@ -145,7 +136,7 @@
 
     <h3>Agregar Vehículo</h3>
 
-    <form action="/guardarvehiculo/" method="post">
+    <form id="frmVehiculo" action="/guardarvehiculo/" method="post">
         {% csrf_token %}
 
         <label>Usuario:</label>
@@ -171,25 +162,30 @@
         </select>
 
         <label>Matrícula:</label>
-        <input type="text" name="txt_matricula" required>
+        <input type="text" name="txt_matricula" id="txt_matricula"
+               placeholder="Ej: ABC1234" required>
 
         <label>Modelo:</label>
-        <input type="text" name="txt_modelo">
+        <input type="text" name="txt_modelo" id="txt_modelo"
+               placeholder="Ej: Chevrolet Aveo">
 
         <label>Número de Cédula (Propietario):</label>
-        <input type="text" name="txt_numero_cedula" required>
+        <input type="text" name="txt_numero_cedula" id="txt_numero_cedula"
+               placeholder="Ej: 0102030405" required>
 
         <label>Número de Motor:</label>
-        <input type="text" name="txt_numero_motor" required>
+        <input type="text" name="txt_numero_motor" id="txt_numero_motor"
+               placeholder="Alfanumérico 6-20" required>
 
         <label>Número de Chasis:</label>
-        <input type="text" name="txt_numero_chasis" required>
+        <input type="text" name="txt_numero_chasis" id="txt_numero_chasis"
+               placeholder="VIN 17 caracteres" required>
 
         <label>Peso:</label>
         <input type="number" name="txt_peso_auto" step="0.01" min="0">
 
         <label>Cilindraje:</label>
-        <input type="text" name="txt_cilindraje" >
+        <input type="text" name="txt_cilindraje">
 
         <div class="btn-container">
             <button type="submit" class="btn-save"
@@ -209,4 +205,108 @@
     </form>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function () {
+
+    function limpiarEspaciosUpper(value){
+        return (value || "")
+            .toString()
+            .replace(/\s+/g, "")
+            .toUpperCase();
+    }
+
+
+    $.validator.addMethod("matriculaEC", function(value, element) {
+        value = limpiarEspaciosUpper(value);
+        return this.optional(element) || /^[A-Z]{3}\d{4}$/.test(value);
+    }, "Formato inválido. Ej: ABC1234");
+
+
+    $.validator.addMethod("cedulaEC", function(value, element) {
+        value = (value || "").replace(/\s+/g,"");
+        if (!/^\d{10}$/.test(value)) return false;
+
+        const provincia = parseInt(value.substring(0,2), 10);
+        if (provincia < 1 || provincia > 24) return false;
+
+        const tercer = parseInt(value.charAt(2), 10);
+        if (tercer >= 6) return false;
+
+        const coef = [2,1,2,1,2,1,2,1,2];
+        let suma = 0;
+
+        for (let i=0; i<9; i++){
+            let dig = parseInt(value.charAt(i),10) * coef[i];
+            if (dig >= 10) dig -= 9;
+            suma += dig;
+        }
+
+        const verificador = parseInt(value.charAt(9),10);
+        const decena = Math.ceil(suma / 10) * 10;
+        const resultado = (decena - suma) % 10;
+
+        return resultado === verificador;
+    }, "Cédula ecuatoriana inválida");
+
+    $.validator.addMethod("motorValido", function(value, element) {
+        value = limpiarEspaciosUpper(value);
+        return this.optional(element) || /^[A-Z0-9\-]{6,20}$/.test(value);
+    }, "Motor inválido (alfanumérico 6-20)");
+
+
+    $.validator.addMethod("vinValido", function(value, element) {
+        value = limpiarEspaciosUpper(value);
+        return this.optional(element) || /^[A-HJ-NPR-Z0-9]{17}$/.test(value);
+    }, "Chasis/VIN inválido (17 caracteres, sin I/O/Q)");
+
+
+    $("#txt_matricula, #txt_numero_motor, #txt_numero_chasis").on("input", function(){
+        $(this).val(limpiarEspaciosUpper($(this).val()));
+    });
+
+    $("#txt_numero_cedula").on("input", function(){
+        $(this).val(($(this).val() || "").replace(/\D/g, ""));
+    });
+
+
+    $("#frmVehiculo").validate({
+        rules: {
+            txt_matricula: {
+                required: true,
+                matriculaEC: true
+            },
+            txt_numero_cedula: {
+                required: true,
+                cedulaEC: true
+            },
+            txt_numero_motor: {
+                required: true,
+                motorValido: true
+            },
+            txt_numero_chasis: {
+                required: true,
+                vinValido: true
+            }
+        },
+        messages: {
+            txt_matricula: {
+                required: "Ingrese la matrícula"
+            },
+            txt_numero_cedula: {
+                required: "Ingrese la cédula del propietario"
+            },
+            txt_numero_motor: {
+                required: "Ingrese el número de motor"
+            },
+            txt_numero_chasis: {
+                required: "Ingrese el número de chasis"
+            }
+        }
+    });
+
+});
+</script>
 {% endblock %}
