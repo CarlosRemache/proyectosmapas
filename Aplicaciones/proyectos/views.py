@@ -2637,26 +2637,23 @@ def reportehistorial(request):
     )
 
     data = []
-
     for viaje in viajes:
-        ruta = viaje.opciones.filter(tipo="OPTIMA").first()
-        data.append({
-            "id": viaje.id_viaje,
-            "usuario": f"{viaje.usuario.nombre_usuario} {viaje.usuario.apellido_usuario}",
-            "fecha": viaje.fecha_creacion,
-            "destino": viaje.destino.nombre_Lugarguardado,
-            "vehiculo": viaje.vehiculo.matricula_vehiculo,
-            "ruta": ruta.tipo,
-            "tiempo": ruta.tiempo_min,
-            "distancia": ruta.distancia_km,
-            "consumo": ruta.consumo_litros,
-            "costo": ruta.costo_estimado,
+        for ruta in viaje.opciones.all():  
+            data.append({
+                "id": viaje.id_viaje,
+                "usuario": f"{viaje.usuario.nombre_usuario} {viaje.usuario.apellido_usuario}",
+                "fecha": viaje.fecha_creacion,
+                "destino": viaje.destino.nombre_Lugarguardado,
+                "vehiculo": viaje.vehiculo.matricula_vehiculo,
 
-        })
+                "ruta": ruta.tipo,               
+                "tiempo": ruta.tiempo_min,
+                "distancia": ruta.distancia_km,
+                "consumo": ruta.consumo_litros,
+                "costo": ruta.costo_estimado,
+            })
 
-    return render(request, "administrador/reportehistorial.html", {
-        "viajes": data
-    })
+    return render(request, "administrador/reportehistorial.html", {"viajes": data})
 
 
 
