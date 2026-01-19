@@ -2646,11 +2646,11 @@ def reportehistorial(request):
             "fecha": viaje.fecha_creacion,
             "destino": viaje.destino.nombre_Lugarguardado,
             "vehiculo": viaje.vehiculo.matricula_vehiculo,
-            "ruta": ruta.tipo if ruta else "N/A",
-            "tiempo": ruta.tiempo_min if ruta else 0,
-            "distancia": ruta.distancia_km if ruta else 0,
-            "consumo": ruta.consumo_litros if ruta and ruta.consumo_litros else 0,
-            "costo": ruta.costo_estimado if ruta and ruta.costo_estimado else 0,
+            "ruta": ruta.tipo,
+            "tiempo": ruta.tiempo_min,
+            "distancia": ruta.distancia_km,
+            "consumo": ruta.consumo_litros,
+            "costo": ruta.costo_estimado,
 
         })
 
