@@ -193,10 +193,6 @@
             {# ---------- NUEVO: consumo ajustado por peso ---------- #}
             {% if r.consumo_litros_ajustado %}
                 <p>
-                    Factor por peso del vehículo:
-                    {{ r.factor_peso|floatformat:2 }}
-                </p>
-                <p>
                     Combustible ajustado por peso:
                     {{ r.consumo_litros_ajustado|floatformat:2 }} L
                 </p>
