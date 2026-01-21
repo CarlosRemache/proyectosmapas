@@ -55,14 +55,6 @@
   </div>
 </div>
 
-<div class="grafico-row">
-  <div class="grafico-card">
-    <h2 style="text-align:center; margin-bottom:20px;">
-      Pedidos realizados por día
-    </h2>
-    <canvas id="kpi5"></canvas>
-  </div>
-</div>
 
 <div class="grafico-row">
   <div class="grafico-card">
@@ -216,27 +208,6 @@
             label: (ctx) => `Costo total ($): ${Number(ctx.parsed.y).toFixed(2)}`
           }
         }
-      }
-    }
-  });
-
-  //kpi5
-  const ctx5 = document.getElementById('kpi5');
-
-  new Chart(ctx5, {
-    type: 'bar',
-    data: {
-      labels: {{ kpi5_labels|safe }},
-      datasets: [{
-        label: 'Pedidos',
-        data: {{ kpi5_data|safe }},
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: {
-        y: { beginAtZero: true }
       }
     }
   });
