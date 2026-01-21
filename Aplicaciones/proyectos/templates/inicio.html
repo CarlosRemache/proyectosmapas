@@ -119,86 +119,148 @@
         iconAnchor: [17, 17] 
       });
 
-      let phoneMarker = null; 
-      const socket = new WebSocket((window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/ubicacion/');
 
+
+      // ====== NUEVO: ID único por navegador para filtrar mensajes ======
+      const MY_CLIENT_ID = localStorage.getItem("client_id") || (
+        (crypto.randomUUID && crypto.randomUUID()) || (Date.now() + "-" + Math.random())
+      );
+      localStorage.setItem("client_id", MY_CLIENT_ID);
+
+      let phoneMarker = null;
+      let accuracyCircle = null;
+
+      const socket = new WebSocket(
+        (window.location.protocol === 'https:' ? 'wss://' : 'ws://') +
+        window.location.host + '/ws/ubicacion/'
+      );
 
       document.addEventListener("DOMContentLoaded", function () {
         const boton = document.getElementById("btnUbicacion");
         const estado = localStorage.getItem("ubicacion_activa");
 
         if (estado === "1") {
-            boton.disabled = true;
-            boton.textContent = "Ubicación activada";
-            boton.style.backgroundColor = "#28a745";
-
-            mostrarUbicacionTiempoReal();
-        }
-      });
-
-
-      socket.onmessage = function(e) {
-        const data = JSON.parse(e.data); 
-        const coords = [data.latitud, data.longitud];
-
-        if (!phoneMarker) {
-          phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);
-        } else {
-          phoneMarker.setLatLng(coords);
-        }
-        map.panTo(coords);
-      };
-
-
-      socket.onclose = function(e) {
-        console.error('Conexión WebSocket cerrada inesperadamente');
-      };
-
-
-
-      function mostrarUbicacionTiempoReal() {
-        if ("geolocation" in navigator) {
-          navigator.geolocation.watchPosition((pos) => {    
-            const lat = pos.coords.latitude;
-            const lon = pos.coords.longitude; 
-
-            localStorage.setItem("last_lat", lat);
-            localStorage.setItem("last_lon", lon);
-
-            console.log(" Coordenadas enviadas:", lat, lon);
-            
-            if (!window.ubicacionGuardada) { 
-                socket.send(JSON.stringify({
-                    latitud: lat,
-                    longitud: lon,
-                    vehiculo_id: {{ vehiculo.id_vehiculo|default:0 }},
-                    guardar: true
-                }));
-                window.ubicacionGuardada = true; 
-            } else {
-                socket.send(JSON.stringify({ 
-                    latitud: lat,
-                    longitud: lon,
-                    guardar: false
-                }));
-            }
-
-          }, (error) => {
-            alert("Error al obtener ubicación: " + error.message);
-          }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }); 
-
-          const boton = document.getElementById("btnUbicacion");
           boton.disabled = true;
           boton.textContent = "Ubicación activada";
           boton.style.backgroundColor = "#28a745";
-          localStorage.setItem("ubicacion_activa", "1");
-          
+          mostrarUbicacionTiempoReal();
+        }
+      });
+
+      // ====== IMPORTANTE: Solo actualizar el mapa si el mensaje es mío ======
+      socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        // Si viene client_id y NO es el mío => ignoro (evita que “salte” por el celular)
+        if (data.client_id && data.client_id !== MY_CLIENT_ID) return;
+
+        const lat = Number(data.latitud);
+        const lon = Number(data.longitud);
+        if (!isFinite(lat) || !isFinite(lon)) return;
+
+        const coords = [lat, lon];
+
+        if (!phoneMarker) {
+          phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);
+          map.setView(coords, 16, { animate: true });
         } else {
-          alert("Tu navegador no soporta geolocalización.");
+          phoneMarker.setLatLng(coords);
+          map.panTo(coords, { animate: true });
+        }
+      };
+
+      socket.onclose = function() {
+        console.error('Conexión WebSocket cerrada inesperadamente');
+      };
+
+      function setMarkerAndAccuracy(lat, lon, acc) {
+        const coords = [lat, lon];
+
+        if (!phoneMarker) {
+          phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);
+          map.setView(coords, 16, { animate: true });
+        } else {
+          phoneMarker.setLatLng(coords);
+          map.panTo(coords, { animate: true });
+        }
+
+        // círculo de precisión (opcional pero útil)
+        if (isFinite(acc)) {
+          if (!accuracyCircle) {
+            accuracyCircle = L.circle(coords, { radius: acc }).addTo(map);
+          } else {
+            accuracyCircle.setLatLng(coords);
+            accuracyCircle.setRadius(acc);
+          }
         }
       }
 
+      function mostrarUbicacionTiempoReal() {
+        if (!("geolocation" in navigator)) {
+          alert("Tu navegador no soporta geolocalización.");
+          return;
+        }
 
+        const boton = document.getElementById("btnUbicacion");
+        boton.disabled = true;
+        boton.textContent = "Ubicación activada";
+        boton.style.backgroundColor = "#28a745";
+        localStorage.setItem("ubicacion_activa", "1");
+
+        // ====== NUEVO: toma una ubicación inicial y centra el mapa ======
+        navigator.geolocation.getCurrentPosition((pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const acc = pos.coords.accuracy;
+
+          setMarkerAndAccuracy(lat, lon, acc);
+
+          // envía también al WS
+          socket.send(JSON.stringify({
+            client_id: MY_CLIENT_ID,
+            latitud: lat,
+            longitud: lon,
+            accuracy: acc,
+            vehiculo_id: {{ vehiculo.id_vehiculo|default:0 }},
+            guardar: true
+          }));
+          window.ubicacionGuardada = true;
+
+        }, (error) => {
+          alert("Error al obtener ubicación inicial: " + error.message);
+        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 12000 });
+
+
+        // ====== Luego se queda escuchando cambios ======
+        navigator.geolocation.watchPosition((pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const acc = pos.coords.accuracy;
+
+          // Si la precisión es muy mala (ej: > 1500m), ignora para que no “salte”
+          if (isFinite(acc) && acc > 1500) return;
+
+          localStorage.setItem("last_lat", lat);
+          localStorage.setItem("last_lon", lon);
+
+          // actualiza el mapa sin depender del WS
+          setMarkerAndAccuracy(lat, lon, acc);
+
+          socket.send(JSON.stringify({
+            client_id: MY_CLIENT_ID,
+            latitud: lat,
+            longitud: lon,
+            accuracy: acc,
+            vehiculo_id: {{ vehiculo.id_vehiculo|default:0 }},
+            guardar: false
+          }));
+
+        }, (error) => {
+          alert("Error al obtener ubicación: " + error.message);
+        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+      }
+
+      
       document.getElementById("btnUbicacion")
               .addEventListener("click", mostrarUbicacionTiempoReal);
     </script>

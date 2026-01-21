@@ -21,6 +21,7 @@ class UbicacionConsumer(AsyncWebsocketConsumer):
         lat = data['latitud']
         lon = data['longitud']
         vehiculo_id = data.get("vehiculo_id")
+        client_id = data.get("client_id")   #nuevo
 
         # Guardar SIEMPRE (si viene vehiculo_id)
         if vehiculo_id:
@@ -36,6 +37,7 @@ class UbicacionConsumer(AsyncWebsocketConsumer):
                 "type": "nueva_ubicacion",
                 "latitud": lat,
                 "longitud": lon,
+                "client_id": client_id, #nuevo
             }
         )
 
@@ -44,6 +46,7 @@ class UbicacionConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             "latitud": event["latitud"],
             "longitud": event["longitud"],
+            "client_id": event.get("client_id"),#nuevo
         }))
 
 
