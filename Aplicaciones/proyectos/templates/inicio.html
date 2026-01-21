@@ -121,20 +121,201 @@
 
 
 
-      // ====== NUEVO: ID único por navegador para filtrar mensajes ======
+
+
+
+
+
+      let phoneMarker = null;
+      let accuracyCircle = null;
+
+      // =========================
+      // ID ÚNICO POR NAVEGADOR (para evitar saltos por otros dispositivos)
+      // =========================
       const MY_CLIENT_ID = localStorage.getItem("client_id") || (
         (crypto.randomUUID && crypto.randomUUID()) || (Date.now() + "-" + Math.random())
       );
       localStorage.setItem("client_id", MY_CLIENT_ID);
 
-      let phoneMarker = null;
-      let accuracyCircle = null;
-
+      // =========================
+      // WEBSOCKET
+      // =========================
       const socket = new WebSocket(
         (window.location.protocol === 'https:' ? 'wss://' : 'ws://') +
         window.location.host + '/ws/ubicacion/'
       );
 
+      socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        // ✅ Evita que el mapa “salte” por ubicaciones de otro dispositivo/pestaña
+        if (data.client_id && data.client_id !== MY_CLIENT_ID) return;
+
+        const lat = Number(data.latitud);
+        const lon = Number(data.longitud);
+        if (!isFinite(lat) || !isFinite(lon)) return;
+
+        // Ojo: aquí NO centramos sí o sí por WS (la precisión se controla con geolocation)
+        setMarkerAndAccuracy(lat, lon, Number(data.accuracy));
+      };
+
+      socket.onclose = function() {
+        console.error('Conexión WebSocket cerrada inesperadamente');
+      };
+
+      // =========================
+      // UTIL: MARCADOR + CÍRCULO
+      // =========================
+      function setMarkerAndAccuracy(lat, lon, acc) {
+        const coords = [lat, lon];
+
+        if (!phoneMarker) {
+          phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);
+        } else {
+          phoneMarker.setLatLng(coords);
+        }
+
+        if (isFinite(acc)) {
+          if (!accuracyCircle) {
+            accuracyCircle = L.circle(coords, { radius: acc }).addTo(map);
+          } else {
+            accuracyCircle.setLatLng(coords);
+            accuracyCircle.setRadius(acc);
+          }
+        }
+      }
+
+      // =========================
+      // WINDOWS: TOMAR MEJOR LECTURA ANTES DE CENTRAR
+      // =========================
+      let bestAccuracy = Infinity;
+      let bestLatLng = null;
+
+      const UMBRAL_METROS_CENTRAR = 120; // ajusta 80–200
+      const VENTANA_MEJORA_MS = 15000;   // espera a que Windows refine (15s)
+
+      function obtenerMejorUbicacionYcentrar() {
+        return new Promise((resolve, reject) => {
+          bestAccuracy = Infinity;
+          bestLatLng = null;
+
+          const start = Date.now();
+
+          const watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+              const lat = pos.coords.latitude;
+              const lon = pos.coords.longitude;
+              const acc = pos.coords.accuracy; // metros
+
+              // actualiza marcador/círculo en cada lectura
+              setMarkerAndAccuracy(lat, lon, acc);
+
+              // guarda la mejor lectura
+              if (isFinite(acc) && acc < bestAccuracy) {
+                bestAccuracy = acc;
+                bestLatLng = [lat, lon];
+              }
+
+              // si ya es suficientemente buena, centramos y terminamos
+              if (bestAccuracy <= UMBRAL_METROS_CENTRAR) {
+                navigator.geolocation.clearWatch(watchId);
+                map.setView(bestLatLng, 16, { animate: true });
+                resolve({ lat: bestLatLng[0], lon: bestLatLng[1], acc: bestAccuracy });
+                return;
+              }
+
+              // si pasó la ventana, centramos con la mejor que tengamos
+              if (Date.now() - start >= VENTANA_MEJORA_MS) {
+                navigator.geolocation.clearWatch(watchId);
+                if (bestLatLng) {
+                  map.setView(bestLatLng, 16, { animate: true });
+                  resolve({ lat: bestLatLng[0], lon: bestLatLng[1], acc: bestAccuracy });
+                } else {
+                  reject(new Error("No se pudo obtener ubicación"));
+                }
+              }
+            },
+            (err) => reject(err),
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+          );
+        });
+      }
+
+      // =========================
+      // TRACKING NORMAL (luego de centrar con la mejor lectura)
+      // =========================
+      function iniciarTrackingContinuo() {
+        navigator.geolocation.watchPosition((pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const acc = pos.coords.accuracy;
+
+          // si es MUY mala, ignora para evitar saltos raros
+          if (isFinite(acc) && acc > 2000) return;
+
+          localStorage.setItem("last_lat", lat);
+          localStorage.setItem("last_lon", lon);
+
+          // actualiza mapa
+          setMarkerAndAccuracy(lat, lon, acc);
+          map.panTo([lat, lon], { animate: true });
+
+          // envía por WS
+          socket.send(JSON.stringify({
+            client_id: MY_CLIENT_ID,
+            latitud: lat,
+            longitud: lon,
+            accuracy: acc,
+            vehiculo_id: {{ vehiculo.id_vehiculo|default:0 }},
+            guardar: false
+          }));
+
+        }, (error) => {
+          alert("Error al obtener ubicación: " + error.message);
+        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+      }
+
+      // =========================
+      // BOTÓN ACTIVAR UBICACIÓN
+      // =========================
+      async function mostrarUbicacionTiempoReal() {
+        if (!("geolocation" in navigator)) {
+          alert("Tu navegador no soporta geolocalización.");
+          return;
+        }
+
+        const boton = document.getElementById("btnUbicacion");
+        boton.disabled = true;
+        boton.textContent = "Ubicación activada";
+        boton.style.backgroundColor = "#28a745";
+        localStorage.setItem("ubicacion_activa", "1");
+
+        try {
+          // ✅ Paso clave para Windows: toma la MEJOR ubicación y centra
+          const best = await obtenerMejorUbicacionYcentrar();
+
+          // envía la primera (mejor) lectura como guardar=true
+          socket.send(JSON.stringify({
+            client_id: MY_CLIENT_ID,
+            latitud: best.lat,
+            longitud: best.lon,
+            accuracy: best.acc,
+            vehiculo_id: {{ vehiculo.id_vehiculo|default:0 }},
+            guardar: true
+          }));
+          window.ubicacionGuardada = true;
+
+          // luego tracking continuo
+          iniciarTrackingContinuo();
+
+        } catch (e) {
+          alert("Error al obtener ubicación: " + e.message);
+        }
+      }
+
+      // =========================
+      // AUTO-REACTIVAR SI YA ESTABA ACTIVO
+      // =========================
       document.addEventListener("DOMContentLoaded", function () {
         const boton = document.getElementById("btnUbicacion");
         const estado = localStorage.getItem("ubicacion_activa");
@@ -147,120 +328,7 @@
         }
       });
 
-      // ====== IMPORTANTE: Solo actualizar el mapa si el mensaje es mío ======
-      socket.onmessage = function(e) {
-        const data = JSON.parse(e.data);
 
-        // Si viene client_id y NO es el mío => ignoro (evita que “salte” por el celular)
-        if (data.client_id && data.client_id !== MY_CLIENT_ID) return;
-
-        const lat = Number(data.latitud);
-        const lon = Number(data.longitud);
-        if (!isFinite(lat) || !isFinite(lon)) return;
-
-        const coords = [lat, lon];
-
-        if (!phoneMarker) {
-          phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);
-          map.setView(coords, 16, { animate: true });
-        } else {
-          phoneMarker.setLatLng(coords);
-          map.panTo(coords, { animate: true });
-        }
-      };
-
-      socket.onclose = function() {
-        console.error('Conexión WebSocket cerrada inesperadamente');
-      };
-
-      function setMarkerAndAccuracy(lat, lon, acc) {
-        const coords = [lat, lon];
-
-        if (!phoneMarker) {
-          phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);
-          map.setView(coords, 16, { animate: true });
-        } else {
-          phoneMarker.setLatLng(coords);
-          map.panTo(coords, { animate: true });
-        }
-
-        // círculo de precisión (opcional pero útil)
-        if (isFinite(acc)) {
-          if (!accuracyCircle) {
-            accuracyCircle = L.circle(coords, { radius: acc }).addTo(map);
-          } else {
-            accuracyCircle.setLatLng(coords);
-            accuracyCircle.setRadius(acc);
-          }
-        }
-      }
-
-      function mostrarUbicacionTiempoReal() {
-        if (!("geolocation" in navigator)) {
-          alert("Tu navegador no soporta geolocalización.");
-          return;
-        }
-
-        const boton = document.getElementById("btnUbicacion");
-        boton.disabled = true;
-        boton.textContent = "Ubicación activada";
-        boton.style.backgroundColor = "#28a745";
-        localStorage.setItem("ubicacion_activa", "1");
-
-        // ====== NUEVO: toma una ubicación inicial y centra el mapa ======
-        navigator.geolocation.getCurrentPosition((pos) => {
-          const lat = pos.coords.latitude;
-          const lon = pos.coords.longitude;
-          const acc = pos.coords.accuracy;
-
-          setMarkerAndAccuracy(lat, lon, acc);
-
-          // envía también al WS
-          socket.send(JSON.stringify({
-            client_id: MY_CLIENT_ID,
-            latitud: lat,
-            longitud: lon,
-            accuracy: acc,
-            vehiculo_id: {{ vehiculo.id_vehiculo|default:0 }},
-            guardar: true
-          }));
-          window.ubicacionGuardada = true;
-
-        }, (error) => {
-          alert("Error al obtener ubicación inicial: " + error.message);
-        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 12000 });
-
-
-        // ====== Luego se queda escuchando cambios ======
-        navigator.geolocation.watchPosition((pos) => {
-          const lat = pos.coords.latitude;
-          const lon = pos.coords.longitude;
-          const acc = pos.coords.accuracy;
-
-          // Si la precisión es muy mala (ej: > 1500m), ignora para que no “salte”
-          if (isFinite(acc) && acc > 1500) return;
-
-          localStorage.setItem("last_lat", lat);
-          localStorage.setItem("last_lon", lon);
-
-          // actualiza el mapa sin depender del WS
-          setMarkerAndAccuracy(lat, lon, acc);
-
-          socket.send(JSON.stringify({
-            client_id: MY_CLIENT_ID,
-            latitud: lat,
-            longitud: lon,
-            accuracy: acc,
-            vehiculo_id: {{ vehiculo.id_vehiculo|default:0 }},
-            guardar: false
-          }));
-
-        }, (error) => {
-          alert("Error al obtener ubicación: " + error.message);
-        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
-      }
-
-      
       document.getElementById("btnUbicacion")
               .addEventListener("click", mostrarUbicacionTiempoReal);
     </script>
