@@ -81,27 +81,11 @@
     <nav id="navmenu" class="navmenu">
       <ul>
         <li><a href="/adminpanel/" class="active"><i class="bi bi-house navicon"></i>Inicio</a></li>
-        <li><a href="/panel/calendario/"><i class="bi bi-calendar4-week navicon"></i> Calendario de Eventos</a></li>
-        <li><a href="/crear_asignacion/"><i class="bi bi-person navicon"></i> Choferes</a></li>
-        <li><a href="/nuevoproveedor/"><i class="bi bi-person navicon"></i> Provedores</a></li>
-        <li class="dropdown"><a href="#"><i class="bi bi-briefcase navicon"></i> <span>Pedidos</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
-          <ul>
-            <li><a href="/nuevopedido/"> Crear Pedidos</a></li>
-            <li><a href="/agregarproducto/">Agregar Productos</a></li>
-          </ul>
-        </li>
-        <li><a href="{% url 'salvoconductos' %}"><i class="bi bi-file-earmark-text navicon"></i>SALVOCONDUCTOS</a></li>
-        <li><a href="/nuevafactura/"><i class="bi bi-card-checklist navicon"></i> Facturacion</a></li>
-        <li><a href="{% url 'listado_pagos' %}"><i class="bi bi-card-checklist navicon"></i> Pago</a></li>
-        <li class="dropdown"><a href="#"><i class="bi bi-bar-chart navicon"></i> <span>Reportes</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
-          <ul>
-            <li><a href="/listadousuario/">Control de Usuarios</a></li>
-            <li><a href="/reporteviaje/">Control de viajes</a></li>
-            <li><a href="/reportehistorial/">historial de viajes</a></li>
-            <li><a href="{% url 'reporte_asignaciones' %}">Estado de asignacion</a></li>
-          </ul>
-        </li>
 
+        <li><a href="/listadousuario/"><i class="bi bi-person navicon"></i> Control de Usuarios</a></li>
+        <li><a href="/reporteviaje/"><i class="bi bi-person navicon"></i> Control de viajes</a></li>
+        <li><a href="/reportehistorial/"><i class="bi bi-person navicon"></i> historial de viajes</a></li>
+  
         <li><a href="/logout/"> Cerrar sesión</a></li>
       </ul>
     </nav>
