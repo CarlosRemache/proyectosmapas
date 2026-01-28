@@ -638,14 +638,6 @@ def eliminar_lugar(request, id):
 #rutas ----------------------------------------------------------------------------------------------------------------------------
 # ---- NUEVO: modelo simple para el efecto del peso ----
 
-# peso de referencia por tipo de vehículo (en kg)
-PESOS_REFERENCIA_VEHICULO = {
-    "TAXI": 1300,
-    "AUTOMOVIL": 1200,
-    "MOTOCICLETA": 180,
-    "CAMION": 5000,
-    "CAMIONETA": 1800,
-}
 
 ALFA_PESO = 0.5  # sensibilidad del consumo al peso (0 = no afecta, 1 = afecta totalmente)
 
@@ -664,26 +656,33 @@ def calcular_factor_peso(vehiculo):
 
     try:
         # asumimos que peso_auto está en toneladas (ej: 0.78 -> 780 kg)
-        peso_actual_kg = float(vehiculo.peso_auto) * 1000.0
+        peso_base_ton = float(vehiculo.peso_auto)
+
+        peso_extra_ton = float(vehiculo.peso_adicional or 0)  # si es None, usamos 0
+
     except (TypeError, ValueError):
         return 1.0, None, None
 
-    peso_ref_kg = PESOS_REFERENCIA_VEHICULO.get(
-        vehiculo.tipovehiculo_vehiculo,
-        1300  # valor por defecto si no encontramos el tipo
-    )
 
-    if peso_ref_kg <= 0:
-        return 1.0, peso_actual_kg, peso_ref_kg
+    if peso_base_ton <= 0:
+        return 1.0, None, None
 
-    diferencia_rel = (peso_actual_kg - peso_ref_kg) / peso_ref_kg
+
+    # Peso en kg
+    peso_base_kg = peso_base_ton * 1000.0
+    peso_extra_kg = peso_extra_ton 
+    peso_total_kg = peso_base_kg + peso_extra_kg
+
+
+    diferencia_rel = peso_extra_kg / peso_base_kg
+
     factor_peso = 1.0 + ALFA_PESO * diferencia_rel
 
     # por seguridad, que nunca sea <= 0
     if factor_peso < 0.1:
         factor_peso = 0.1
 
-    return factor_peso, peso_actual_kg, peso_ref_kg
+    return factor_peso, peso_total_kg, peso_base_kg
 
 
 
@@ -861,7 +860,8 @@ def rutas(request):
 
 
     # ---- NUEVO: ajustar consumo según peso del vehículo ----
-    factor_peso, peso_actual_kg, peso_ref_kg = calcular_factor_peso(vehiculo)
+    factor_peso, peso_total_kg, peso_base_kg = calcular_factor_peso(vehiculo)
+
 
     # Estos serán consumos ajustados por peso (además de los originales)
     consumo_opt_ajustado = consumo_larga_ajustado = consumo_segura_ajustado = None
