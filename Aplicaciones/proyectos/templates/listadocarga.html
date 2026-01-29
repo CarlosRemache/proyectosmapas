@@ -30,13 +30,28 @@
     text-transform: uppercase;
   }
 
+  /* ---- CABECERA RESUMEN + BOTONES ---- */
   .acciones-top{
     display:flex;
     justify-content: space-between;
-    align-items:center;
+    align-items:flex-start;
     margin-bottom: 15px;
     gap:10px;
     flex-wrap: wrap;
+    text-align:left;
+  }
+
+  .grupo-izq{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+
+  .grupo-der{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    justify-content:flex-end;
   }
 
   .btn-verde{
@@ -60,9 +75,11 @@
   .resumen-peso{
     font-size:14px;
     color:#ddd;
-    margin-top:5px;
+    margin:0;
+    line-height:1.5;
   }
 
+  /* ---- TABLA ---- */
   .table-responsive{
     width:100%;
     margin-top: 14px;
@@ -197,7 +214,13 @@
 
   @media (max-width: 768px){
     .carga-container{ padding:16px; }
-    .acciones-top{ flex-direction:column; align-items:flex-start; }
+    .acciones-top{ 
+      flex-direction:column; 
+      align-items:flex-start; 
+    }
+    .grupo-der{
+      justify-content:flex-start;
+    }
     .table-responsive{ overflow-x:auto; }
     .dt-buttons{ text-align:left; }
     .dt-buttons .dt-button{ margin:6px 6px 0 0; }
@@ -210,17 +233,22 @@
   <h3>Listado de Cargas del Vehículo</h3>
 
   <div class="acciones-top">
-    <div>
+    <!-- IZQUIERDA: datos del vehículo -->
+    <div class="grupo-izq">
       {% if vehiculo %}
-        <div class="resumen-peso">
+        <p class="resumen-peso">
           Vehículo: <b>{{ vehiculo.matricula_vehiculo }}</b> ({{ vehiculo.tipovehiculo_vehiculo }})<br>
           Peso base vehículo: <b>{{ vehiculo.peso_auto }} kg</b><br>
           Peso total de carga: <b>{{ total_carga_kg }} kg</b>
-        </div>
+        </p>
       {% endif %}
     </div>
+
+    <!-- DERECHA: botones -->
+    <div class="grupo-der">
       <a href="/nuevacarga/" class="btn-verde">+ Nueva carga</a>
       <a href="/inicio/" class="btn-verde">Menú</a>
+    </div>
   </div>
 
   {% if cargas %}
