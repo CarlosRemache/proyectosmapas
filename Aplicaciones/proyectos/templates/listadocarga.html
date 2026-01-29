@@ -211,8 +211,6 @@
 
   <div class="acciones-top">
     <div>
-      <a href="/nuevacarga/" class="btn-verde">+ Nueva carga</a>
-      <a href="/inicio/" class="btn-verde">Menú</a>
       {% if vehiculo %}
         <div class="resumen-peso">
           Vehículo: <b>{{ vehiculo.matricula_vehiculo }}</b> ({{ vehiculo.tipovehiculo_vehiculo }})<br>
@@ -221,6 +219,8 @@
         </div>
       {% endif %}
     </div>
+      <a href="/nuevacarga/" class="btn-verde">+ Nueva carga</a>
+      <a href="/inicio/" class="btn-verde">Menú</a>
   </div>
 
   {% if cargas %}
