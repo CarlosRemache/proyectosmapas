@@ -549,6 +549,126 @@ def procesareditarvehiculo(request):
     return redirect('/listadovehiculo')
 
 
+#peso agregado con vehiculo----------------------------------------------------------------------------
+
+def nuevacarga(request):
+    # 1. Sacamos el usuario logueado
+    usuario_id = request.session.get('usuario_id')
+    if not usuario_id:
+        messages.error(request, "Inicia sesión nuevamente.")
+        return redirect('/login')
+    vehiculo = Vehiculo.objects.filter(usuario_id=usuario_id).first()
+    if not vehiculo:
+        messages.error(request, "Debes registrar primero un vehículo.")
+        return redirect('/nuevovehiculo') 
+
+
+    return render(request, 'nuevacarga.html', {
+        'vehiculo': vehiculo
+    })
+
+
+
+
+def listadocarga(request):
+    usuario_id = request.session.get('usuario_id')
+    if not usuario_id:
+        messages.error(request, "Inicia sesión nuevamente.")
+        return redirect('/login')
+
+    vehiculo = Vehiculo.objects.filter(usuario_id=usuario_id).first()
+    if not vehiculo:
+        messages.error(request, "Debes registrar primero un vehículo.")
+        return redirect('/nuevovehiculo')
+
+    cargas = CargaVehiculo.objects.filter(vehiculo=vehiculo)
+    total_carga_kg = cargas.aggregate(total=Sum('peso_adicional'))['total'] or 0
+
+    return render(request, 'listadocarga.html', {
+        'cargas': cargas,
+        'vehiculo': vehiculo,
+        'total_carga_kg': total_carga_kg,
+    })
+
+
+
+def guardarcarga(request):
+    id_vehiculo = request.POST['vehiculo']
+    nombre_producto = request.POST['txt_nombre_producto']
+    peso_adicional = request.POST['txt_peso_adicional']
+
+    vehiculo = Vehiculo.objects.get(id_vehiculo=id_vehiculo)
+
+    CargaVehiculo.objects.create(
+        vehiculo=vehiculo,
+        nombre_producto=nombre_producto,
+        peso_adicional=peso_adicional
+    )
+
+    messages.success(request, "Carga guardada correctamente.")
+    return redirect('/listadocarga')
+
+
+def editarcarga(request, id):
+    usuario_id = request.session.get('usuario_id')
+    if not usuario_id:
+        messages.error(request, "Inicia sesión nuevamente.")
+        return redirect('/login')
+
+
+    carga = CargaVehiculo.objects.filter(
+        id_carga=id,
+        vehiculo__usuario_id=usuario_id
+    ).first()
+
+    if not carga:
+        messages.error(request, "No puedes editar esta carga.")
+        return redirect('/listadocarga')
+
+    vehiculo = carga.vehiculo 
+    return render(request, 'editarcarga.html', {
+        'carga': carga,
+        'vehiculo': vehiculo
+    })
+
+
+def procesareditarcarga(request):
+    usuario_id = request.session.get('usuario_id')
+
+    carga = CargaVehiculo.objects.filter(
+        id_carga=request.POST['id_carga'],
+        vehiculo__usuario_id=usuario_id
+    ).first()
+
+    if not carga:
+        messages.error(request, "No puedes editar esta carga.")
+        return redirect('/listadocarga')
+
+    carga.nombre_producto = request.POST['txt_nombre_producto']
+    carga.peso_adicional = request.POST['txt_peso_adicional']
+    carga.save()
+
+    messages.success(request, "Carga actualizada exitosamente.")
+    return redirect('/listadocarga')
+
+
+
+def eliminarcarga(request, id):
+    usuario_id = request.session.get('usuario_id')
+
+    carga = CargaVehiculo.objects.filter(
+        id_carga=id,
+        vehiculo__usuario_id=usuario_id
+    ).first()
+
+    if not carga:
+        messages.error(request, "No puedes eliminar esta carga.")
+        return redirect('/listadocarga')
+
+    carga.delete()
+    messages.success(request, "Carga eliminada correctamente.")
+    return redirect('/listadocarga')
+
 
 
 #busca en el mapa-------------------------------------------------------------------------------------

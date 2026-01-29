@@ -33,6 +33,14 @@ urlpatterns = [
     path('editarvehiculo/<int:id>/', views.editarvehiculo),
     path('procesareditarvehiculo/', views.procesareditarvehiculo),
 
+    #peso
+    
+    path('cargas/', views.listar_cargas, name='listar_cargas'),
+    path('cargas/nueva/', views.nueva_carga, name='nueva_carga'),
+    path('cargas/editar/<int:id_carga>/', views.editar_carga, name='editar_carga'),
+    path('cargas/eliminar/<int:id_carga>/', views.eliminar_carga, name='eliminar_carga'),
+
+
     #lugares del mapa
     path("buscarlugares/", views.buscarlugares, name="buscarlugares"),
     path("lugar/<str:lat>/<str:lon>/", views.ver_lugar, name="ver_lugar"),
@@ -60,12 +68,13 @@ urlpatterns = [
     path('asignaciones/eliminar/<int:id>/', views.eliminar_asignacion, name='eliminar_asignacion'),
 
     #agregar provedor
-    path('listadoproveedor/', views.listadoproveedor),
-    path('nuevoproveedor/', views.nuevoproveedor),
-    path('guardarproveedor/', views.guardarproveedor),
-    path('eliminarproveedor/<int:id>/', views.eliminarproveedor),
-    path('editarproveedor/<int:id>/', views.editarproveedor),
-    path('procesareditarproveedor/', views.procesareditarproveedor),
+    path('listadocarga/', views.listadocarga),
+    path('nuevacarga/', views.nuevacarga),
+    path('guardarcarga/', views.guardarcarga),
+    path('eliminarcarga/<int:id>/', views.eliminarcarga),
+    path('editarcarga/<int:id>/', views.editarcarga),
+    path('procesareditarcarga/', views.procesareditarcarga),
+
 
     #pedidos
     path('listadopedido/', views.listadopedido, name='listadopedido'),
@@ -139,10 +148,6 @@ urlpatterns = [
     path("service-worker.js", ServiceWorkerView.as_view(), name="service-worker"),
 
     path("offline/", offline, name="offline"),
-
-
-
-
 
 ]
 
