@@ -87,9 +87,25 @@ class Vehiculo(models.Model):
     numero_motor = models.CharField(max_length=100, unique=True, null=True, blank=True)
     numero_chasis = models.CharField(max_length=100, unique=True, null=True, blank=True)
     peso_auto = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
-    nombre_producto= models.CharField(max_length=100, unique=True, null=True, blank=True)
-    peso_adicional = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     cilindraje= models.CharField(max_length=50, blank=True)
+
+
+
+
+
+class CargaVehiculo(models.Model):
+    id_carga = models.AutoField(primary_key=True)
+    vehiculo = models.ForeignKey(Vehiculo,on_delete=models.CASCADE,related_name="cargas")
+    nombre_producto = models.CharField(max_length=100)
+    # peso en toneladas o en kg, según lo que decidas usar
+    peso_adicional = models.DecimalField(max_digits=7, decimal_places=2, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.nombre_producto} - {self.peso_adicional} kg"
+
+
+
+
 
 
 #punto de inicio

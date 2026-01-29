@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion,EventoAdmin,Administrador,AsignacionEvento,Proveedor,Pedido,DetallePedido,ChecklistVehiculo,Pago,Salvoconducto,Factura,RendimientoVehiculoTipo
+from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion,EventoAdmin,Administrador,AsignacionEvento,Proveedor,Pedido,DetallePedido,ChecklistVehiculo,Pago,Salvoconducto,Factura,RendimientoVehiculoTipo,CargaVehiculo
 from Aplicaciones.proyectos.rutas_utils import (construir_grafo,dijkstra,calcular_metricas_ruta,nodo_mas_cercano,nodos_mas_cercanos,calcular_ruta_larga,construir_grafo_seguro,calcular_ruta_segura)
 from django.utils.dateparse import parse_date, parse_time
 from django.views.decorators.http import require_GET
@@ -658,7 +658,6 @@ def calcular_factor_peso(vehiculo):
         # asumimos que peso_auto está en toneladas (ej: 0.78 -> 780 kg)
         peso_base_ton = float(vehiculo.peso_auto)
 
-        peso_extra_ton = float(vehiculo.peso_adicional or 0)  # si es None, usamos 0
 
     except (TypeError, ValueError):
         return 1.0, None, None
@@ -668,9 +667,11 @@ def calcular_factor_peso(vehiculo):
         return 1.0, None, None
 
 
+    total_carga_kg = vehiculo.cargas.aggregate(total=Sum('peso_adicional'))['total'] or 0
+
     # Peso en kg
     peso_base_kg = peso_base_ton * 1000.0
-    peso_extra_kg = peso_extra_ton 
+    peso_extra_kg = total_carga_kg 
     peso_total_kg = peso_base_kg + peso_extra_kg
 
 
