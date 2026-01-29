@@ -34,12 +34,12 @@ urlpatterns = [
     path('procesareditarvehiculo/', views.procesareditarvehiculo),
 
     #peso
-    
-    path('cargas/', views.listar_cargas, name='listar_cargas'),
-    path('cargas/nueva/', views.nueva_carga, name='nueva_carga'),
-    path('cargas/editar/<int:id_carga>/', views.editar_carga, name='editar_carga'),
-    path('cargas/eliminar/<int:id_carga>/', views.eliminar_carga, name='eliminar_carga'),
-
+    path('listadocarga/', views.listadocarga, name='listadocarga'),
+    path('nuevacarga/', views.nuevacarga, name='nuevacarga'),
+    path('guardarcarga/', views.guardarcarga, name='guardarcarga'),
+    path('editarcarga/<int:id>/', views.editarcarga, name='editarcarga'),
+    path('eliminarcarga/<int:id>/', views.eliminarcarga, name='eliminarcarga'),
+    path('procesareditarcarga/', views.procesareditarcarga, name='procesareditarcarga'),
 
     #lugares del mapa
     path("buscarlugares/", views.buscarlugares, name="buscarlugares"),
@@ -68,13 +68,12 @@ urlpatterns = [
     path('asignaciones/eliminar/<int:id>/', views.eliminar_asignacion, name='eliminar_asignacion'),
 
     #agregar provedor
-    path('listadocarga/', views.listadocarga),
-    path('nuevacarga/', views.nuevacarga),
-    path('guardarcarga/', views.guardarcarga),
-    path('eliminarcarga/<int:id>/', views.eliminarcarga),
-    path('editarcarga/<int:id>/', views.editarcarga),
-    path('procesareditarcarga/', views.procesareditarcarga),
-
+    path('listadoproveedor/', views.listadoproveedor),
+    path('nuevoproveedor/', views.nuevoproveedor),
+    path('guardarproveedor/', views.guardarproveedor),
+    path('eliminarproveedor/<int:id>/', views.eliminarproveedor),
+    path('editarproveedor/<int:id>/', views.editarproveedor),
+    path('procesareditarproveedor/', views.procesareditarproveedor),
 
     #pedidos
     path('listadopedido/', views.listadopedido, name='listadopedido'),
@@ -149,5 +148,6 @@ urlpatterns = [
 
     path("offline/", offline, name="offline"),
 
-]
 
+
+]
