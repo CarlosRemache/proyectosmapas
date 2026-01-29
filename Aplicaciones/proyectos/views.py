@@ -789,9 +789,10 @@ def calcular_factor_peso(vehiculo):
 
     total_carga_kg = vehiculo.cargas.aggregate(total=Sum('peso_adicional'))['total'] or 0
 
+    
     # Peso en kg
     peso_base_kg = peso_base_ton * 1000.0
-    peso_extra_kg = total_carga_kg 
+    peso_extra_kg = float(total_carga_kg)
     peso_total_kg = peso_base_kg + peso_extra_kg
 
 
