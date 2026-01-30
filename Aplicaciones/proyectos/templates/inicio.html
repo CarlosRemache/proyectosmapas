@@ -132,9 +132,7 @@
         map.panTo(coords);
       }
 
-      // -----------------------------
-      // 1) WebSocket con auto-reintento
-      // -----------------------------
+
       let socket = null;
       let socketRetries = 0;
       let socketTimer = null;
@@ -181,9 +179,7 @@
         }, delay);
       }
 
-      // -----------------------------
-      // 2) Geolocation con reinicio
-      // -----------------------------
+
       let watchId = null;
 
       function startWatch(sendFn) {
@@ -221,9 +217,7 @@
         }
       }
 
-      // -----------------------------
-      // 3) “Reanudar” al volver a la app
-      // -----------------------------
+
       function onResume(callback) {
         document.addEventListener("visibilitychange", () => {
           if (!document.hidden) callback();
@@ -234,19 +228,15 @@
         window.addEventListener("pageshow", callback);
       }
 
-      // -----------------------------
-      // 4) App logic (WS + GPS)
-      // -----------------------------
+
       function handleWSMessage(e) {
         const data = JSON.parse(e.data);
         paintMarker(data.latitud, data.longitud);
       }
 
       function sendLocation(lat, lon) {
-        // pinta inmediato
         paintMarker(lat, lon);
 
-        // envía al servidor
         if (socket && socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({
             latitud: lat,
@@ -269,23 +259,22 @@
         btn.style.backgroundColor = "#28a745";
       }
 
-      // Botón
+
       document.getElementById("btnUbicacion").addEventListener("click", activarUbicacion);
 
-      // Al cargar
       document.addEventListener("DOMContentLoaded", () => {
-        // pinta último punto
+
         const lastLat = localStorage.getItem("last_lat");
         const lastLon = localStorage.getItem("last_lon");
         if (lastLat && lastLon) paintMarker(parseFloat(lastLat), parseFloat(lastLon));
 
-        // si ya estaba activo, reanuda
+  
         if (localStorage.getItem("ubicacion_activa") === "1") {
           activarUbicacion();
         }
       });
 
-      // Al apagar/encender / volver sin refresh
+
       onResume(() => {
         if (localStorage.getItem("ubicacion_activa") === "1") {
           console.log("Resume: reactivando WS + GPS");

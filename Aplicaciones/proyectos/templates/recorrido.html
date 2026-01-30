@@ -11,13 +11,13 @@
     
     <style>
         body {
-            background-color: #000 !important;
+            background-color: #000;
             padding: 0;
             margin: 0;
             font-family: Arial, sans-serif;
         }
 
-        /* Tarjeta contenedora del mapa + info */
+
         .card-mapa {
             width: 90%;
             max-width: 900px;
@@ -138,8 +138,6 @@
         const origen = JSON.parse('{{ origen_real|escapejs }}');
         const destino = JSON.parse('{{ destino_real|escapejs }}');
 
-        // (Opcional) marcador origen si quieres:
-        // L.marker([origen.latitud, origen.longitud], { icon: iconOrigen }).addTo(map).bindPopup(`Origen: ${origen.nombre}`);
 
         const markerDestino = L.marker([destino.latitud, destino.longitud], { icon: iconDestino })
             .addTo(map)
@@ -162,9 +160,7 @@
 
         setTimeout(() => map.invalidateSize(), 300);
 
-        // =========================
-        // 2) MARKER DEL TELÉFONO
-        // =========================
+
         let phoneMarker = null;
 
         function paintMarker(lat, lon) {
@@ -176,9 +172,6 @@
             }
         }
 
-        // =========================
-        // 3) WEBSOCKET + RECONEXIÓN
-        // =========================
         let socket = null;
         let socketRetries = 0;
         let socketTimer = null;
@@ -234,16 +227,13 @@
             }
         }
 
-        // =========================
-        // 4) GPS WATCH + RESUME
-        // =========================
         let watchId = null;
 
         function sendLocation(lat, lon) {
-            // pinta inmediato
+        
             paintMarker(lat, lon);
 
-            // envía al WS si está abierto
+    
             if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({
                 latitud: lat,
@@ -297,9 +287,6 @@
             window.addEventListener("pageshow", callback);
         }
 
-        // =========================
-        // 5) ACTIVAR / DETENER
-        // =========================
         function setBtnActivo() {
             const btn = document.getElementById("btnUbicacionRecorrido");
             btn.disabled = true;
@@ -317,7 +304,6 @@
         function activarRecorrido() {
             localStorage.setItem("ubicacion_activa", "1");
 
-            // Reconecta WS y arranca GPS
             connectSocket(handleWSMessage);
             startWatch();
 
@@ -339,7 +325,6 @@
             activarRecorrido();
         });
 
-        // Detener (si quieres que también corte el watch antes de ir a /inicio/)
         document.getElementById("btnDetener").addEventListener("click", (e) => {
         e.preventDefault();
         detenerRecorrido();
@@ -349,16 +334,13 @@
 
 
 
-        // =========================
-        // 6) AUTO-REANUDAR (sin refrescar)
-        // =========================
         document.addEventListener("DOMContentLoaded", () => {
-            // pinta última ubicación guardada
+    
             const lastLat = localStorage.getItem("last_lat");
             const lastLon = localStorage.getItem("last_lon");
             if (lastLat && lastLon) paintMarker(parseFloat(lastLat), parseFloat(lastLon));
 
-            // si estaba activo, reanuda
+
             if (localStorage.getItem("ubicacion_activa") === "1") {
             activarRecorrido();
             }
