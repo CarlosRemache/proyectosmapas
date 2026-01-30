@@ -1107,10 +1107,10 @@ def rutas(request):
 
 # recorrido-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+
 def recorrido(request):
     usuario_id = request.session.get("usuario_id")
-    tipo_solicitado = request.GET.get("ruta", "optima")  
-
+    tipo_solicitado = request.GET.get("ruta", "optima")
 
     vehiculo = Vehiculo.objects.filter(usuario_id=usuario_id).first()
 
@@ -1118,28 +1118,36 @@ def recorrido(request):
     lat_get = request.GET.get("lat")
     lon_get = request.GET.get("lon")
 
+    origen_obj = None 
+
     if lat_get and lon_get:
         lat_origen = float(lat_get)
         lon_origen = float(lon_get)
+
+
+        if vehiculo:
+            origen_obj = UbicacionVehiculo.objects.filter(
+                vehiculo=vehiculo
+            ).order_by("-fecha_hora").first()
+
     else:
         origen_obj = UbicacionVehiculo.objects.filter(
             vehiculo__usuario__id_usuario=usuario_id
-        ).order_by('-fecha_hora').first()
+        ).order_by("-fecha_hora").first()
 
         if not origen_obj:
             messages.error(request, "No se encontró la ubicación del vehículo.")
-            return redirect('/inicio')
+            return redirect("/inicio")
 
         lat_origen = origen_obj.latitud
         lon_origen = origen_obj.longitud
 
+    # --- DESTINO ---
     destino_obj = Lugarguardado.objects.filter(usuario_id=usuario_id).last()
     if not destino_obj:
         messages.error(request, "Debes guardar un lugar primero.")
-        return redirect('/buscarlugares')
+        return redirect("/buscarlugares")
 
-    lat_origen = origen_obj.latitud
-    lon_origen = origen_obj.longitud
     lat_dest = destino_obj.latitud_Lugarguardado
     lon_dest = destino_obj.longitud_Lugarguardado
 
@@ -1148,9 +1156,8 @@ def recorrido(request):
 
     if not nodo_origen or not nodo_destino:
         messages.error(request, "No se encontraron nodos cercanos en la red vial.")
-        return redirect('/inicio')
+        return redirect("/inicio")
 
-    # === Ruta óptima ===
     grafo = construir_grafo()
     ruta_optima_ids, _ = dijkstra(grafo, nodo_origen.id_nodo, nodo_destino.id_nodo)
 
@@ -1168,27 +1175,17 @@ def recorrido(request):
                 break
         if not mejor:
             messages.error(request, "No se pudo calcular una ruta en la red vial.")
-            return redirect('/inicio')
+            return redirect("/inicio")
         nodo_origen, nodo_destino, ruta_optima_ids = mejor
 
-    # === Ruta larga ===
     ruta_larga_ids, _ = calcular_ruta_larga(
-        grafo,
-        ruta_optima_ids,
-        nodo_origen.id_nodo,
-        nodo_destino.id_nodo
+        grafo, ruta_optima_ids, nodo_origen.id_nodo, nodo_destino.id_nodo
     )
 
-    # === Ruta segura ===
     grafo_seguro = construir_grafo_seguro()
     ruta_segura_ids, _ = calcular_ruta_segura(
-        grafo_seguro,
-        ruta_optima_ids,
-        ruta_larga_ids,
-        nodo_origen.id_nodo,
-        nodo_destino.id_nodo
+        grafo_seguro, ruta_optima_ids, ruta_larga_ids, nodo_origen.id_nodo, nodo_destino.id_nodo
     )
-
 
     if tipo_solicitado == "larga" and ruta_larga_ids:
         ruta_seleccionada_ids = ruta_larga_ids
@@ -1199,14 +1196,11 @@ def recorrido(request):
         color_ruta = "#00ff88"
         tipo_bd = "SEGURA"
     else:
-        # fallback a óptima
         ruta_seleccionada_ids = ruta_optima_ids
         color_ruta = "#00aaff"
         tipo_bd = "OPTIMA"
 
-
-    todos_ids = set(ruta_seleccionada_ids)
-    nodos_dict = NodoMapa.objects.in_bulk(todos_ids, field_name='id_nodo')
+    nodos_dict = NodoMapa.objects.in_bulk(set(ruta_seleccionada_ids), field_name="id_nodo")
 
     coords_ruta = []
     for nid in ruta_seleccionada_ids:
@@ -1215,7 +1209,6 @@ def recorrido(request):
             coords_ruta.append([nodo.latitud, nodo.longitud])
 
     rutas_js = [coords_ruta]
-
 
     distancia_km, tiempo_min = calcular_metricas_ruta(ruta_seleccionada_ids)
 
@@ -1238,7 +1231,7 @@ def recorrido(request):
                 costo_estimado = consumo_litros * precio_obj.precio_por_litro
 
     viaje = None
-    viaje_id = request.session.get('viaje_id')
+    viaje_id = request.session.get("viaje_id")
     if viaje_id:
         viaje = Viaje.objects.filter(id_viaje=viaje_id).first()
 
@@ -1246,21 +1239,19 @@ def recorrido(request):
         viaje = Viaje.objects.create(
             usuario_id=usuario_id,
             vehiculo=vehiculo,
-            origen=origen_obj,
+            origen=origen_obj,  
             destino=destino_obj,
         )
-        request.session['viaje_id'] = viaje.id_viaje
-
+        request.session["viaje_id"] = viaje.id_viaje
 
     RutaOpcion.objects.create(
         viaje=viaje,
-        tipo=tipo_bd,             
+        tipo=tipo_bd,
         tiempo_min=tiempo_min,
         distancia_km=distancia_km,
         consumo_litros=consumo_litros if consumo_litros is not None else 0,
         costo_estimado=costo_estimado if costo_estimado is not None else 0,
         combustible_tipo=vehiculo.tipocombustible_vehiculo if vehiculo else None,
-
     )
 
     return render(request, "recorrido.html", {
@@ -1274,6 +1265,7 @@ def recorrido(request):
         "color_ruta": color_ruta,
         "vehiculo": vehiculo,
     })
+
 
 
 

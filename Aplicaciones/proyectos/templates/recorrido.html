@@ -95,7 +95,8 @@
     <div class="tarjeta-info" id="opciones-rutas">
 
         <div class="acciones-rutas">
-            <a href="/inicio/" class="btn-accion btn-cancelar">Detener</a>
+            <a href="/inicio/" id="btnDetener" class="btn-accion btn-cancelar">Detener</a>
+
             <button id="btnUbicacionRecorrido" type="button" class="btn-accion btn-ir">
                 Activar
             </button>
@@ -127,35 +128,6 @@
             iconAnchor: [15, 15]
         });
 
-        const origen = JSON.parse('{{ origen_real|escapejs }}');
-        const destino = JSON.parse('{{ destino_real|escapejs }}');
-
-
-
-        const markerDestino = L.marker(
-            [destino.latitud, destino.longitud],
-            { icon: iconDestino }
-        ).addTo(map);
-        markerDestino.bindPopup(`Destino: ${destino.nombre}`);
-
-        const bounds = L.latLngBounds(
-            [origen.latitud, origen.longitud],
-            [destino.latitud, destino.longitud]
-        );
-        map.fitBounds(bounds, { padding: [50, 50] });
-
-        const rutas = JSON.parse('{{ rutas_js|escapejs }}');   
-        const colorRuta = '{{ color_ruta }}';
-
-        if (rutas.length > 0) {
-            const coords = rutas[0];
-            const poly = L.polyline(coords, { color: colorRuta, weight: 6 }).addTo(map);
-            map.fitBounds(poly.getBounds(), { padding: [50, 50] });
-        }
-
-        setTimeout(() => map.invalidateSize(), 300);
-
-
 
         const phoneIcon = L.icon({
             iconUrl: '{% static "img/punto.png" %}',
@@ -163,96 +135,249 @@
             iconAnchor: [17, 17]
         });
 
+        const origen = JSON.parse('{{ origen_real|escapejs }}');
+        const destino = JSON.parse('{{ destino_real|escapejs }}');
+
+        // (Opcional) marcador origen si quieres:
+        // L.marker([origen.latitud, origen.longitud], { icon: iconOrigen }).addTo(map).bindPopup(`Origen: ${origen.nombre}`);
+
+        const markerDestino = L.marker([destino.latitud, destino.longitud], { icon: iconDestino })
+            .addTo(map)
+            .bindPopup(`Destino: ${destino.nombre}`);
+
+        const rutas = JSON.parse('{{ rutas_js|escapejs }}');
+        const colorRuta = '{{ color_ruta }}';
+
+        if (rutas && rutas.length > 0) {
+            const coords = rutas[0];
+            const poly = L.polyline(coords, { color: colorRuta, weight: 6 }).addTo(map);
+            map.fitBounds(poly.getBounds(), { padding: [50, 50] });
+        } else {
+            const bounds = L.latLngBounds(
+            [origen.latitud, origen.longitud],
+            [destino.latitud, destino.longitud]
+            );
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+
+        setTimeout(() => map.invalidateSize(), 300);
+
+        // =========================
+        // 2) MARKER DEL TELÉFONO
+        // =========================
         let phoneMarker = null;
 
-        // Misma URL de WebSocket que usas en inicio.html
-        const socket = new WebSocket(
-            (window.location.protocol === 'https:' ? 'wss://' : 'ws://') +
-            window.location.host +
-            '/ws/ubicacion/'
-        );
-
-        // Cuando el servidor envía nuevas coordenadas
-        socket.onmessage = function(e) {
-            const data = JSON.parse(e.data);
-            const coords = [data.latitud, data.longitud];
-
+        function paintMarker(lat, lon) {
+            const coords = [lat, lon];
             if (!phoneMarker) {
-                phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);
+            phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);
             } else {
-                phoneMarker.setLatLng(coords);
+            phoneMarker.setLatLng(coords);
             }
-        };
+            map.panTo(coords);
+        }
 
-        socket.onclose = function(e) {
-            console.error('Conexión WebSocket cerrada inesperadamente');
-        };
+        // =========================
+        // 3) WEBSOCKET + RECONEXIÓN
+        // =========================
+        let socket = null;
+        let socketRetries = 0;
+        let socketTimer = null;
 
+        function wsUrl() {
+            return (window.location.protocol === "https:" ? "wss://" : "ws://") +
+                window.location.host + "/ws/ubicacion/";
+        }
 
+        function connectSocket(onMessageCb) {
+            if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+            return;
+            }
 
-        function mostrarUbicacionTiempoRealRecorrido() {
-            if ("geolocation" in navigator) {
-                navigator.geolocation.watchPosition((pos) => {
-                    const lat = pos.coords.latitude;
-                    const lon = pos.coords.longitude;
-        
-                    localStorage.setItem("last_lat", lat);
-                    localStorage.setItem("last_lon", lon);
+            socket = new WebSocket(wsUrl());
 
+            socket.onopen = () => {
+            socketRetries = 0;
+            console.log("WS conectado (recorrido)");
+            };
 
-                    console.log("Coordenadas enviadas (recorrido):", lat, lon);
+            socket.onmessage = onMessageCb;
 
-                    if (!window.ubicacionGuardadaRecorrido) {
-                        // Primera vez: guardar en BD
-                        socket.send(JSON.stringify({
-                            latitud: lat,
-                            longitud: lon,
-                            vehiculo_id: {{ vehiculo.id_vehiculo|default:0 }},
-                            guardar: true
-                        }));
-                        window.ubicacionGuardadaRecorrido = true;
-                    } else {
-                        // Luego solo actualizar
-                        socket.send(JSON.stringify({
-                            latitud: lat,
-                            longitud: lon,
-                            guardar: false
-                        }));
-                    }
-                }, (error) => {
-                    alert("Error al obtener ubicación: " + error.message);
-                }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+            socket.onclose = () => {
+            console.warn("WS cerrado (recorrido), reintentando...");
+            scheduleReconnect(onMessageCb);
+            };
 
-                const boton = document.getElementById("btnUbicacionRecorrido");
-                boton.disabled = true;
-                boton.textContent = "Activado";
-                boton.style.backgroundColor = "#28a745";
+            socket.onerror = () => {
+            console.warn("WS error (recorrido), cerrando...");
+            try { socket.close(); } catch(e) {}
+            };
+        }
 
-                localStorage.setItem("ubicacion_activa", "1");
-            } else {
-                alert("Tu navegador no soporta geolocalización.");
+        function scheduleReconnect(onMessageCb) {
+            if (socketTimer) return;
+            const delay = Math.min(15000, 1000 * Math.pow(2, socketRetries)); // 1s,2s,4s... max 15s
+            socketRetries++;
+            socketTimer = setTimeout(() => {
+            socketTimer = null;
+            connectSocket(onMessageCb);
+            }, delay);
+        }
+
+        function handleWSMessage(e) {
+            try {
+            const data = JSON.parse(e.data);
+            if (data && typeof data.latitud !== "undefined" && typeof data.longitud !== "undefined") {
+                paintMarker(data.latitud, data.longitud);
+            }
+            } catch(err) {
+            console.log("WS parse error:", err);
             }
         }
 
+        // =========================
+        // 4) GPS WATCH + RESUME
+        // =========================
+        let watchId = null;
 
-        document.getElementById("btnUbicacionRecorrido")
-                .addEventListener("click", function (e) {
-                    e.preventDefault();  
-                    mostrarUbicacionTiempoRealRecorrido();
-                });
+        function sendLocation(lat, lon) {
+            // pinta inmediato
+            paintMarker(lat, lon);
+
+            // envía al WS si está abierto
+            if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+                latitud: lat,
+                longitud: lon,
+                vehiculo_id: {{ vehiculo.id_vehiculo|default:0 }},
+                guardar: true
+            }));
+            }
+        }
+
+        function startWatch() {
+            if (!("geolocation" in navigator)) {
+            alert("Tu navegador no soporta geolocalización.");
+            return;
+            }
+            if (watchId !== null) return;
+
+            watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+
+                localStorage.setItem("last_lat", lat);
+                localStorage.setItem("last_lon", lon);
+
+                sendLocation(lat, lon);
+            },
+            (err) => {
+                console.log("Geo error:", err);
+            },
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+            );
+
+            console.log("watchPosition iniciado (recorrido):", watchId);
+        }
+
+        function stopWatch() {
+            if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+            console.log("watchPosition detenido (recorrido)");
+            }
+        }
+
+        function onResume(callback) {
+            document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) callback();
+            });
+            window.addEventListener("focus", callback);
+            window.addEventListener("online", callback);
+            window.addEventListener("pageshow", callback);
+        }
+
+        // =========================
+        // 5) ACTIVAR / DETENER
+        // =========================
+        function setBtnActivo() {
+            const btn = document.getElementById("btnUbicacionRecorrido");
+            btn.disabled = true;
+            btn.textContent = "Activado";
+            btn.style.backgroundColor = "#28a745";
+        }
+
+        function setBtnInactivo() {
+            const btn = document.getElementById("btnUbicacionRecorrido");
+            btn.disabled = false;
+            btn.textContent = "Activar";
+            btn.style.backgroundColor = "";
+        }
+
+        function activarRecorrido() {
+            localStorage.setItem("ubicacion_activa", "1");
+
+            // Reconecta WS y arranca GPS
+            connectSocket(handleWSMessage);
+            startWatch();
+
+            setBtnActivo();
+        }
+
+        function detenerRecorrido() {
+            localStorage.removeItem("ubicacion_activa");
+            stopWatch();
+
+            try { if (socket) socket.close(); } catch(e) {}
+            socket = null;
+
+            setBtnInactivo();
+        }
+
+        document.getElementById("btnUbicacionRecorrido").addEventListener("click", (e) => {
+            e.preventDefault();
+            activarRecorrido();
+        });
+
+        // Detener (si quieres que también corte el watch antes de ir a /inicio/)
+        document.getElementById("btnDetener").addEventListener("click", (e) => {
+        e.preventDefault();
+        detenerRecorrido();
+        window.location.href = "/inicio/";
+        });
 
 
-        document.addEventListener("DOMContentLoaded", function () {
-            const boton = document.getElementById("btnUbicacionRecorrido");
-            const estado = localStorage.getItem("ubicacion_activa");
 
-            if (estado === "1") {
-                boton.disabled = true;
-                boton.textContent = "Activado";
-                boton.style.backgroundColor = "#28a745";
-                mostrarUbicacionTiempoRealRecorrido();
+
+        // =========================
+        // 6) AUTO-REANUDAR (sin refrescar)
+        // =========================
+        document.addEventListener("DOMContentLoaded", () => {
+            // pinta última ubicación guardada
+            const lastLat = localStorage.getItem("last_lat");
+            const lastLon = localStorage.getItem("last_lon");
+            if (lastLat && lastLon) paintMarker(parseFloat(lastLat), parseFloat(lastLon));
+
+            // si estaba activo, reanuda
+            if (localStorage.getItem("ubicacion_activa") === "1") {
+            activarRecorrido();
             }
         });
+
+        onResume(() => {
+            if (localStorage.getItem("ubicacion_activa") === "1") {
+            console.log("Resume recorrido: reactivando WS + GPS");
+            connectSocket(handleWSMessage);
+            if (watchId === null) startWatch();
+
+            const lastLat = localStorage.getItem("last_lat");
+            const lastLon = localStorage.getItem("last_lon");
+            if (lastLat && lastLon) paintMarker(parseFloat(lastLat), parseFloat(lastLon));
+            }
+        });
+
+
     </script>
 
   </body>

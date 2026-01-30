@@ -119,88 +119,188 @@
         iconAnchor: [17, 17] 
       });
 
-      let phoneMarker = null; 
-      const socket = new WebSocket((window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/ubicacion/');
 
+      let phoneMarker = null;
 
-      document.addEventListener("DOMContentLoaded", function () {
-        const boton = document.getElementById("btnUbicacion");
-        const estado = localStorage.getItem("ubicacion_activa");
-
-        if (estado === "1") {
-            boton.disabled = true;
-            boton.textContent = "Ubicación activada";
-            boton.style.backgroundColor = "#28a745";
-
-            mostrarUbicacionTiempoReal();
-        }
-      });
-
-
-      socket.onmessage = function(e) {
-        const data = JSON.parse(e.data); 
-        const coords = [data.latitud, data.longitud];
-
+      function paintMarker(lat, lon) {
+        const coords = [lat, lon];
         if (!phoneMarker) {
           phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);
         } else {
           phoneMarker.setLatLng(coords);
         }
         map.panTo(coords);
-      };
+      }
 
+      // -----------------------------
+      // 1) WebSocket con auto-reintento
+      // -----------------------------
+      let socket = null;
+      let socketRetries = 0;
+      let socketTimer = null;
 
-      socket.onclose = function(e) {
-        console.error('Conexión WebSocket cerrada inesperadamente');
-      };
+      function wsUrl() {
+        return (window.location.protocol === "https:" ? "wss://" : "ws://") +
+          window.location.host + "/ws/ubicacion/";
+      }
 
+      function connectSocket(onMessageCb) {
+        if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+          return;
+        }
 
+        socket = new WebSocket(wsUrl());
 
-      function mostrarUbicacionTiempoReal() {
-        if ("geolocation" in navigator) {
-          navigator.geolocation.watchPosition((pos) => {    
+        socket.onopen = () => {
+          socketRetries = 0;
+          console.log("WS conectado");
+        };
+
+        socket.onmessage = onMessageCb;
+
+        socket.onclose = () => {
+          console.warn("WS cerrado, reintentando...");
+          scheduleReconnect(onMessageCb);
+        };
+
+        socket.onerror = () => {
+          console.warn("WS error, cerrando...");
+          try { socket.close(); } catch(e) {}
+        };
+      }
+
+      function scheduleReconnect(onMessageCb) {
+        if (socketTimer) return;
+
+        const delay = Math.min(15000, 1000 * Math.pow(2, socketRetries)); // 1s,2s,4s... max 15s
+        socketRetries++;
+
+        socketTimer = setTimeout(() => {
+          socketTimer = null;
+          connectSocket(onMessageCb);
+        }, delay);
+      }
+
+      // -----------------------------
+      // 2) Geolocation con reinicio
+      // -----------------------------
+      let watchId = null;
+
+      function startWatch(sendFn) {
+        if (!("geolocation" in navigator)) {
+          alert("Tu navegador no soporta geolocalización.");
+          return;
+        }
+
+        if (watchId !== null) return;
+
+        watchId = navigator.geolocation.watchPosition(
+          (pos) => {
             const lat = pos.coords.latitude;
-            const lon = pos.coords.longitude; 
+            const lon = pos.coords.longitude;
 
             localStorage.setItem("last_lat", lat);
             localStorage.setItem("last_lon", lon);
 
-            console.log(" Coordenadas enviadas:", lat, lon);
-            
-            if (!window.ubicacionGuardada) { 
-                socket.send(JSON.stringify({
-                    latitud: lat,
-                    longitud: lon,
-                    vehiculo_id: {{ vehiculo.id_vehiculo|default:0 }},
-                    guardar: true
-                }));
-                window.ubicacionGuardada = true; 
-            } else {
-                socket.send(JSON.stringify({ 
-                    latitud: lat,
-                    longitud: lon,
-                    guardar: false
-                }));
-            }
+            sendFn(lat, lon);
+          },
+          (err) => {
+            console.log("Geo error:", err);
+          },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+        );
 
-          }, (error) => {
-            alert("Error al obtener ubicación: " + error.message);
-          }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }); 
+        console.log("watchPosition iniciado:", watchId);
+      }
 
-          const boton = document.getElementById("btnUbicacion");
-          boton.disabled = true;
-          boton.textContent = "Ubicación activada";
-          boton.style.backgroundColor = "#28a745";
-          localStorage.setItem("ubicacion_activa", "1");
-          
-        } else {
-          alert("Tu navegador no soporta geolocalización.");
+      function stopWatch() {
+        if (watchId !== null) {
+          navigator.geolocation.clearWatch(watchId);
+          watchId = null;
+          console.log("watchPosition detenido");
         }
       }
 
+      // -----------------------------
+      // 3) “Reanudar” al volver a la app
+      // -----------------------------
+      function onResume(callback) {
+        document.addEventListener("visibilitychange", () => {
+          if (!document.hidden) callback();
+        });
 
-      document.getElementById("btnUbicacion")
-              .addEventListener("click", mostrarUbicacionTiempoReal);
+        window.addEventListener("focus", callback);
+        window.addEventListener("online", callback);
+        window.addEventListener("pageshow", callback);
+      }
+
+      // -----------------------------
+      // 4) App logic (WS + GPS)
+      // -----------------------------
+      function handleWSMessage(e) {
+        const data = JSON.parse(e.data);
+        paintMarker(data.latitud, data.longitud);
+      }
+
+      function sendLocation(lat, lon) {
+        // pinta inmediato
+        paintMarker(lat, lon);
+
+        // envía al servidor
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            latitud: lat,
+            longitud: lon,
+            vehiculo_id: {{ vehiculo.id_vehiculo|default:0 }},
+            guardar: true
+          }));
+        }
+      }
+
+      function activarUbicacion() {
+        localStorage.setItem("ubicacion_activa", "1");
+
+        connectSocket(handleWSMessage);
+        startWatch(sendLocation);
+
+        const btn = document.getElementById("btnUbicacion");
+        btn.disabled = true;
+        btn.textContent = "Ubicación activada";
+        btn.style.backgroundColor = "#28a745";
+      }
+
+      // Botón
+      document.getElementById("btnUbicacion").addEventListener("click", activarUbicacion);
+
+      // Al cargar
+      document.addEventListener("DOMContentLoaded", () => {
+        // pinta último punto
+        const lastLat = localStorage.getItem("last_lat");
+        const lastLon = localStorage.getItem("last_lon");
+        if (lastLat && lastLon) paintMarker(parseFloat(lastLat), parseFloat(lastLon));
+
+        // si ya estaba activo, reanuda
+        if (localStorage.getItem("ubicacion_activa") === "1") {
+          activarUbicacion();
+        }
+      });
+
+      // Al apagar/encender / volver sin refresh
+      onResume(() => {
+        if (localStorage.getItem("ubicacion_activa") === "1") {
+          console.log("Resume: reactivando WS + GPS");
+
+          connectSocket(handleWSMessage);
+
+          if (watchId === null) {
+            startWatch(sendLocation);
+          }
+
+          const lastLat = localStorage.getItem("last_lat");
+          const lastLon = localStorage.getItem("last_lon");
+          if (lastLat && lastLon) paintMarker(parseFloat(lastLat), parseFloat(lastLon));
+        }
+      });
     </script>
   </body>
 
