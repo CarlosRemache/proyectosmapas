@@ -2991,3 +2991,12 @@ def offline(request):
     return render(request, "offline.html")
 
 
+#seguridad -------------------------------------------------------------
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def tab_bloqueada(request):
+    return render(request, "tab_bloqueada.html")
+

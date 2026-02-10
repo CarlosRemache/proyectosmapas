@@ -148,6 +148,6 @@ urlpatterns = [
 
     path("offline/", offline, name="offline"),
 
-
-
+    #seguridad
+    path("tab-bloqueada/", views.tab_bloqueada, name="tab_bloqueada"),
 ]

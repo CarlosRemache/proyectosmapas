@@ -206,7 +206,96 @@
     }
   </script>
 
+<script>
+(function () {
+  // Solo aplica al adminpanel (ajusta si tu URL base es distinta)
+  if (!location.pathname.startsWith("/adminpanel")) return;
 
+  // Identificador único por pestaña
+  const TAB_ID = (crypto?.randomUUID?.() || (Date.now() + "-" + Math.random())).toString();
+  const LOCK_KEY = "ADMINPANEL_ACTIVE_TAB_LOCK";
+  const HEARTBEAT_MS = 2000;      // cada 2s actualiza
+  const TIMEOUT_MS = 7000;        // si no late en 7s, se considera libre
+
+  // Oculta la página hasta decidir si puede entrar
+  document.documentElement.style.visibility = "hidden";
+
+  function now() { return Date.now(); }
+
+  function readLock() {
+    try { return JSON.parse(localStorage.getItem(LOCK_KEY) || "null"); }
+    catch (e) { return null; }
+  }
+
+  function writeLock(obj) {
+    localStorage.setItem(LOCK_KEY, JSON.stringify(obj));
+  }
+
+  function lockIsAlive(lock) {
+    return lock && (now() - lock.ts) < TIMEOUT_MS;
+  }
+
+  function acquireLockOrBlock() {
+    const lock = readLock();
+
+    // Si no hay lock o está muerto -> tomarlo
+    if (!lock || !lockIsAlive(lock)) {
+      writeLock({ tabId: TAB_ID, ts: now() });
+      document.documentElement.style.visibility = "visible";
+      return true;
+    }
+
+    // Si el lock ya es mío -> ok
+    if (lock.tabId === TAB_ID) {
+      document.documentElement.style.visibility = "visible";
+      return true;
+    }
+
+    // Lock vivo y de otra pestaña -> bloquear
+    try { sessionStorage.setItem("adminpanel_blocked", "1"); } catch(e){}
+    location.replace("/tab-bloqueada/");
+    return false;
+  }
+
+  // Mantener vivo el lock si soy el dueño
+  const interval = setInterval(() => {
+    const lock = readLock();
+    if (lock && lock.tabId === TAB_ID) {
+      writeLock({ tabId: TAB_ID, ts: now() });
+    }
+  }, HEARTBEAT_MS);
+
+  // Si cierro la pestaña dueña, libero lock (no siempre se garantiza, pero ayuda)
+  window.addEventListener("beforeunload", () => {
+    const lock = readLock();
+    if (lock && lock.tabId === TAB_ID) {
+      localStorage.removeItem(LOCK_KEY);
+    }
+    clearInterval(interval);
+  });
+
+  // Sincronización entre pestañas
+  let bc = null;
+  try {
+    bc = new BroadcastChannel("adminpanel_channel");
+    bc.onmessage = (ev) => {
+      if (ev.data === "LOCK_TAKEN") {
+        const lock = readLock();
+        if (lock && lock.tabId !== TAB_ID && lockIsAlive(lock)) {
+          location.replace("/tab-bloqueada/");
+        }
+      }
+    };
+  } catch(e) {}
+
+  // Cuando tomo lock, aviso a otras pestañas
+  const ok = acquireLockOrBlock();
+  if (ok && bc) bc.postMessage("LOCK_TAKEN");
+
+})();
+</script>
+
+  
 
 </body>
 </html>
