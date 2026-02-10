@@ -209,7 +209,101 @@
 <script>
 (function () {
   // Solo aplica al adminpanel (ajusta si tu URL base es distinta)
-  if (!location.pathname.startsWith("/adminpanel")) return;
+  if (!location.pathname.startsWith(
+    "/adminpanel",
+
+    // usuarios
+    "/listadousuario",
+    "/nuevousuario",
+    "/editarusuarioadministrador",
+    "/procesareditarusuarioadministrador",
+    "/eliminarusuarioadministrador",
+    "/editarusuario",
+    "/procesareditarusuario",
+
+    // vehiculos
+    "/nuevovehiculo",
+    "/listadovehiculo",
+    "/editarvehiculo",
+    "/procesareditarvehiculo",
+    "/eliminarvehiculo",
+
+    // carga/peso
+    "/listadocarga",
+    "/nuevacarga",
+    "/editarcarga",
+    "/procesareditarcarga",
+    "/eliminarcarga",
+
+    // mapa/lugares
+    "/buscarlugares",
+    "/lugar/",
+    "/guardar_lugar/",
+    "/eliminar_lugar/",
+
+    // rutas e historial
+    "/rutas",
+    "/recorrido",
+    "/historial",
+    "/historial/eliminar/",
+    "/api/ruta-optima/",
+
+    // calendario (todo cuelga de /panel/)
+    "/panel/",
+    "/lista_asignaciones",
+    "/crear_asignacion",
+    "/asignaciones/editar/",
+    "/asignaciones/eliminar/",
+
+    // proveedores
+    "/listadoproveedor",
+    "/nuevoproveedor",
+    "/editarproveedor",
+    "/procesareditarproveedor",
+    "/eliminarproveedor",
+
+    // pedidos y detalle
+    "/listadopedido",
+    "/nuevopedido",
+    "/editarpedido",
+    "/procesareditarpedido",
+    "/eliminarpedido",
+    "/listadodetalle/",
+    "/nuevodetalle/",
+    "/editardetalle",
+    "/procesareditardetalle",
+    "/eliminardetalle",
+    "/agregarproducto",
+    "/redirigir_detalle/",
+
+    // reportes
+    "/reporteviaje",
+    "/reportehistorial",
+
+    // facturas
+    "/nuevafactura",
+    "/crear_factura",
+    "/ver_factura/",
+    "/listadofacturas",
+    "/factura/pdf/",
+    "/eliminarfactura",
+
+    // salvoconductos
+    "/salvoconductos",
+    "/nuevosalvoconducto",
+    "/editarsalvoconducto/",
+    "/eliminarsalvoconducto/",
+    "/salvoconducto/pdf/",
+    "/validar/salvoconducto/",
+
+    // pagos
+    "/pago/",
+    "/guardar_pago",
+    "/pagos",
+    "/pagos/ver/",
+    "/pagos/editar/",
+    "/pagos/eliminar/"  
+  )) return;
 
   // Identificador único por pestaña
   const TAB_ID = (crypto?.randomUUID?.() || (Date.now() + "-" + Math.random())).toString();
