@@ -65,7 +65,7 @@ INSTALLED_APPS = [
     'cloudinary',
     'cloudinary_storage',
     'channels', #activar el chanel django
-    'Aplicaciones.proyectos'
+    'Aplicaciones.proyectos.apps.ProyectosConfig',
 ]
 
 MIDDLEWARE = [

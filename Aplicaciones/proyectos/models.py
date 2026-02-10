@@ -2,6 +2,9 @@ from django.db import models
 from django.utils import timezone
 from decimal import Decimal
 
+from django.conf import settings
+from django.db import models
+
 class Usuario(models.Model):
     id_usuario=models.AutoField(primary_key=True)
     nombre_usuario=models.CharField(max_length=100)
@@ -400,3 +403,12 @@ class RendimientoVehiculoTipo(models.Model):
     def __str__(self):
         return f"{self.tipo} - {self.km_l_promedio} km/L"
 
+
+
+class UserSession(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    session_key = models.CharField(max_length=40, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.session_key}"
