@@ -209,7 +209,9 @@
 <script>
 (function () {
   // Solo aplica al adminpanel (ajusta si tu URL base es distinta)
-  if (!location.pathname.startsWith("/adminpanel","/listadousuario")) return;
+  const rutasAdmin = ["/adminpanel", "/listadousuario", "/reporteviaje", "/reportehistorial", "/nuevousuario", "/editarusuario", "/panel/"];
+  if (!rutasAdmin.some(r => location.pathname.startsWith(r))) return;
+
 
   // Identificador único por pestaña
   const TAB_ID = (crypto?.randomUUID?.() || (Date.now() + "-" + Math.random())).toString();
