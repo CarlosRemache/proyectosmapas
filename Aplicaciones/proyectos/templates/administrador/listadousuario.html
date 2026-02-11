@@ -77,23 +77,53 @@ tbody tr:hover {
 }
 
 .btn-estado{
-    padding:8px 12px;
+    padding:8px 16px;
     border-radius:10px;
     text-decoration:none;
     font-weight:700;
     font-size:13px;
-    display:inline-block;
+    display:inline-flex;
+    align-items:center;        /* centra verticalmente el texto */
+    justify-content:center;    /* centra horizontalmente */
+    min-width:80px;
+    height:40px;               /* misma altura siempre */
+    border:1px solid #d1d5db;
+    background:#ffffff;        /* FONDO BLANCO */
+    color:#111827;
+    box-sizing:border-box;
 }
 
+.btn-estado:hover{
+    background:#f9fafb;
+    text-decoration:none;
+}
+
+/* Activo: borde y texto verde, fondo blanco */
 .btn-activo{
-    background:#16a34a; /* verde */
-    color:#ffffff;
+    color:#16a34a;
+    border-color:#16a34a;
 }
 
-.btn-inactivo{
-    background:#6b7280; /* gris */
-    color:#ffffff;
+.btn-activo:hover{
+    background:#ecfdf3;
 }
+
+/* Inactivo: borde y texto gris, fondo blanco */
+.btn-inactivo{
+    color:#6b7280;
+    border-color:#6b7280;
+}
+
+.btn-inactivo:hover{
+    background:#f3f4f6;
+}
+
+
+
+
+
+
+
 
 
 
@@ -255,7 +285,7 @@ tbody tr:hover {
                     {% if request.session.usuario_tiporol == "ADMINISTRADOR" %}
                     <td>
                         {% if u.tiporol != "ADMINISTRADOR" %}
-                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
 
                             {# SOLO MOSTRAR EDITAR CUANDO ESTÁ ACTIVO #}
                             {% if u.activo %}
