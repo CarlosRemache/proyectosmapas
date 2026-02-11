@@ -13,7 +13,7 @@ class Usuario(models.Model):
     contrasena_usuario = models.CharField(max_length=128)
     foto_usuario = models.ImageField(upload_to='usuarios/',blank=True,null=True)
     tiporol  = models.CharField(max_length=20, choices=[('USUARIO', 'USUARIO'), ('ADMINISTRADOR', 'ADMINISTRADOR')])
-
+    activo = models.BooleanField(default=True) 
 
 
 class Administrador(models.Model):

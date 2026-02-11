@@ -268,6 +268,45 @@ def eliminarusuarioadministrador(request, id):
 
 
 
+def activarusuarioadministrador(request, id):
+    # solo ADMIN
+    if not request.session.get('usuario_id'):
+        return redirect('/login')
+    if request.session.get('usuario_tiporol') != 'ADMINISTRADOR':
+        messages.error(request, "No tienes permisos para acceder.")
+        return redirect('/inicio')
+
+    try:
+        usuario = Usuario.objects.get(id_usuario=id)
+    except Usuario.DoesNotExist:
+        messages.error(request, "El usuario no existe.")
+        return redirect('/listadousuario/')
+
+    usuario.activo = True
+    usuario.save()
+    messages.success(request, "Usuario activado correctamente.")
+    return redirect('/listadousuario/')
+
+
+def inactivarusuarioadministrador(request, id):
+    # solo ADMIN
+    if not request.session.get('usuario_id'):
+        return redirect('/login')
+    if request.session.get('usuario_tiporol') != 'ADMINISTRADOR':
+        messages.error(request, "No tienes permisos para acceder.")
+        return redirect('/inicio')
+
+    try:
+        usuario = Usuario.objects.get(id_usuario=id)
+    except Usuario.DoesNotExist:
+        messages.error(request, "El usuario no existe.")
+        return redirect('/listadousuario/')
+
+    usuario.activo = False
+    usuario.save()
+    messages.success(request, "Usuario desactivado correctamente.")
+    return redirect('/listadousuario/')
+
 
 #documento---------------------------------------------------------------------------------------------------
 

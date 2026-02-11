@@ -22,6 +22,9 @@ urlpatterns = [
     path('editarusuario/<int:id>',views.editarusuario),
     path('procesareditarusuario/', views.procesareditarusuario),
     path('listadousuario/', views.listadousuario),  
+    path('activarusuarioadministrador/<int:id>/', views.activarusuarioadministrador, name='activarusuarioadministrador'),
+    path('inactivarusuarioadministrador/<int:id>/', views.inactivarusuarioadministrador, name='inactivarusuarioadministrador'),
+
     #documento
     path('creardocumento/', views.creardocumento, name='creardocumento'),
 
