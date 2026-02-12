@@ -21,6 +21,7 @@ from django.core.files.storage import default_storage
 
 #este es para login
 def login_usuario(request):
+
     if request.session.get('usuario_id'):
         if request.session.get('usuario_tiporol') == 'ADMINISTRADOR':
             return redirect('/adminpanel/')
@@ -29,10 +30,9 @@ def login_usuario(request):
     if request.method == 'POST':
         usuario_in = request.POST.get('usuario', '').strip()
         contrasena = request.POST.get('contrasena', '').strip()
-        rol_elegido = request.POST.get('rol', '').strip()
 
-        if not rol_elegido:
-            messages.error(request, "Debes seleccionar un rol.")
+        if not usuario_in or not contrasena:
+            messages.error(request, "Debes ingresar correo y contraseña.")
             return render(request, 'login.html')
 
         try:
@@ -40,20 +40,20 @@ def login_usuario(request):
                 correo_usuario=usuario_in,
                 contrasena_usuario=contrasena
             )
-            # validar que el rol coincida con el del usuario
-            if usuario.tiporol != rol_elegido:
-                messages.error(request, "Rol incorrecto para este usuario.")
+
+            # Verificar si está activo
+            if not usuario.activo:
+                messages.error(request, "Tu usuario está inactivo. Comunícate con el administrador.")
                 return render(request, 'login.html')
-            
-            # si elige ADMINISTRADOR, debe existir en tabla Administrador
-            if rol_elegido == "ADMINISTRADOR":
+
+
+            if usuario.tiporol == "ADMINISTRADOR":
                 try:
                     admin = Administrador.objects.get(usuario=usuario)
                 except Administrador.DoesNotExist:
                     messages.error(request, "Este usuario NO tiene perfil de administrador.")
                     return render(request, 'login.html')
 
-            # Guardar sesión
             request.session['usuario_id'] = usuario.id_usuario
             request.session['usuario_nombre'] = usuario.nombre_usuario
             request.session['usuario_apellido'] = usuario.apellido_usuario
@@ -61,15 +61,18 @@ def login_usuario(request):
 
             messages.success(request, "Inicio de sesión exitoso")
 
-            if rol_elegido == 'ADMINISTRADOR':
+            if usuario.tiporol == 'ADMINISTRADOR':
                 return redirect('/adminpanel/')
-
-            return redirect('/inicio')
+            else:
+                return redirect('/inicio')
 
         except Usuario.DoesNotExist:
             messages.error(request, "Usuario o contraseña incorrectos")
 
     return render(request, 'login.html')
+
+
+
 
 
 #sirve para cerrar la cesion 
