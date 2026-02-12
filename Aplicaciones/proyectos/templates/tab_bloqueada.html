@@ -1,22 +1,137 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Pestaña bloqueada</title>
-  <style>
-    body{font-family:system-ui,Arial; background:#f6f7fb; margin:0; display:grid; place-items:center; height:100vh;}
-    .card{background:white; padding:24px; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.12); max-width:520px;}
-    h1{margin:0 0 10px;}
-    p{margin:8px 0; line-height:1.4;}
-    .small{color:#666; font-size:14px;}
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>No disponible</h1>
-    <p>Este panel ya está abierto en <b>otra pestaña</b>.</p>
-    <p class="small">Cierra la otra pestaña o vuelve a intentarlo cuando quede libre.</p>
+
+<style>
+  .offline-wrapper{
+    min-height: calc(100vh - 120px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+
+  .offline-card{
+    width:100%;
+    max-width:520px;
+    background: radial-gradient(circle at top left, #111827, #020617);
+    border-radius:20px;
+    padding:30px 28px 26px 28px;
+    box-shadow:0 18px 40px rgba(0,0,0,0.6);
+    border:1px solid #1f2937;
+    text-align:center;
+    color:#e5e7eb;
+    font-family: Arial, system-ui, sans-serif;
+  }
+
+  .offline-icon{
+    width:70px;
+    height:70px;
+    border-radius:50%;
+    background:rgba(239,68,68,0.12);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:0 auto 18px auto;
+    font-size:36px;
+  }
+
+  .offline-title{
+    font-size:1.5rem;
+    font-weight:700;
+    margin-bottom:8px;
+  }
+
+  .offline-subtitle{
+    font-size:0.95rem;
+    color:#9ca3af;
+    margin-bottom:18px;
+  }
+
+  .offline-list{
+    list-style:none;
+    padding:0;
+    margin:0 0 22px 0;
+    font-size:0.9rem;
+    color:#d1d5db;
+  }
+
+  .offline-list li{
+    margin-bottom:6px;
+  }
+
+  .offline-list li::before{
+    content:"• ";
+    color:#22c55e;
+  }
+
+  .offline-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:center;
+  }
+
+  .btn-offline-primary,
+  .btn-offline-secondary{
+    border-radius:999px;
+    padding:9px 18px;
+    font-size:0.9rem;
+    font-weight:600;
+    border:1px solid transparent;
+    cursor:pointer;
+    transition:all .18s ease;
+  }
+
+  .btn-offline-primary{
+    background:#22c55e;
+    border-color:#16a34a;
+    color:#020617;
+  }
+
+  .btn-offline-primary:hover{
+    background:#16a34a;
+  }
+
+  .btn-offline-secondary{
+    background:transparent;
+    border-color:#4b5563;
+    color:#e5e7eb;
+  }
+
+  .btn-offline-secondary:hover{
+    background:#111827;
+  }
+
+  @media (max-width: 480px){
+    .offline-card{
+      padding:24px 18px 20px 18px;
+    }
+  }
+</style>
+
+<div class="offline-wrapper">
+  <div class="offline-card">
+    <div class="offline-icon">
+      😕
+    </div>
+
+    <h2 class="offline-title">Estás sin conexión</h2>
+    <p class="offline-subtitle">
+      No pudimos comunicar con el servidor en este momento.
+    </p>
+
+    <ul class="offline-list">
+      <li>Revisa si tienes datos móviles o conexión Wi-Fi.</li>
+      <li>Si estás en ruta, vuelve a intentar cuando recuperes señal.</li>
+      <li>Las secciones guardadas en tu dispositivo seguirán disponibles.</li>
+    </ul>
+
+    <div class="offline-actions">
+      <button class="btn-offline-primary" onclick="window.location.reload();">
+        Reintentar conexión
+      </button>
+      <button class="btn-offline-secondary" onclick="window.location.href='{{ request.path }}';">
+        Mantener esta vista
+      </button>
+    </div>
   </div>
-</body>
-</html>
+</div>
+
