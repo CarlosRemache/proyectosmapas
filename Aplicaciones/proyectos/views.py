@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Usuario, Vehiculo, Lugarguardado, UbicacionVehiculo, PrecioCombustible,NodoMapa,Viaje,RutaOpcion,EventoAdmin,Administrador,AsignacionEvento,Proveedor,Pedido,DetallePedido,ChecklistVehiculo,Pago,Salvoconducto,Factura,RendimientoVehiculoTipo,CargaVehiculo
-from Aplicaciones.proyectos.rutas_utils import (construir_grafo,dijkstra,calcular_metricas_ruta,nodo_mas_cercano,nodos_mas_cercanos,calcular_ruta_larga,construir_grafo_seguro,calcular_ruta_segura)
+from Aplicaciones.proyectos.rutas_utils import (construir_grafo,dijkstra,calcular_metricas_ruta,nodo_mas_cercano,nodos_mas_cercanos,k_mejores_rutas)
 from django.utils.dateparse import parse_date, parse_time
 from django.views.decorators.http import require_GET
 from django.db.models.functions import TruncMonth
@@ -798,95 +798,79 @@ def eliminar_lugar(request, id):
 
 
 #rutas ----------------------------------------------------------------------------------------------------------------------------
-# ---- NUEVO: modelo simple para el efecto del peso ----
 
+# ------------------ CONSTANTES DE PESO ------------------
 
-ALFA_PESO = 0.5  # sensibilidad del consumo al peso (0 = no afecta, 1 = afecta totalmente)
+ALFA_PESO = 0.5      # sensibilidad de consumo al peso
 
 
 def calcular_factor_peso(vehiculo):
     """
-    Devuelve (factor_peso, peso_actual_kg, peso_ref_kg).
-
-    - factor_peso > 1  -> más consumo que el vehículo de referencia
-    - factor_peso < 1  -> menos consumo (vehículo más liviano)
-    - factor_peso = 1  -> igual que el de referencia
+    Devuelve (factor_peso, peso_total_kg, peso_base_kg).
     """
-    # Si no hay peso registrado, no aplicamos ajuste
     if vehiculo.peso_auto is None:
         return 1.0, None, None
 
     try:
-        # asumimos que peso_auto está en toneladas (ej: 0.78 -> 780 kg)
         peso_base_ton = float(vehiculo.peso_auto)
-
-
     except (TypeError, ValueError):
         return 1.0, None, None
-
 
     if peso_base_ton <= 0:
         return 1.0, None, None
 
+    total_carga_kg = vehiculo.cargas.aggregate(
+        total=Sum('peso_adicional')
+    )['total'] or 0
 
-    total_carga_kg = vehiculo.cargas.aggregate(total=Sum('peso_adicional'))['total'] or 0
-
-    
-    # Peso en kg
     peso_base_kg = peso_base_ton * 1000.0
     peso_extra_kg = float(total_carga_kg)
     peso_total_kg = peso_base_kg + peso_extra_kg
 
-
     diferencia_rel = peso_extra_kg / peso_base_kg
-
     factor_peso = 1.0 + ALFA_PESO * diferencia_rel
 
-    # por seguridad, que nunca sea <= 0
     if factor_peso < 0.1:
         factor_peso = 0.1
 
     return factor_peso, peso_total_kg, peso_base_kg
 
 
+# ------------------ VISTA RUTAS (N rutas + Dijkstra) ------------------
 
-
-
-
-
-UMBRAL_DISTANCIA_REL = 0.10   # 10% más distancia
-UMBRAL_DISTANCIA_ABS = 0.3    # o al menos 0.3 km más
-UMBRAL_TIEMPO_REL = 0.10      # 10% más tiempo
-UMBRAL_TIEMPO_ABS = 1.0       # o al menos 1 minuto más
-
-def es_significativamente_mas_larga(dist_opt, t_opt, dist_larga, t_larga):
-    """
-    Devuelve True si la ruta larga es suficientemente más larga
-    que la óptima (en distancia o en tiempo).
-    """
-    # Diferencias
-    delta_dist = dist_larga - dist_opt
-    delta_t    = t_larga - t_opt
-
-    dist_ok = delta_dist >= max(UMBRAL_DISTANCIA_ABS, dist_opt * UMBRAL_DISTANCIA_REL)
-    tiempo_ok = delta_t >= max(UMBRAL_TIEMPO_ABS, t_opt * UMBRAL_TIEMPO_REL)
-
-    return dist_ok or tiempo_ok
-
+MAX_RUTAS = 6   # cuántas rutas alternativas como máximo quieres mostrar
 
 
 def rutas(request):
+    if not request.session.get("usuario_id"):
+        return redirect('/login')
+
     usuario_id = request.session.get("usuario_id")
 
+    # 1) Vehículo del usuario
+    vehiculo = Vehiculo.objects.filter(usuario_id=usuario_id).first()
+    if not vehiculo:
+        messages.error(request, "Debes registrar un vehículo antes de calcular la ruta.")
+        return redirect('/inicio')
+
+    # 2) ORIGEN: GET (lat/lon) o última UbicacionVehiculo del vehículo
     lat_get = request.GET.get("lat")
     lon_get = request.GET.get("lon")
 
+    origen_obj = None
+    lat_origen = None
+    lon_origen = None
+
     if lat_get and lon_get:
-        lat_origen = float(lat_get)
-        lon_origen = float(lon_get)
-    else:
+        try:
+            lat_origen = float(lat_get)
+            lon_origen = float(lon_get)
+        except ValueError:
+            lat_origen = lon_origen = None
+
+    if lat_origen is None or lon_origen is None:
         origen_obj = UbicacionVehiculo.objects.filter(
-            vehiculo__usuario__id_usuario=usuario_id
+            vehiculo=vehiculo
         ).order_by('-fecha_hora').first()
 
         if not origen_obj:
@@ -896,15 +880,15 @@ def rutas(request):
         lat_origen = origen_obj.latitud
         lon_origen = origen_obj.longitud
 
+    if origen_obj is None:
+        origen_obj = UbicacionVehiculo.objects.create(
+            vehiculo=vehiculo,
+            latitud=lat_origen,
+            longitud=lon_origen
+        )
 
-    if not origen_obj:
-        messages.error(request, "No se encontró la ubicación del vehículo.")
-        return redirect('/inicio')
-
-    lat_origen = origen_obj.latitud
-    lon_origen = origen_obj.longitud
+    # 3) DESTINO: último lugar guardado
     destino_obj = Lugarguardado.objects.filter(usuario_id=usuario_id).last()
-
     if not destino_obj:
         messages.error(request, "Debes guardar un lugar primero.")
         return redirect('/buscarlugares')
@@ -912,7 +896,7 @@ def rutas(request):
     lat_dest = destino_obj.latitud_Lugarguardado
     lon_dest = destino_obj.longitud_Lugarguardado
 
-
+    # 4) Enganche a la red vial
     nodo_origen = nodo_mas_cercano(lat_origen, lon_origen)
     nodo_destino = nodo_mas_cercano(lat_dest, lon_dest)
 
@@ -921,15 +905,16 @@ def rutas(request):
         return redirect('/inicio')
 
     grafo = construir_grafo()
-    ruta_optima_ids, costo_min = dijkstra(grafo, nodo_origen.id_nodo, nodo_destino.id_nodo)
 
-    # ========= Fallback: probar con varios nodos cercanos si no hay ruta =========
-    if not ruta_optima_ids:
+    # Primero comprobamos que exista al menos una ruta (Dijkstra simple)
+    ruta_prueba, _ = dijkstra(grafo, nodo_origen.id_nodo, nodo_destino.id_nodo)
+
+    # Fallback: probar varios nodos cercanos si no hay ruta directa
+    if not ruta_prueba:
         origen_candidatos = nodos_mas_cercanos(lat_origen, lon_origen, k=5)
         destino_candidatos = nodos_mas_cercanos(lat_dest, lon_dest, k=5)
 
         mejor = None
-
         for o in origen_candidatos:
             for d in destino_candidatos:
                 ruta_tmp, costo_tmp = dijkstra(grafo, o.id_nodo, d.id_nodo)
@@ -940,59 +925,36 @@ def rutas(request):
                 break
 
         if not mejor:
-            messages.error(request, "No se pudo calcular una ruta óptima en la red vial.")
+            messages.error(
+                request,
+                "No se pudo calcular una ruta óptima en la red vial."
+            )
             return redirect('/inicio')
 
-        # Usamos el mejor par encontrado
-        nodo_origen, nodo_destino, ruta_optima_ids, costo_min = mejor
+        nodo_origen, nodo_destino, ruta_prueba, _ = mejor
 
-
-    distancia_km_opt, tiempo_min_opt = calcular_metricas_ruta(ruta_optima_ids)
-
-
-    ruta_larga_ids, costo_largo = calcular_ruta_larga(
+    # 5) AQUÍ VIENE LO IMPORTANTE:
+    #    obtenemos hasta MAX_RUTAS rutas distintas entre origen y destino
+    lista_rutas = k_mejores_rutas(
         grafo,
-        ruta_optima_ids,
         nodo_origen.id_nodo,
-        nodo_destino.id_nodo
+        nodo_destino.id_nodo,
+        k=MAX_RUTAS
     )
 
-    distancia_km_larga = None
-    tiempo_min_larga = None
+    if not lista_rutas:
+        messages.error(request, "No se pudo calcular ninguna ruta.")
+        return redirect('/inicio')
 
-    if ruta_larga_ids:
-        distancia_km_larga, tiempo_min_larga = calcular_metricas_ruta(ruta_larga_ids)
-
-    ruta_segura_ids = None
-    distancia_km_segura = None
-    tiempo_min_segura = None
-
-    grafo_seguro = construir_grafo_seguro()
-
-    ruta_segura_ids, costo_seguro = calcular_ruta_segura(
-        grafo_seguro,
-        ruta_optima_ids,
-        ruta_larga_ids,
-        nodo_origen.id_nodo,
-        nodo_destino.id_nodo
-    )
-
-    if ruta_segura_ids:
-        distancia_km_segura, tiempo_min_segura = calcular_metricas_ruta(ruta_segura_ids)
-
-
-    vehiculo = Vehiculo.objects.filter(usuario_id=usuario_id).first()
-
-    if not vehiculo:
-        messages.error(request, "Debes registrar un vehículo antes de calcular la ruta.")
-        return redirect('/inicio')  
-
+    # 6) Rendimiento y precios para calcular combustible
     rend_obj = RendimientoVehiculoTipo.objects.filter(
         tipo=vehiculo.tipovehiculo_vehiculo
     ).first()
-
     if not rend_obj:
-        messages.error(request, "No se ha configurado el rendimiento para este tipo de vehículo.")
+        messages.error(
+            request,
+            "No se ha configurado el rendimiento para este tipo de vehículo."
+        )
         return redirect('/inicio')
 
     rendimiento_km_litro = rend_obj.km_l_promedio
@@ -1001,139 +963,70 @@ def rutas(request):
         tipo=vehiculo.tipocombustible_vehiculo
     ).first()
 
-    consumo_opt = costo_opt = None
-    consumo_larga = costo_larga = None
-    consumo_segura = costo_segura_monto = None 
+    precio_litro = precio_obj.precio_por_litro if precio_obj else None
 
-    if rendimiento_km_litro and precio_obj:
-        precio_litro = precio_obj.precio_por_litro
-
-
-        consumo_opt = distancia_km_opt / rendimiento_km_litro
-        costo_opt = consumo_opt * precio_litro
-
-
-        if distancia_km_larga is not None:
-            consumo_larga = distancia_km_larga / rendimiento_km_litro
-            costo_larga = consumo_larga * precio_litro
-
-
-        if distancia_km_segura is not None:
-            consumo_segura = distancia_km_segura / rendimiento_km_litro
-            costo_segura_monto = consumo_segura * precio_litro
-
-
-    # ---- NUEVO: ajustar consumo según peso del vehículo ----
+    # Ajuste por peso
     factor_peso, peso_total_kg, peso_base_kg = calcular_factor_peso(vehiculo)
 
-
-    # Estos serán consumos ajustados por peso (además de los originales)
-    consumo_opt_ajustado = consumo_larga_ajustado = consumo_segura_ajustado = None
-    delta_opt_litros = delta_larga_litros = delta_segura_litros = None
-
-    if factor_peso != 1.0 and consumo_opt is not None:
-        consumo_opt_ajustado = consumo_opt * factor_peso
-        delta_opt_litros = consumo_opt_ajustado - consumo_opt
-
-    if factor_peso != 1.0 and consumo_larga is not None:
-        consumo_larga_ajustado = consumo_larga * factor_peso
-        delta_larga_litros = consumo_larga_ajustado - consumo_larga
-
-    if factor_peso != 1.0 and consumo_segura is not None:
-        consumo_segura_ajustado = consumo_segura * factor_peso
-        delta_segura_litros = consumo_segura_ajustado - consumo_segura
-
-
-
+    # 7) Guardamos el viaje origen-destino (no depende de cuál ruta alternativa se use)
     viaje = Viaje.objects.create(
         usuario_id=usuario_id,
         vehiculo=vehiculo,
         origen=origen_obj,
         destino=destino_obj,
     )
-
     request.session['viaje_id'] = viaje.id_viaje
 
+    # 8) Armamos las tarjetas y las rutas para el mapa
     detalles_rutas = []
+    rutas_js = []
 
-    # Ruta Óptima
-    detalles_rutas.append({
-        "distancia_km": distancia_km_opt,
-        "tiempo_min": tiempo_min_opt,
-        "tipo": "optima",
-        "consumo_litros": consumo_opt,
-        "costo_ruta": costo_opt,
-        # ---- NUEVOS CAMPOS (opcional, para la vista o para tu tesis) ----
-        "consumo_litros_ajustado": consumo_opt_ajustado,
-        "delta_litros_peso": delta_opt_litros,
-        "factor_peso": factor_peso,
-    })
-
-    # Ruta Larga (solo si realmente existe)
-    if ruta_larga_ids and distancia_km_larga and tiempo_min_larga:
-        detalles_rutas.append({
-            "distancia_km": distancia_km_larga,
-            "tiempo_min": tiempo_min_larga,
-            "tipo": "larga",
-            "consumo_litros": consumo_larga,
-            "costo_ruta": costo_larga,
-            "consumo_litros_ajustado": consumo_larga_ajustado,
-            "delta_litros_peso": delta_larga_litros,
-            "factor_peso": factor_peso,
-        })
-
-    # Ruta Segura (solo si realmente existe y es distinta)
-    if ruta_segura_ids and distancia_km_segura and tiempo_min_segura:
-        detalles_rutas.append({
-            "distancia_km": distancia_km_segura,
-            "tiempo_min": tiempo_min_segura,
-            "tipo": "segura",
-            "consumo_litros": consumo_segura,
-            "costo_ruta": costo_segura_monto,
-            "consumo_litros_ajustado": consumo_segura_ajustado,
-            "delta_litros_peso": delta_segura_litros,
-            "factor_peso": factor_peso,
-        })
-
-
-    todos_ids = set(ruta_optima_ids)
-    if ruta_larga_ids:
-        todos_ids.update(ruta_larga_ids)
-    if ruta_segura_ids:
-        todos_ids.update(ruta_segura_ids)
+    # recolectamos todos los ids de nodos para un solo in_bulk
+    todos_ids = set()
+    for ruta_ids, _ in lista_rutas:
+        todos_ids.update(ruta_ids)
 
     nodos_dict = NodoMapa.objects.in_bulk(todos_ids, field_name='id_nodo')
 
-    # Ruta Óptima
-    coords_ruta_optima = []
-    for nid in ruta_optima_ids:
-        nodo = nodos_dict.get(nid)
-        if nodo:
-            coords_ruta_optima.append([nodo.latitud, nodo.longitud])
+    for idx, (ruta_ids, costo_tiempo) in enumerate(lista_rutas):
+        # Métricas base
+        distancia_km, tiempo_min = calcular_metricas_ruta(ruta_ids)
 
-    rutas_js = [coords_ruta_optima]
+        consumo = costo_ruta = None
+        consumo_ajustado = delta_litros = None
 
-    # Ruta Larga
-    if ruta_larga_ids:
-        coords_ruta_larga = []
-        for nid in ruta_larga_ids:
+        if rendimiento_km_litro and precio_litro is not None:
+            consumo = distancia_km / rendimiento_km_litro
+            costo_ruta = consumo * precio_litro
+
+            if factor_peso != 1.0:
+                consumo_ajustado = consumo * factor_peso
+                delta_litros = consumo_ajustado - consumo
+
+        es_optima = (idx == 0)  # la primera ruta es la de Dijkstra
+        slug = "optima" if es_optima else "alternativa"
+
+        detalles_rutas.append({
+            "slug": slug,                # para CSS / dataset
+            "es_optima": es_optima,      # para el globo Dijkstra
+            "indice": idx + 1,           # por si quieres mostrar N° de ruta
+            "distancia_km": distancia_km,
+            "tiempo_min": tiempo_min,
+            "consumo_litros": consumo,
+            "costo_ruta": costo_ruta,
+            "consumo_litros_ajustado": consumo_ajustado,
+            "delta_litros_peso": delta_litros,
+            "factor_peso": factor_peso,
+        })
+
+        # coords para el mapa
+        coords = []
+        for nid in ruta_ids:
             nodo = nodos_dict.get(nid)
             if nodo:
-                coords_ruta_larga.append([nodo.latitud, nodo.longitud])
-
-        if coords_ruta_larga:
-            rutas_js.append(coords_ruta_larga)
-
-    # Ruta Segura
-    if ruta_segura_ids:
-        coords_ruta_segura = []
-        for nid in ruta_segura_ids:
-            nodo = nodos_dict.get(nid)
-            if nodo:
-                coords_ruta_segura.append([nodo.latitud, nodo.longitud])
-
-        if coords_ruta_segura:
-            rutas_js.append(coords_ruta_segura)
+                coords.append([nodo.latitud, nodo.longitud])
+        if coords:
+            rutas_js.append(coords)
 
     return render(request, "rutas.html", {
         "origen_real": json.dumps({"latitud": lat_origen, "longitud": lon_origen}),
@@ -1145,7 +1038,6 @@ def rutas(request):
         "rutas_js": json.dumps(rutas_js),
         "detalles_rutas": detalles_rutas,
     })
-
 
 # recorrido-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

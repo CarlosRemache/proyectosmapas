@@ -13,7 +13,6 @@
         font-family: Arial, sans-serif;
     }
 
-    /* Tarjeta contenedora del mapa + info */
     .card-mapa {
         width: 90%;
         max-width: 900px;
@@ -36,7 +35,6 @@
         color: #fff;
     }
 
-    /* Contenedor de las tarjetas de rutas */
     .tarjeta-info {
         background-color: #1b1b1b;
         border-radius: 12px;
@@ -45,8 +43,7 @@
         box-shadow: 0 3px 15px rgba(255, 255, 255, 0.08);
     }
 
-    /* Wrapper para poder posicionar el globo */
-    .tarjeta-ruta-wrapper{
+    .tarjeta-ruta-wrapper {
         position: relative;
         margin-bottom: 12px;
     }
@@ -58,7 +55,7 @@
         transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
         background-color: #101010;
         color: #fff;
-        border: 1px solid #333; /* por defecto */
+        border: 1px solid #333;
     }
 
     .tarjeta-ruta:hover {
@@ -73,12 +70,11 @@
         font-family: system-ui;
     }
 
-    /* Bordes según tipo */
-    .tarjeta-ruta.ruta-optima { border: 2px solid #00aaff; }
-    .tarjeta-ruta.ruta-larga  { border: 2px solid #ff8800; }
-    .tarjeta-ruta.ruta-segura { border: 2px solid #00ff88; }
+    /* Bordes por tipo (óptima vs alternativas) */
+    .tarjeta-ruta.ruta-optima      { border: 2px solid #00aaff; }
+    .tarjeta-ruta.ruta-alternativa { border: 2px solid #ff8800; }
 
-    /* Globo de “ruta más óptima” */
+    /* Globo de Dijkstra */
     .badge-optima{
         position: absolute;
         right: 18px;
@@ -87,12 +83,13 @@
         color:#000;
         border-radius: 18px;
         padding:6px 10px;
-        font-size:12px;
+        font-size:11px;
         font-weight:600;
         display:flex;
         align-items:center;
         gap:6px;
         box-shadow:0 3px 10px rgba(0,0,0,0.6);
+        max-width: 240px;
     }
 
     .badge-optima::after{
@@ -171,8 +168,8 @@
         {% for r in detalles_rutas %}
         <div class="tarjeta-ruta-wrapper">
 
-            <div class="tarjeta-ruta ruta-{{ r.tipo|default:'otra' }}"
-                 data-tipo="{{ r.tipo }}"
+            <div class="tarjeta-ruta ruta-{{ r.slug }}"
+                 data-tipo="{{ r.slug }}"
                  onclick="seleccionarRuta({{ forloop.counter }})">
 
                 <p>Tiempo estimado: {{ r.tiempo_min|floatformat:1 }} min</p>
@@ -194,11 +191,13 @@
                 {% endif %}
             </div>
 
-            {# Globo que marca la ruta más óptima #}
-            {% if r.tipo == "optima" %}
+            {% if r.es_optima %}
             <div class="badge-optima">
                 <span class="badge-optima-icon">★</span>
-                <span>Esta es la ruta más óptima</span>
+                <span>
+                    Según el algoritmo de Dijkstra,
+                    esta es la ruta más óptima.
+                </span>
             </div>
             {% endif %}
 
@@ -261,7 +260,7 @@
     const rutas = JSON.parse('{{ rutas_js|escapejs }}');
 
     const colores = [
-        "#0077ff", // primera (óptima)
+        "#0077ff", // 1: óptima
         "#ff8800",
         "#00ff88",
         "#ff00ff",
@@ -305,12 +304,14 @@
 
         const cards = document.querySelectorAll('.tarjeta-ruta');
         const card = cards[rutaSeleccionada - 1];
-        const tipo = card.dataset.tipo;  // optima / larga / segura / etc.
+        const tipo = card.dataset.tipo;  // "optima" o "alternativa"
 
+        // si luego quieres que /recorrido use la ruta exacta,
+        // puedes enviar "tipo" o el índice.
         window.location.href = `/recorrido/?ruta=${tipo}`;
     });
 
-    // Por defecto, se selecciona la 1ª ruta (la óptima)
+    // Seleccionar por defecto la primera (óptima)
     seleccionarRuta(1);
 
     setTimeout(() => map.invalidateSize(), 300);

@@ -1,11 +1,10 @@
-
 from django.db.models import F, FloatField, ExpressionWrapper
 from Aplicaciones.proyectos.models import NodoMapa, TramoVial
 from collections import defaultdict
 import heapq
 
 
-# CACHÉ DE TRAMOS (para no consultar la BD muchas veces)
+# ----------------- CACHÉ DE TRAMOS -----------------
 
 _tramos_cache = None
 _tramos_index_cache = None
@@ -48,7 +47,8 @@ def limpiar_cache_tramos():
     _tramos_index_cache = None
 
 
-# CONSTRUCCIÓN DE GRAFOS
+# ----------------- GRAFO + DIJKSTRA BÁSICO -----------------
+
 
 def construir_grafo():
     """
@@ -70,6 +70,8 @@ def dijkstra(grafo, origen_id, destino_id):
     """
     Calcula la ruta de mínimo costo entre origen_id y destino_id.
     Retorna (ruta_como_lista_de_ids, costo_total).
+
+    Si no hay camino, devuelve (None, inf).
     """
     dist = {}
     prev = {}
@@ -117,14 +119,13 @@ def calcular_metricas_ruta(lista_ids_nodo):
         tramo = index_tramos.get((u, v))
         if not tramo:
             continue
-        distancia_total += tramo.distancia_km   
-        tiempo_total += tramo.tiempo_base_min   
+        distancia_total += tramo.distancia_km
+        tiempo_total += tramo.tiempo_base_min
 
     return distancia_total, tiempo_total
 
 
-# NODOS CERCANOS (para enganchar GPS con la red vial)
-
+# ------------- NODOS CERCANOS (ENGANCHE GPS–GRAFO) -------------
 
 def nodos_mas_cercanos(lat, lon, k=5):
     """
@@ -149,174 +150,92 @@ def nodo_mas_cercano(lat, lon):
     return resultados[0] if resultados else None
 
 
+# ----------------- K MEJORES RUTAS (YEN SIMPLIFICADO) -----------------
 
-# UTILES PARA RUTAS ALTERNATIVAS
+def _copiar_grafo(grafo):
+    return {u: list(ady) for u, ady in grafo.items()}
 
-def construir_grafo_sin_tramo(grafo, u, v):
+
+def _eliminar_arista(grafo, u, v):
+    if u in grafo:
+        grafo[u] = [(dest, peso) for (dest, peso) in grafo[u] if dest != v]
+
+
+def _eliminar_nodos(grafo, nodos):
+    nodos = set(nodos)
+    for n in nodos:
+        grafo.pop(n, None)
+
+    for u in list(grafo.keys()):
+        grafo[u] = [(dest, peso) for (dest, peso) in grafo[u] if dest not in nodos]
+
+
+def k_mejores_rutas(grafo, origen_id, destino_id, k=5):
     """
-    Devuelve una copia del grafo donde se elimina SOLO el tramo u -> v
-    (y v -> u si existe).
+    Devuelve una lista de hasta k rutas distintas:
+    [(lista_ids_nodo, costo_tiempo_minutos), ...]
+    ordenadas desde la más rápida (Dijkstra) hasta las siguientes.
+
+    Implementa una versión simplificada del algoritmo de Yen:
+    usa Dijkstra varias veces para ir encontrando rutas alternativas.
     """
-    nuevo_grafo = {
-        nodo: list(adyacencias)
-        for nodo, adyacencias in grafo.items()
-    }
+    # Ruta 1 (la óptima de Dijkstra)
+    primera_ruta, _ = dijkstra(grafo, origen_id, destino_id)
+    if not primera_ruta:
+        return []
 
-    if u in nuevo_grafo:
-        nuevo_grafo[u] = [
-            (dest, peso)
-            for (dest, peso) in nuevo_grafo[u]
-            if dest != v
-        ]
-
-    if v in nuevo_grafo:
-        nuevo_grafo[v] = [
-            (dest, peso)
-            for (dest, peso) in nuevo_grafo[v]
-            if dest != u
-        ]
-
-    return nuevo_grafo
-
-
-
-PENALIZACION_RUTA_OPTIMA = 2.0  
-
-
-def construir_grafo_penalizado(grafo, ruta_optima_ids, factor=PENALIZACION_RUTA_OPTIMA):
-    """
-    Devuelve un grafo nuevo donde los tramos pertenecientes a la ruta óptima
-    tienen su peso multiplicado por 'factor', para forzar a Dijkstra a buscar
-    caminos distintos si es posible.
-    """
-    aristas_optimas = set(zip(ruta_optima_ids[:-1], ruta_optima_ids[1:]))
-    grafo_penalizado = {}
-
-    for u, adyacencias in grafo.items():
-        nueva_lista = []
-        for v, peso in adyacencias:
-            if (u, v) in aristas_optimas:
-                nueva_lista.append((v, peso * factor))
-            else:
-                nueva_lista.append((v, peso))
-        grafo_penalizado[u] = nueva_lista
-
-    return grafo_penalizado
-
-
-def calcular_ruta_larga(grafo, ruta_optima_ids, origen_id, destino_id):
-    """
-    Calcula una ruta alternativa 'larga' penalizando los tramos de la ruta
-    óptima y ejecutando Dijkstra en el grafo penalizado.
-    """
-    if len(ruta_optima_ids) < 2:
-        return None, None
-
-    grafo_alt = construir_grafo_penalizado(grafo, ruta_optima_ids)
-    ruta_alt, costo_alt = dijkstra(grafo_alt, origen_id, destino_id)
-
-    if not ruta_alt or ruta_alt == ruta_optima_ids:
-        return None, None
-
-    return ruta_alt, costo_alt
-
-
-
-# RUTA SEGURA (3ª RUTA)---------------------------------------
-
-# FACTORES DE SEGURIDAD (ajusta a tu gusto)
-FACTOR_SEGURIDAD = {
-    "PRINCIPAL": 0.7,    # -30% tiempo → muy favorecida
-    "SECUNDARIA": 0.85,  # -15% tiempo
-    "URBANA": 1.4,       # +40% tiempo → penalizamos fuerte
-    "RURAL": 1.6,        # +60% tiempo
-}
-
-
-def peso_seguro(tramo: TramoVial) -> float:
-    base = tramo.tiempo_base_min
-    tipo = (tramo.tipo_via or "").upper()
-    factor = FACTOR_SEGURIDAD.get(tipo, 1.0)
-    return base * factor
-
-
-def construir_grafo_seguro():
-    """
-    Grafo usando tiempo penalizado por seguridad.
-    """
-    grafo = defaultdict(list)
-    for tramo in obtener_tramos():
-        grafo[tramo.origen_id].append((tramo.destino_id, peso_seguro(tramo)))
-    return grafo
-
-
-def rutas_muy_similares(r1, r2, umbral_solapamiento=0.9):
-    """
-    True si r1 y r2 comparten la mayoría de sus tramos.
-    Así evitamos mostrar rutas que visualmente son casi iguales.
-    """
-    if not r1 or not r2:
-        return False
-
-    e1 = set(zip(r1[:-1], r1[1:]))
-    e2 = set(zip(r2[:-1], r2[1:]))
-
-    if not e1:
-        return False
-
-    solapamiento = len(e1 & e2) / len(e1)
-    return solapamiento >= umbral_solapamiento
-
-
-def calcular_ruta_segura(grafo_seguro, ruta_optima_ids, ruta_larga_ids,
-                         origen_id, destino_id):
-    """
-    Calcula una ruta 'segura' usando el grafo_seguro.
-    Si coincide demasiado con la óptima o la larga, intenta forzar
-    una alternativa eliminando tramos de la ruta óptima
-    (priorizando URBANA / RURAL).
-
-    Devuelve (lista_ids_ruta_segura, costo_total_minutos) o (None, None).
-    """
-    # 1) Ruta segura básica
-    ruta_segura, costo_seguro = dijkstra(grafo_seguro, origen_id, destino_id)
-
-    if not ruta_segura:
-        return None, None
-
-    if not rutas_muy_similares(ruta_segura, ruta_optima_ids) and \
-       not rutas_muy_similares(ruta_segura, ruta_larga_ids or []):
-        return ruta_segura, costo_seguro
-
-    # 2) Forzar ruta distinta eliminando tramos inseguros de la óptima
-    index_tramos = obtener_index_tramos()
+    rutas = [primera_ruta]
     candidatos = []
 
-    for u, v in zip(ruta_optima_ids[:-1], ruta_optima_ids[1:]):
-        tramo = index_tramos.get((u, v))
-        if not tramo:
-            continue
-        tipo = (tramo.tipo_via or "").upper()
+    def costo_ruta(ruta_ids):
+        # usamos el tiempo como costo
+        _, t = calcular_metricas_ruta(ruta_ids)
+        return t
 
-        if tipo in ("URBANA", "RURAL"):
-            prioridad = 2
-        elif tipo in ("SECUNDARIA", "PRINCIPAL"):
-            prioridad = 1
-        else:
-            prioridad = 0
+    # Vamos buscando hasta k rutas
+    for _ in range(1, k):
+        ultima_ruta = rutas[-1]
 
-        candidatos.append((prioridad, u, v))
+        # Spur node = cada nodo de la ruta previa, menos el último
+        for i in range(len(ultima_ruta) - 1):
+            spur_node = ultima_ruta[i]
+            root_path = ultima_ruta[:i + 1]
 
-    candidatos.sort(reverse=True) 
+            # Copia del grafo para aplicar bloqueos
+            grafo_mod = _copiar_grafo(grafo)
 
-    for prioridad, u, v in candidatos:
-        grafo_alt = construir_grafo_sin_tramo(grafo_seguro, u, v)
-        ruta_alt, costo_alt = dijkstra(grafo_alt, origen_id, destino_id)
-        if not ruta_alt:
-            continue
+            # 1) Eliminar aristas que generen la misma prefijo-ruta
+            for r in rutas:
+                if len(r) > i and r[:i + 1] == root_path:
+                    u = r[i]
+                    v = r[i + 1]
+                    _eliminar_arista(grafo_mod, u, v)
 
-        if not rutas_muy_similares(ruta_alt, ruta_optima_ids) and \
-           not rutas_muy_similares(ruta_alt, ruta_larga_ids or []):
-            return ruta_alt, costo_alt
+            # 2) Eliminar nodos del prefijo (menos el spur_node)
+            nodos_bloqueados = root_path[:-1]
+            _eliminar_nodos(grafo_mod, nodos_bloqueados)
 
-    return None, None  
+            # 3) Ruta desde spur_node hasta el destino en el grafo modificado
+            spur_path, _ = dijkstra(grafo_mod, spur_node, destino_id)
+            if not spur_path:
+                continue
+
+            # Ruta completa = prefijo hasta spur_node (sin repetir spur_node) + spur_path
+            nueva_ruta = root_path[:-1] + spur_path
+
+            # Evitar duplicados
+            if any(nueva_ruta == r for r in rutas):
+                continue
+
+            c_total = costo_ruta(nueva_ruta)
+            heapq.heappush(candidatos, (c_total, nueva_ruta))
+
+        if not candidatos:
+            break
+
+        # Tomamos el candidato más barato
+        costo_k, ruta_k = heapq.heappop(candidatos)
+        rutas.append(ruta_k)
+
+    # Devolvemos rutas con su costo en tiempo
+    return [(r, costo_ruta(r)) for r in rutas]
