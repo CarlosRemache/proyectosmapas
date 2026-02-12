@@ -170,72 +170,74 @@ def _eliminar_nodos(grafo, nodos):
         grafo[u] = [(dest, peso) for (dest, peso) in grafo[u] if dest not in nodos]
 
 
-def k_mejores_rutas(grafo, origen_id, destino_id, k=5):
+
+
+
+
+
+def k_mejores_rutas(grafo, origen_id, destino_id, k=5, penalizacion_base=2.0):
     """
     Devuelve una lista de hasta k rutas distintas:
     [(lista_ids_nodo, costo_tiempo_minutos), ...]
     ordenadas desde la más rápida (Dijkstra) hasta las siguientes.
 
-    Implementa una versión simplificada del algoritmo de Yen:
-    usa Dijkstra varias veces para ir encontrando rutas alternativas.
+    IMPLEMENTACIÓN LIGERA:
+    - Ruta 1: Dijkstra normal (ruta óptima).
+    - Ruta 2..k: cada vez penalizamos las aristas usadas en las rutas anteriores
+      (les subimos mucho el peso) y volvemos a ejecutar Dijkstra.
+    - Complejidad ≈ k * costo(Dijkstra).
     """
-    # Ruta 1 (la óptima de Dijkstra)
-    primera_ruta, _ = dijkstra(grafo, origen_id, destino_id)
-    if not primera_ruta:
+
+    # Copia del grafo original (dict -> lista) para poder modificar pesos
+    grafo_original = {u: list(ady) for u, ady in grafo.items()}
+
+    def dijkstra_con_grafo(g):
+        # reutilizamos la función dijkstra ya definida arriba
+        return dijkstra(g, origen_id, destino_id)
+
+    rutas = []
+
+    # 1) Ruta óptima (Dijkstra puro)
+    ruta0, costo0 = dijkstra_con_grafo(grafo_original)
+    if not ruta0:
         return []
 
-    rutas = [primera_ruta]
-    candidatos = []
+    rutas.append((ruta0, costo0))
 
-    def costo_ruta(ruta_ids):
-        # usamos el tiempo como costo
-        _, t = calcular_metricas_ruta(ruta_ids)
-        return t
+    # 2) Rutas alternativas penalizando tramos anteriores
+    for i in range(1, k):
+        # Unión de todas las aristas usadas en rutas anteriores
+        aristas_penalizar = set()
+        for ruta_ids, _ in rutas:
+            aristas_penalizar.update(zip(ruta_ids[:-1], ruta_ids[1:]))
 
-    # Vamos buscando hasta k rutas
-    for _ in range(1, k):
-        ultima_ruta = rutas[-1]
+        # Factor de penalización (cada iteración un poco más fuerte)
+        factor = penalizacion_base + i * 0.5
 
-        # Spur node = cada nodo de la ruta previa, menos el último
-        for i in range(len(ultima_ruta) - 1):
-            spur_node = ultima_ruta[i]
-            root_path = ultima_ruta[:i + 1]
+        # Construimos un grafo penalizado
+        grafo_penal = {}
+        for u, ady in grafo_original.items():
+            nueva_ady = []
+            for v, peso in ady:
+                if (u, v) in aristas_penalizar:
+                    nueva_ady.append((v, peso * factor))
+                else:
+                    nueva_ady.append((v, peso))
+            grafo_penal[u] = nueva_ady
 
-            # Copia del grafo para aplicar bloqueos
-            grafo_mod = _copiar_grafo(grafo)
-
-            # 1) Eliminar aristas que generen la misma prefijo-ruta
-            for r in rutas:
-                if len(r) > i and r[:i + 1] == root_path:
-                    u = r[i]
-                    v = r[i + 1]
-                    _eliminar_arista(grafo_mod, u, v)
-
-            # 2) Eliminar nodos del prefijo (menos el spur_node)
-            nodos_bloqueados = root_path[:-1]
-            _eliminar_nodos(grafo_mod, nodos_bloqueados)
-
-            # 3) Ruta desde spur_node hasta el destino en el grafo modificado
-            spur_path, _ = dijkstra(grafo_mod, spur_node, destino_id)
-            if not spur_path:
-                continue
-
-            # Ruta completa = prefijo hasta spur_node (sin repetir spur_node) + spur_path
-            nueva_ruta = root_path[:-1] + spur_path
-
-            # Evitar duplicados
-            if any(nueva_ruta == r for r in rutas):
-                continue
-
-            c_total = costo_ruta(nueva_ruta)
-            heapq.heappush(candidatos, (c_total, nueva_ruta))
-
-        if not candidatos:
+        # Dijkstra sobre el grafo penalizado
+        ruta_i, costo_i = dijkstra_con_grafo(grafo_penal)
+        if not ruta_i:
             break
 
-        # Tomamos el candidato más barato
-        costo_k, ruta_k = heapq.heappop(candidatos)
-        rutas.append(ruta_k)
+        # Si es igual a alguna ruta anterior, no la usamos
+        if any(ruta_i == r for r, _ in rutas):
+            break
 
-    # Devolvemos rutas con su costo en tiempo
-    return [(r, costo_ruta(r)) for r in rutas]
+        rutas.append((ruta_i, costo_i))
+
+    return rutas
+
+
+
+

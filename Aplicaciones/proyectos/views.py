@@ -838,7 +838,7 @@ def calcular_factor_peso(vehiculo):
 
 # ------------------ VISTA RUTAS (N rutas + Dijkstra) ------------------
 
-MAX_RUTAS = 4   # cuántas rutas alternativas como máximo quieres mostrar
+MAX_RUTAS = 6   # cuántas rutas alternativas como máximo quieres mostrar
 
 
 def rutas(request):
