@@ -154,7 +154,7 @@ def nodo_mas_cercano(lat, lon):
 
 
 
-def rutas_muy_similares(r1_ids, r2_ids, umbral=0.85):
+def rutas_muy_similares(r1_ids, r2_ids, umbral=0.95):
     """
     Devuelve True si r1 y r2 comparten la mayoría de sus tramos.
     Sirve para descartar rutas que visualmente son casi iguales.
