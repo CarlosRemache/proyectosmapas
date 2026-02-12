@@ -152,47 +152,50 @@ def nodo_mas_cercano(lat, lon):
 
 # ----------------- K MEJORES RUTAS (YEN SIMPLIFICADO) -----------------
 
-def _copiar_grafo(grafo):
-    return {u: list(ady) for u, ady in grafo.items()}
 
 
-def _eliminar_arista(grafo, u, v):
-    if u in grafo:
-        grafo[u] = [(dest, peso) for (dest, peso) in grafo[u] if dest != v]
+def rutas_muy_similares(r1_ids, r2_ids, umbral=0.9):
+    """
+    Devuelve True si r1 y r2 comparten la mayoría de sus tramos.
+    Sirve para descartar rutas que visualmente son casi iguales.
+
+    - umbral=0.9 → si el 90% de las aristas son iguales, se considera "lo mismo".
+    """
+    if not r1_ids or not r2_ids:
+        return False
+
+    # Aristas (u -> v) de cada ruta
+    e1 = set(zip(r1_ids[:-1], r1_ids[1:]))
+    e2 = set(zip(r2_ids[:-1], r2_ids[1:]))
+
+    if not e1:
+        return True  # ruta muy corta, la consideramos igual
+
+    solapamiento = len(e1 & e2) / len(e1)
+    return solapamiento >= umbral
 
 
-def _eliminar_nodos(grafo, nodos):
-    nodos = set(nodos)
-    for n in nodos:
-        grafo.pop(n, None)
-
-    for u in list(grafo.keys()):
-        grafo[u] = [(dest, peso) for (dest, peso) in grafo[u] if dest not in nodos]
 
 
 
-
-
-
-
-def k_mejores_rutas(grafo, origen_id, destino_id, k=5, penalizacion_base=2.0):
+def k_mejores_rutas(grafo,origen_id,destino_id,k=5,penalizacion_base=2.0,umbral_similitud=0.9):
     """
     Devuelve una lista de hasta k rutas distintas:
     [(lista_ids_nodo, costo_tiempo_minutos), ...]
-    ordenadas desde la más rápida (Dijkstra) hasta las siguientes.
+    ordenadas desde la más rápida (Dijkstra) hacia las siguientes.
 
-    IMPLEMENTACIÓN LIGERA:
-    - Ruta 1: Dijkstra normal (ruta óptima).
-    - Ruta 2..k: cada vez penalizamos las aristas usadas en las rutas anteriores
-      (les subimos mucho el peso) y volvemos a ejecutar Dijkstra.
-    - Complejidad ≈ k * costo(Dijkstra).
+    - La 1ª ruta es SIEMPRE la óptima (Dijkstra puro).
+    - Las siguientes se obtienen penalizando los tramos usados.
+    - Rutas que son demasiado parecidas a alguna anterior
+      (según 'umbral_similitud') se DESCARTAN.
+    - Resultado: entre 1 y k rutas, según cuántas distintas existan
+      realmente en el grafo.
     """
 
-    # Copia del grafo original (dict -> lista) para poder modificar pesos
+    # Copia del grafo original para poder modificar pesos
     grafo_original = {u: list(ady) for u, ady in grafo.items()}
 
     def dijkstra_con_grafo(g):
-        # reutilizamos la función dijkstra ya definida arriba
         return dijkstra(g, origen_id, destino_id)
 
     rutas = []
@@ -204,17 +207,23 @@ def k_mejores_rutas(grafo, origen_id, destino_id, k=5, penalizacion_base=2.0):
 
     rutas.append((ruta0, costo0))
 
-    # 2) Rutas alternativas penalizando tramos anteriores
-    for i in range(1, k):
-        # Unión de todas las aristas usadas en rutas anteriores
+    # 2) Rutas alternativas penalizando aristas ya usadas
+    #    Usamos un número máximo de intentos para no colgarnos
+    max_intentos = k * 4   # por ejemplo, 4 intentos por cada ruta deseada
+    intentos = 0
+
+    while len(rutas) < k and intentos < max_intentos:
+        intentos += 1
+
+        # Unión de todas las aristas usadas en las rutas ya aceptadas
         aristas_penalizar = set()
         for ruta_ids, _ in rutas:
             aristas_penalizar.update(zip(ruta_ids[:-1], ruta_ids[1:]))
 
-        # Factor de penalización (cada iteración un poco más fuerte)
-        factor = penalizacion_base + i * 0.5
+        # Aumentamos la penalización progresivamente
+        factor = penalizacion_base + intentos * 0.5
 
-        # Construimos un grafo penalizado
+        # Construimos grafo penalizado
         grafo_penal = {}
         for u, ady in grafo_original.items():
             nueva_ady = []
@@ -225,19 +234,23 @@ def k_mejores_rutas(grafo, origen_id, destino_id, k=5, penalizacion_base=2.0):
                     nueva_ady.append((v, peso))
             grafo_penal[u] = nueva_ady
 
-        # Dijkstra sobre el grafo penalizado
+        # Ejecutamos Dijkstra en el grafo penalizado
         ruta_i, costo_i = dijkstra_con_grafo(grafo_penal)
         if not ruta_i:
-            break
+            break  # no hay más caminos
 
-        # Si es igual a alguna ruta anterior, no la usamos
-        if any(ruta_i == r for r, _ in rutas):
-            break
+        # ----- FILTRO IMPORTANTE -----
+        # Descartar si es igual o demasiado similar a alguna ruta anterior
+        es_demasiado_parecida = False
+        for ruta_existente, _ in rutas:
+            if rutas_muy_similares(ruta_i, ruta_existente, umbral=umbral_similitud):
+                es_demasiado_parecida = True
+                break
 
+        if es_demasiado_parecida:
+            continue  # probamos otro intento con más penalización
+
+        # Si pasó el filtro, la guardamos
         rutas.append((ruta_i, costo_i))
 
     return rutas
-
-
-
-
