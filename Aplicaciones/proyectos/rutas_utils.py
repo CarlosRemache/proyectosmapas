@@ -154,7 +154,7 @@ def nodo_mas_cercano(lat, lon):
 
 
 
-def rutas_muy_similares(r1_ids, r2_ids, umbral=0.95):
+def rutas_muy_similares(r1_ids, r2_ids, umbral=0.8):
     """
     Devuelve True si r1 y r2 comparten la mayoría de sus tramos.
     Sirve para descartar rutas que visualmente son casi iguales.
@@ -178,7 +178,7 @@ def rutas_muy_similares(r1_ids, r2_ids, umbral=0.95):
 
 
 #umbral_similitud=0.9              Si pones 0.8 → aceptarás rutas un poco más parecidas (saldrán más rutas).               Si pones 0.95 → exigirás que sean muy diferentes (saldrán menos rutas).
-def k_mejores_rutas(grafo,origen_id,destino_id,k=6,penalizacion_base=2.0,umbral_similitud=0.9):
+def k_mejores_rutas(grafo,origen_id,destino_id,k=6,penalizacion_base=2.0,umbral_similitud=0.8):
     """
     Devuelve una lista de hasta k rutas distintas:
     [(lista_ids_nodo, costo_tiempo_minutos), ...]
