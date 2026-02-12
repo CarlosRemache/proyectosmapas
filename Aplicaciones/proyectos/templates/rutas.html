@@ -170,6 +170,7 @@
 
             <div class="tarjeta-ruta ruta-{{ r.slug }}"
                  data-tipo="{{ r.slug }}"
+                 data-indice="{{ r.indice }}"
                  onclick="seleccionarRuta({{ forloop.counter }})">
 
                 <p>Tiempo estimado: {{ r.tiempo_min|floatformat:1 }} min</p>
@@ -263,7 +264,7 @@
         "#ff8800",
         "#00ff88",
         "#ff00ff",
-        "#ffff00",
+        "#000000",
         "#00ffff",
         "#ff4444"
     ];
@@ -304,10 +305,12 @@
         const cards = document.querySelectorAll('.tarjeta-ruta');
         const card = cards[rutaSeleccionada - 1];
         const tipo = card.dataset.tipo;  // "optima" o "alternativa"
+        const indice = card.dataset.indice;  // 1, 2, 3, ...
+
 
         // si luego quieres que /recorrido use la ruta exacta,
         // puedes enviar "tipo" o el índice.
-        window.location.href = `/recorrido/?ruta=${tipo}`;
+        window.location.href = `/recorrido/?ruta=${tipo}&idx=${indice}`;
     });
 
     // Seleccionar por defecto la primera (óptima)
