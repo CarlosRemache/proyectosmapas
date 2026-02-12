@@ -933,6 +933,7 @@ def rutas(request):
 
         nodo_origen, nodo_destino, ruta_prueba, _ = mejor
 
+
     # 5) AQUÍ VIENE LO IMPORTANTE:
     #    obtenemos hasta MAX_RUTAS rutas distintas entre origen y destino
     lista_rutas = k_mejores_rutas(
@@ -945,6 +946,34 @@ def rutas(request):
     if not lista_rutas:
         messages.error(request, "No se pudo calcular ninguna ruta.")
         return redirect('/inicio')
+
+
+
+    # ---------- ELEGIR POSICIÓN VISUAL PARA LA RUTA ÓPTIMA ----------
+    # k_mejores_rutas devuelve la óptima en lista_rutas[0].
+    # Queremos que esa ruta se muestre en una tarjeta aleatoria
+    # (1ª, 2ª, 3ª, 4ª, 5ª o 6ª), NO siempre en la primera.
+    pos_optima = 0
+    n_rutas = len(lista_rutas)
+
+    if n_rutas > 1:
+        # Elegimos una posición entre 0 y n_rutas-1
+        pos_optima = random.randint(0, n_rutas - 1)
+
+        # Intercambiamos la ruta óptima (índice 0) con la que esté en pos_optima
+        lista_rutas[0], lista_rutas[pos_optima] = lista_rutas[pos_optima], lista_rutas[0]
+    # A partir de aquí, la ruta óptima de Dijkstra está en lista_rutas[pos_optima]
+
+
+
+
+
+
+
+
+
+
+
 
     # 6) Rendimiento y precios para calcular combustible
     rend_obj = RendimientoVehiculoTipo.objects.filter(
@@ -1003,7 +1032,7 @@ def rutas(request):
                 consumo_ajustado = consumo * factor_peso
                 delta_litros = consumo_ajustado - consumo
 
-        es_optima = (idx == 0)  # la primera ruta es la de Dijkstra
+        es_optima = (idx == pos_optima)  # la primera ruta es la de Dijkstra
         slug = "optima" if es_optima else "alternativa"
 
         detalles_rutas.append({
