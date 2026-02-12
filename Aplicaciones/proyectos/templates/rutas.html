@@ -45,14 +45,20 @@
         box-shadow: 0 3px 15px rgba(255, 255, 255, 0.08);
     }
 
+    /* Wrapper para poder posicionar el globo */
+    .tarjeta-ruta-wrapper{
+        position: relative;
+        margin-bottom: 12px;
+    }
+
     .tarjeta-ruta {
         border-radius: 12px;
         padding: 15px 18px;
-        margin-bottom: 12px;
         cursor: pointer;
         transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
         background-color: #101010;
         color: #fff;
+        border: 1px solid #333; /* por defecto */
     }
 
     .tarjeta-ruta:hover {
@@ -60,25 +66,55 @@
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
 
-    .tarjeta-ruta h3 {
-        margin: 0 0 5px 0;
-        font-size: 18px;
-    }
-
     .tarjeta-ruta p {
         margin: 2px 0;
         font-size: 14px;
         opacity: 0.9;
+        font-family: system-ui;
     }
 
-    .pill-tipo {
-        margin-top: 6px;
-        font-weight: bold;
+    /* Bordes según tipo */
+    .tarjeta-ruta.ruta-optima { border: 2px solid #00aaff; }
+    .tarjeta-ruta.ruta-larga  { border: 2px solid #ff8800; }
+    .tarjeta-ruta.ruta-segura { border: 2px solid #00ff88; }
+
+    /* Globo de “ruta más óptima” */
+    .badge-optima{
+        position: absolute;
+        right: 18px;
+        bottom: -6px;
+        background:#00e53a;
+        color:#000;
+        border-radius: 18px;
+        padding:6px 10px;
+        font-size:12px;
+        font-weight:600;
+        display:flex;
+        align-items:center;
+        gap:6px;
+        box-shadow:0 3px 10px rgba(0,0,0,0.6);
     }
 
-    .pill-optima { color: #00aaff; }
-    .pill-larga { color: #ff8800; }
-    .pill-segura { color: #00ff88; }
+    .badge-optima::after{
+        content:"";
+        position:absolute;
+        right:22px;
+        top:-7px;
+        border-width:0 7px 7px 7px;
+        border-style:solid;
+        border-color:transparent transparent #00e53a transparent;
+    }
+
+    .badge-optima-icon{
+        width:16px;
+        height:16px;
+        border-radius:999px;
+        background:#fff;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:11px;
+    }
 
     .acciones-rutas{
         margin-top:18px;
@@ -120,47 +156,6 @@
     .btn-ir:hover{
         background:#00c732;
     }
-
-
-    .texto-arriba {
-    position: relative; /
-    top: -70px;         
-    }
-
-    p {
-    font-family: system-ui;
-    }
-
-    /* Bordes según tipo */
-    .tarjeta-ruta { border: 1px solid #333; } /* por defecto */
-
-    .tarjeta-ruta.ruta-optima { border: 2px solid #00aaff; }
-    .tarjeta-ruta.ruta-larga  { border: 2px solid #ff8800; }
-    .tarjeta-ruta.ruta-segura { border: 2px solid #00ff88; }
-
-
-    .tarjeta-ruta.ruta-optima .pill-tipo{
-        font-size: 17px;     
-        line-height: 1.1;
-        margin: 0;
-        text-align: right;           
-    }
-
-    .tarjeta-ruta.ruta-larga .pill-tipo{
-        font-size: 17px;     
-        line-height: 1.1;
-        margin: 0;
-        text-align: right;           
-    }
-
-    .tarjeta-ruta.ruta-segura .pill-tipo{
-        font-size: 17px;     
-        line-height: 1.1;
-        margin: 0;
-        text-align: right;           
-    }
-
-
 </style>
 
 
@@ -174,47 +169,45 @@
     <div class="tarjeta-info" id="opciones-rutas">
 
         {% for r in detalles_rutas %}
-        <div class="tarjeta-ruta ruta-{{ r.tipo|default:'otra' }}"
-        data-tipo="{{ r.tipo }}"
-        onclick="seleccionarRuta({{ forloop.counter }})">
+        <div class="tarjeta-ruta-wrapper">
 
-            <p>Tiempo estimado:  {{ r.tiempo_min|floatformat:1 }} min</p>
+            <div class="tarjeta-ruta ruta-{{ r.tipo|default:'otra' }}"
+                 data-tipo="{{ r.tipo }}"
+                 onclick="seleccionarRuta({{ forloop.counter }})">
 
-            <p>Distancia: {{ r.distancia_km|floatformat:2 }} km</p>
+                <p>Tiempo estimado: {{ r.tiempo_min|floatformat:1 }} min</p>
+                <p>Distancia: {{ r.distancia_km|floatformat:2 }} km</p>
 
-            {% if r.consumo_litros %}
-            <p>Combustible utiliza: {{ r.consumo_litros|floatformat:2 }} L</p>
-            {% endif %}
+                {% if r.consumo_litros %}
+                    <p>Combustible utiliza: {{ r.consumo_litros|floatformat:2 }} L</p>
+                {% endif %}
 
-            {% if r.costo_ruta %}
-            <p>Costo estimado: {{ r.costo_ruta|floatformat:2 }}</p>
-            {% endif %}
+                {% if r.costo_ruta %}
+                    <p>Costo estimado: {{ r.costo_ruta|floatformat:2 }}</p>
+                {% endif %}
 
-            {# ---------- NUEVO: consumo ajustado por peso ---------- #}
-            {% if r.consumo_litros_ajustado %}
-                <p>
-                    Combustible ajustado por peso:
-                    {{ r.consumo_litros_ajustado|floatformat:2 }} L
-                </p>
-            {% endif %}
-            {# ------------------------------------------------------ #}
+                {% if r.consumo_litros_ajustado %}
+                    <p>
+                        Combustible ajustado por peso:
+                        {{ r.consumo_litros_ajustado|floatformat:2 }} L
+                    </p>
+                {% endif %}
+            </div>
 
+            {# Globo que marca la ruta más óptima #}
             {% if r.tipo == "optima" %}
-                <p class="pill-tipo pill-optima texto-arriba ">Ruta </p>
-                <p class="pill-tipo pill-optima texto-arriba ">Óptima</p>
-            {% elif r.tipo == "larga" %}
-                <p class="pill-tipo pill-larga texto-arriba">Ruta </p>
-                <p class="pill-tipo pill-larga texto-arriba">Alternativa</p>
-            {% elif r.tipo == "segura" %}
-                 <p class="pill-tipo pill-segura texto-arriba">Ruta</p>
-                 <p class="pill-tipo pill-segura texto-arriba">Alternativa</p>
+            <div class="badge-optima">
+                <span class="badge-optima-icon">★</span>
+                <span>Esta es la ruta más óptima</span>
+            </div>
             {% endif %}
 
         </div>
         {% endfor %}
+
         <div class="acciones-rutas">
             <a href="/buscarlugares/" class="btn-accion btn-cancelar">Cancelar</a>
-            <a href="/recorrido/"id="btn-ir-ahora" class="btn-accion btn-ir">Ir ahora</a>
+            <a href="/recorrido/" id="btn-ir-ahora" class="btn-accion btn-ir">Ir ahora</a>
         </div>
 
     </div>
@@ -224,7 +217,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-
+    // ----- MAPA -----
     const map = L.map('mapa').setView([-0.9333, -78.6167], 15);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -264,16 +257,21 @@
     );
     map.fitBounds(bounds, { padding: [50, 50] });
 
-
+    // ----- RUTAS (soporta N rutas) -----
     const rutas = JSON.parse('{{ rutas_js|escapejs }}');
 
+    const colores = [
+        "#0077ff", // primera (óptima)
+        "#ff8800",
+        "#00ff88",
+        "#ff00ff",
+        "#ffff00",
+        "#00ffff",
+        "#ff4444"
+    ];
+
     const polylines = rutas.map((coords, idx) => {
-        let color = "#0077ff"; 
-        if (idx === 1) {
-            color = "#ff8800"; 
-        } else if (idx === 2) {
-            color = "#00ff88"; 
-        }
+        const color = colores[idx % colores.length];
         return L.polyline(coords, { color: color, weight: 6 });
     });
 
@@ -282,16 +280,15 @@
         polylines.forEach(p => p.remove());
         if (polylines[idx]) {
             polylines[idx].addTo(map);
+            map.fitBounds(polylines[idx].getBounds(), { padding: [50, 50] });
         }
     }
 
-
-    let rutaSeleccionada = 1;  
+    let rutaSeleccionada = 1;
 
     function seleccionarRuta(n) {
         rutaSeleccionada = n;
         activarRuta(n);
-
 
         const cards = document.querySelectorAll('.tarjeta-ruta');
         cards.forEach((card, idx) => {
@@ -303,18 +300,17 @@
         });
     }
 
-
     document.getElementById('btn-ir-ahora').addEventListener('click', function (e) {
         e.preventDefault();
 
         const cards = document.querySelectorAll('.tarjeta-ruta');
         const card = cards[rutaSeleccionada - 1];
-        const tipo = card.dataset.tipo;  
+        const tipo = card.dataset.tipo;  // optima / larga / segura / etc.
 
         window.location.href = `/recorrido/?ruta=${tipo}`;
     });
 
-
+    // Por defecto, se selecciona la 1ª ruta (la óptima)
     seleccionarRuta(1);
 
     setTimeout(() => map.invalidateSize(), 300);
