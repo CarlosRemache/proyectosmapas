@@ -1,3 +1,4 @@
+
 {% extends "./plantilla.html" %}
 {% load static %}
 {% block contenido %}
@@ -8,7 +9,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>localizacion de autos</title>
-
+     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+ 
      <style>
       body {
           padding: 0;
@@ -19,6 +21,7 @@
           height: 100%;
           width: 100vw;
       }
+
 
       #btnUbicacion {
         position: absolute;
@@ -39,16 +42,12 @@
         background-color: #0056b3;
       }
 
-      /* Esto era para Leaflet, ya no se usa pero no molesta
       .leaflet-top.leaflet-left {
         top: 100px;
       }
-      */
+
      </style>
-
-     <!-- Google Maps JS (pon aquí tu API KEY) -->
-     <script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY_AQUI"></script>
-
+ 
   </head>
   <body>
         
@@ -96,50 +95,44 @@
     </div>
   </nav>
 
-  <button id="btnUbicacion">Activar ubicación</button>
-  <div id="map"></div> 
 
-  <script>
-      // ====== MAPA GOOGLE (modo tipo Earth) ======
-      let map;
+
+  <button id="btnUbicacion">Activar ubicación</button>
+    <div id="map"></div> 
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    <script>
+      
+      const map = L.map('map').setView([-0.9333, -78.6167], 15); 
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+
+
+      const phoneIcon = L.icon({
+        iconUrl: '{% static "img/punto.png" %}',
+        iconSize: [35, 35],
+        iconAnchor: [17, 17] 
+      });
+
+
       let phoneMarker = null;
 
-      function initMap() {
-        map = new google.maps.Map(document.getElementById("map"), {
-          center: { lat: -0.9333, lng: -78.6167 },
-          zoom: 15,
-          mapTypeId: "hybrid",   // satélite + labels
-          tilt: 45
-        });
-      }
-
-      const phoneIcon = {
-        url: "{% static 'img/punto.png' %}",
-        scaledSize: new google.maps.Size(35, 35),
-        anchor: new google.maps.Point(17, 17)
-      };
-
       function paintMarker(lat, lon) {
-        const pos = { lat: lat, lng: lon };
-
-        if (!map) {
-          initMap();
-        }
-
+        const coords = [lat, lon];
         if (!phoneMarker) {
-          phoneMarker = new google.maps.Marker({
-            position: pos,
-            map: map,
-            icon: phoneIcon
-          });
+          phoneMarker = L.marker(coords, { icon: phoneIcon }).addTo(map);
         } else {
-          phoneMarker.setPosition(pos);
+          phoneMarker.setLatLng(coords);
         }
-
-        map.panTo(pos);
+        map.panTo(coords);
       }
 
-      // ====== WEBSOCKET + GEO ======
+
       let socket = null;
       let socketRetries = 0;
       let socketTimer = null;
@@ -186,6 +179,7 @@
         }, delay);
       }
 
+
       let watchId = null;
 
       function startWatch(sendFn) {
@@ -223,6 +217,7 @@
         }
       }
 
+
       function onResume(callback) {
         document.addEventListener("visibilitychange", () => {
           if (!document.hidden) callback();
@@ -232,6 +227,7 @@
         window.addEventListener("online", callback);
         window.addEventListener("pageshow", callback);
       }
+
 
       function handleWSMessage(e) {
         const data = JSON.parse(e.data);
@@ -263,20 +259,21 @@
         btn.style.backgroundColor = "#28a745";
       }
 
+
       document.getElementById("btnUbicacion").addEventListener("click", activarUbicacion);
 
       document.addEventListener("DOMContentLoaded", () => {
-        // Inicializar el mapa al cargar
-        initMap();
 
         const lastLat = localStorage.getItem("last_lat");
         const lastLon = localStorage.getItem("last_lon");
         if (lastLat && lastLon) paintMarker(parseFloat(lastLat), parseFloat(lastLon));
 
+  
         if (localStorage.getItem("ubicacion_activa") === "1") {
           activarUbicacion();
         }
       });
+
 
       onResume(() => {
         if (localStorage.getItem("ubicacion_activa") === "1") {
@@ -295,6 +292,7 @@
       });
     </script>
   </body>
+
 </html>
 
-{% endblock %}
+{% endblock %} 
