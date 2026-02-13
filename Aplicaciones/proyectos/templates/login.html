@@ -212,7 +212,8 @@ body{
         <br>
         <br>
           <h3>Iniciar sesión</h3>
-
+        <br>
+        <br>
           <form action="{% url 'login' %}" method="post">
               {% csrf_token %}
 
@@ -226,7 +227,8 @@ body{
                   <input type="checkbox" id="chkMostrar">
                   <label for="chkMostrar" style="margin:0; font-weight:normal;">Mostrar contraseña</label>
               </div>
-
+            <br>
+            <br>
               <button type="submit">Ingresar</button>
 
           </form>
