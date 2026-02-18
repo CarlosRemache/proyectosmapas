@@ -166,7 +166,7 @@ def guardarusuario(request):
             messages.error(
                 request,
                 "La contraseña debe tener EXACTAMENTE 10 caracteres e incluir: "
-                "1 mayúscula, 1 minúscula, 1 número y 1 símbolo (ej: ! @ # )."
+                "1 mayúscula, 1 minúscula, 1 número y 1 símbolo (ej: ! @ # . , )."
             )
             return redirect('/nuevousuario/')
 
