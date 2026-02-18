@@ -162,6 +162,15 @@ def guardarusuario(request):
         correo_usuario = request.POST['txt_correo']
         contrasena_usuario = request.POST['txt_contrasena']
 
+        if not password_valida_10(contrasena_usuario):
+            messages.error(
+                request,
+                "La contraseña debe tener EXACTAMENTE 10 caracteres e incluir: "
+                "1 mayúscula, 1 minúscula, 1 número y 1 símbolo (ej: ! @ # . ,)."
+            )
+            return redirect('/nuevousuario/')
+
+
         rol = 'USUARIO'
 
         if Usuario.objects.filter(correo_usuario=correo_usuario).exists():
@@ -222,7 +231,16 @@ def procesareditarusuarioadministrador(request):
     nueva_contra = request.POST.get('txt_contrasena', '').strip()
 
     if nueva_contra:
+        if not password_valida_10(nueva_contra):
+            messages.error(
+                request,
+                "La contraseña debe tener EXACTAMENTE 10 caracteres e incluir: "
+                "1 mayúscula, 1 minúscula, 1 número y 1 símbolo."
+            )
+            return redirect(f'/editarusuarioadministrador/{usuario.id_usuario}/')
+        
         usuario.contrasena_usuario = nueva_contra
+
 
     if 'foto_usuario' in request.FILES:
         nueva_foto = request.FILES['foto_usuario']
@@ -309,6 +327,26 @@ def inactivarusuarioadministrador(request, id):
     usuario.save()
     messages.success(request, "Usuario desactivado correctamente.")
     return redirect('/listadousuario/')
+
+
+
+
+
+def password_valida_10(pw: str) -> bool:
+    if len(pw) != 10:
+        return False
+    if any(ch.isspace() for ch in pw):  # sin espacios
+        return False
+
+    tiene_min = any(ch.islower() for ch in pw)
+    tiene_may = any(ch.isupper() for ch in pw)
+    tiene_num = any(ch.isdigit() for ch in pw)
+    tiene_simbolo = any((not ch.isalnum()) for ch in pw)  # cualquier símbolo: !@#., etc.
+
+    return tiene_min and tiene_may and tiene_num and tiene_simbolo
+
+
+
 
 
 #documento---------------------------------------------------------------------------------------------------
