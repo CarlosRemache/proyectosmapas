@@ -581,6 +581,26 @@ def guardarvehiculo(request):
 
 
 
+    if cilindraje is None or cilindraje.strip() == "":
+        messages.error(request, "Debe ingresar el cilindraje del vehículo.")
+        return redirect('/nuevovehiculo')
+
+    cilindraje = cilindraje.replace(',', '.')
+
+    try:
+        valor_cilindraje = float(cilindraje)
+    except ValueError:
+        messages.error(request, "El cilindraje debe ser un número válido (ej: 150, 1250, 2000).")
+        return redirect('/nuevovehiculo')
+
+    if valor_cilindraje <= 0:
+        messages.error(request, "El cilindraje debe ser mayor que 0.")
+        return redirect('/nuevovehiculo')
+
+    if valor_cilindraje > 5000:
+        messages.error(request, "El cilindraje no puede ser mayor a 5000.")
+        return redirect('/nuevovehiculo')
+
 
     usuario = Usuario.objects.get(id_usuario=id_usuario)
 
@@ -645,6 +665,7 @@ def procesareditarvehiculo(request):
     vehiculo.numero_motor = request.POST['txt_numero_motor']
     vehiculo.numero_chasis = request.POST['txt_numero_chasis']
     peso_auto = request.POST['txt_peso_auto']
+    cilindraje = request.POST['txt_cilindraje']
 
 
     if peso_auto is None or peso_auto.strip() == "":
@@ -667,9 +688,30 @@ def procesareditarvehiculo(request):
         messages.error(request, "El peso no puede ser mayor a 8 toneladas.")
         return redirect(f'/editarvehiculo/{vehiculo.id_vehiculo}')
 
-    vehiculo.peso_auto = valor_peso
-    vehiculo.cilindraje = request.POST['txt_cilindraje']
 
+    if cilindraje is None or cilindraje.strip() == "":
+        messages.error(request, "Debe ingresar el cilindraje del vehículo.")
+        return redirect(f'/editarvehiculo/{vehiculo.id_vehiculo}')
+
+    cilindraje = cilindraje.replace(',', '.')
+
+    try:
+        valor_cilindraje = float(cilindraje)
+    except ValueError:
+        messages.error(request, "El cilindraje debe ser un número válido (ej: 150, 1250, 2000).")
+        return redirect(f'/editarvehiculo/{vehiculo.id_vehiculo}')
+
+    if valor_cilindraje <= 0:
+        messages.error(request, "El cilindraje debe ser mayor que 0.")
+        return redirect(f'/editarvehiculo/{vehiculo.id_vehiculo}')
+
+    if valor_cilindraje > 5000:
+        messages.error(request, "El cilindraje no puede ser mayor a 5000.")
+        return redirect(f'/editarvehiculo/{vehiculo.id_vehiculo}')
+
+
+    vehiculo.peso_auto = valor_peso
+    vehiculo.cilindraje = valor_cilindraje
 
     vehiculo.save()
 
