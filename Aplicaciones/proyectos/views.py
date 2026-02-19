@@ -558,6 +558,30 @@ def guardarvehiculo(request):
     peso_auto = request.POST['txt_peso_auto']
     cilindraje = request.POST['txt_cilindraje']
 
+
+    if peso_auto is None or peso_auto.strip() == "":
+        messages.error(request, "Debe ingresar el peso del vehículo en toneladas.")
+        return redirect('/nuevovehiculo')
+
+    peso_auto = peso_auto.replace(',', '.')
+
+    try:
+        valor_peso = float(peso_auto)
+    except ValueError:
+        messages.error(request, "El peso del vehículo debe ser un número válido (ej: 1.2).")
+        return redirect('/nuevovehiculo')
+
+    if valor_peso <= 0:
+        messages.error(request, "El peso debe ser mayor que 0 toneladas.")
+        return redirect('/nuevovehiculo')
+
+    if valor_peso > 8:
+        messages.error(request, "El peso no puede ser mayor a 8 toneladas.")
+        return redirect('/nuevovehiculo')
+
+
+
+
     usuario = Usuario.objects.get(id_usuario=id_usuario)
 
     Vehiculo.objects.create(
@@ -620,8 +644,32 @@ def procesareditarvehiculo(request):
     vehiculo.numero_cedula = request.POST['txt_numero_cedula']
     vehiculo.numero_motor = request.POST['txt_numero_motor']
     vehiculo.numero_chasis = request.POST['txt_numero_chasis']
-    vehiculo.peso_auto = request.POST['txt_peso_auto']
+    peso_auto = request.POST['txt_peso_auto']
+
+
+    if peso_auto is None or peso_auto.strip() == "":
+        messages.error(request, "Debe ingresar el peso del vehículo en toneladas.")
+        return redirect(f'/editarvehiculo/{vehiculo.id_vehiculo}')
+
+    peso_auto = peso_auto.replace(',', '.')
+
+    try:
+        valor_peso = float(peso_auto)
+    except ValueError:
+        messages.error(request, "El peso del vehículo debe ser un número válido (ej: 1.2).")
+        return redirect(f'/editarvehiculo/{vehiculo.id_vehiculo}')
+
+    if valor_peso <= 0:
+        messages.error(request, "El peso debe ser mayor que 0 toneladas.")
+        return redirect(f'/editarvehiculo/{vehiculo.id_vehiculo}')
+
+    if valor_peso > 8:
+        messages.error(request, "El peso no puede ser mayor a 8 toneladas.")
+        return redirect(f'/editarvehiculo/{vehiculo.id_vehiculo}')
+
+    vehiculo.peso_auto = valor_peso
     vehiculo.cilindraje = request.POST['txt_cilindraje']
+
 
     vehiculo.save()
 
