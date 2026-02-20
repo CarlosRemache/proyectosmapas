@@ -585,7 +585,7 @@ def guardarvehiculo(request):
         messages.error(request, "Debe ingresar el cilindraje del vehículo.")
         return redirect('/nuevovehiculo')
 
-    cilindraje = cilindraje.replace(',', '.')
+    cilindraje = cilindraje.replace(',', '.').strip()
 
     try:
         valor_cilindraje = float(cilindraje)
@@ -672,7 +672,7 @@ def procesareditarvehiculo(request):
         messages.error(request, "Debe ingresar el peso del vehículo en toneladas.")
         return redirect(f'/editarvehiculo/{vehiculo.id_vehiculo}')
 
-    peso_auto = peso_auto.replace(',', '.')
+    peso_auto = peso_auto.replace(',', '.') 
 
     try:
         valor_peso = float(peso_auto)
@@ -693,7 +693,7 @@ def procesareditarvehiculo(request):
         messages.error(request, "Debe ingresar el cilindraje del vehículo.")
         return redirect(f'/editarvehiculo/{vehiculo.id_vehiculo}')
 
-    cilindraje = cilindraje.replace(',', '.')
+    cilindraje = cilindraje.replace(',', '.').strip()
 
     try:
         valor_cilindraje = float(cilindraje)
