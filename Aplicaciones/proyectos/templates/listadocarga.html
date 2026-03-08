@@ -238,7 +238,7 @@
       {% if vehiculo %}
         <p class="resumen-peso">
           Vehículo: <b>{{ vehiculo.matricula_vehiculo }}</b> ({{ vehiculo.tipovehiculo_vehiculo }})<br>
-          Peso base vehículo: <b>{{ vehiculo.peso_base_kg }} kg</b><br>
+          Peso base vehículo: <b>{{ peso_base_kg|floatformat:0 }} kg</b><br>
           Peso total de carga: <b>{{ total_carga_kg }} kg</b>
         </p>
       {% endif %}

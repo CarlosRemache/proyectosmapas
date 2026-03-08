@@ -754,7 +754,11 @@ def listadocarga(request):
     cargas = CargaVehiculo.objects.filter(vehiculo=vehiculo)
     total_carga_kg = cargas.aggregate(total=Sum('peso_adicional'))['total'] or 0
 
+    factor_peso, peso_total_kg, peso_base_kg = calcular_factor_peso(vehiculo)
+
+
     return render(request, 'listadocarga.html', {
+        'peso_base_kg':peso_base_kg,
         'cargas': cargas,
         'vehiculo': vehiculo,
         'total_carga_kg': total_carga_kg,
