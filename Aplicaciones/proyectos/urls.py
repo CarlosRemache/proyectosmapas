@@ -153,4 +153,9 @@ urlpatterns = [
 
     #seguridad
     path("tab-bloqueada/", views.tab_bloqueada, name="tab_bloqueada"),
+
+
+
+    path('listadocarros/', views.listadocarros),  
+
 ]
