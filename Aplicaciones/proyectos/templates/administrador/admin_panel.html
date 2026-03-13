@@ -28,9 +28,39 @@
   </div>
 </div>
 
+<div class="grafico-row">
+  <div class="grafico-card">
+    <h2 style="text-align:center; margin-bottom:20px;">
+      Consumo total de Combustible (L) por mes (todos los usuarios)
+    </h2>
+    <div id="kpi3"></div>
+  </div>
+</div>
+
+<div class="grafico-row">
+  <div class="grafico-card">
+    <h2 style="text-align:center; margin-bottom:20px;">
+      Costo total ($) por mes (todos los usuarios)
+    </h2>
+    <div id="kpi4"></div>
+  </div>
+</div>
+
+<div class="grafico-row">
+  <div class="grafico-card">
+    <h2 style="text-align:center; margin-bottom:20px;">
+      Litros consumidos por tipo de combustible
+    </h2>
+    <div id="kpi6"></div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <script>
+  // =========================
+  // KPI1 - Viaje más repetido por usuario
+  // =========================
   var optionsKpi1 = {
     chart: {
       type: 'bar',
@@ -50,15 +80,16 @@
       }
     },
     yaxis: {
+      min: 0,
       title: {
-        text: 'Cantidad'
+        text: 'Cantidad de veces'
       }
     },
     plotOptions: {
       bar: {
         borderRadius: 6,
-        horizontal: false,
-        distributed: true
+        distributed: true,
+        horizontal: false
       }
     },
     dataLabels: {
@@ -85,6 +116,149 @@
 
   var chartKpi1 = new ApexCharts(document.querySelector("#kpi1"), optionsKpi1);
   chartKpi1.render();
+
+
+  // =========================
+  // KPI3 - Consumo total de combustible por mes
+  // =========================
+  var optionsKpi3 = {
+    chart: {
+      type: 'line',
+      height: 350,
+      toolbar: {
+        show: true
+      }
+    },
+    series: [{
+      name: 'Consumo total (L)',
+      data: {{ kpi3_data|safe }}
+    }],
+    xaxis: {
+      categories: {{ kpi3_labels|safe }},
+      labels: {
+        rotate: 0
+      }
+    },
+    yaxis: {
+      min: 0,
+      title: {
+        text: 'Litros (L)'
+      }
+    },
+    stroke: {
+      curve: 'smooth',
+      width: 3
+    },
+    markers: {
+      size: 4
+    },
+    dataLabels: {
+      enabled: false
+    },
+    tooltip: {
+      y: {
+        formatter: function(value) {
+          return Number(value).toFixed(2) + ' L';
+        }
+      }
+    }
+  };
+
+  var chartKpi3 = new ApexCharts(document.querySelector("#kpi3"), optionsKpi3);
+  chartKpi3.render();
+
+
+  // =========================
+  // KPI4 - Costo total por mes
+  // =========================
+  var optionsKpi4 = {
+    chart: {
+      type: 'area',
+      height: 350,
+      toolbar: {
+        show: true
+      }
+    },
+    series: [{
+      name: 'Costo total ($)',
+      data: {{ kpi4_data|safe }}
+    }],
+    xaxis: {
+      categories: {{ kpi4_labels|safe }},
+      labels: {
+        rotate: 0
+      }
+    },
+    yaxis: {
+      min: 0,
+      title: {
+        text: 'USD ($)'
+      }
+    },
+    stroke: {
+      curve: 'smooth',
+      width: 3
+    },
+    markers: {
+      size: 4
+    },
+    dataLabels: {
+      enabled: false
+    },
+    tooltip: {
+      y: {
+        formatter: function(value) {
+          return '$ ' + Number(value).toFixed(2);
+        }
+      }
+    },
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.35,
+        opacityTo: 0.10,
+        stops: [0, 90, 100]
+      }
+    },
+    colors: ['#36A2EB']
+  };
+
+  var chartKpi4 = new ApexCharts(document.querySelector("#kpi4"), optionsKpi4);
+  chartKpi4.render();
+
+
+  // =========================
+  // KPI6 - Litros consumidos por tipo de combustible
+  // =========================
+  var optionsKpi6 = {
+    chart: {
+      type: 'pie',
+      height: 350
+    },
+    series: {{ kpi6_data|safe }},
+    labels: {{ kpi6_labels|safe }},
+    colors: ['#4e79a7', '#f28e2b', '#59a14f', '#e15759'],
+    legend: {
+      position: 'bottom'
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: function(val) {
+        return val.toFixed(1) + '%';
+      }
+    },
+    tooltip: {
+      y: {
+        formatter: function(value) {
+          return Number(value).toFixed(2) + ' L';
+        }
+      }
+    }
+  };
+
+  var chartKpi6 = new ApexCharts(document.querySelector("#kpi6"), optionsKpi6);
+  chartKpi6.render();
 </script>
 
 {% endblock %}
