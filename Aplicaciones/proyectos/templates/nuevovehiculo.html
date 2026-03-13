@@ -3,209 +3,288 @@
 {% block contenido %}
 
 <style>
-    body {
-        background-color: #000;
-        font-family: Arial, sans-serif;
+.content-wrapper{
+    margin-left:380px;
+    padding:30px;
+}
+
+.form-card{
+    max-width: 820px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.form-header{
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.form-header h3{
+    margin: 0;
+    font-size: 24px;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.form-header p{
+    margin-top: 8px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.form-grid{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px 20px;
+}
+
+.form-group{
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width{
+    grid-column: 1 / -1;
+}
+
+.form-group label{
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #374151;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select{
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #111827;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: all .15s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus{
+    outline: none;
+    border-color: #111827;
+    box-shadow: 0 0 0 3px rgba(17,24,39,0.10);
+}
+
+.form-group input::placeholder{
+    color: #9ca3af;
+}
+
+.btn-container{
+    margin-top: 28px;
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.btn-save,
+.btn-cancel{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+    transition: transform .12s ease, opacity .12s ease, background .12s ease;
+    cursor: pointer;
+}
+
+.btn-save{
+    background: #111827;
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+}
+
+.btn-save:hover{
+    opacity: .92;
+    transform: translateY(-1px);
+}
+
+.btn-save[disabled]{
+    background: #9ca3af !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    opacity: 1 !important;
+    box-shadow: none !important;
+}
+
+.btn-cancel{
+    background: #ffffff;
+    color: #111827;
+    border: 1px solid #d1d5db;
+}
+
+.btn-cancel:hover{
+    background: #f9fafb;
+    transform: translateY(-1px);
+}
+
+.alerta-vehiculo{
+    margin-top: 18px;
+    text-align: center;
+    color: #dc2626;
+    font-size: 14px;
+    font-weight: 600;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    padding: 12px;
+    border-radius: 12px;
+}
+
+.info-usuario{
+    margin-bottom: 22px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.info-usuario strong{
+    color: #111827;
+}
+
+@media (max-width:1200px){
+    .content-wrapper{
+        margin-left:0;
+        padding:20px;
+    }
+}
+
+@media (max-width: 768px){
+    .form-grid{
+        grid-template-columns: 1fr;
     }
 
-    .form-container {
-        max-width: 380px;
-        margin: 80px auto;
-        background-color: #2b2b2b;
-        padding: 30px;
-        border-radius: 20px;
-        color: white;
-        text-align: center;
-        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.7);
+    .form-card{
+        padding: 20px;
     }
 
-    .barra {
-        width: 250px;
-        height: 18px;
-        background-color: #444;
-        margin: 10px auto 20px auto;
-        border-radius: 10px;
+    .form-header h3{
+        font-size: 21px;
     }
 
-    h3 {
-        color: white;
-        margin-bottom: 20px;
-        font-size: 20px;
-        text-transform: uppercase;
-    }
-
-    label {
-        display: block;
-        text-align: left;
-        font-weight: bold;
-        margin-top: 12px;
-        color: #ddd;
-    }
-
-    select, input[type="text"] {
-        width: 100%;
-        padding: 12px;
-        margin-top: 5px;
-        border: none;
-        border-radius: 8px;
-        background-color: #444;
-        color: white;
-        font-size: 14px;
-    }
-
-    select option {
-        background-color: #333;
-        color: white;
-    }
-
-    input::placeholder {
-        color: #aaa;
-    }
-
-    .btn-container {
-        margin-top: 25px;
-        display: flex;
+    .btn-container{
         flex-direction: column;
-        gap: 12px;
     }
 
-    .btn-save {
-        background-color: #0ccb3a;
-        color: white;
-        padding: 12px;
-        border-radius: 10px;
-        font-weight: bold;
-        cursor: pointer;
-        border: none;
-        font-size: 16px;
-    }
-
-    .btn-save:hover {
-        background-color: #0aa330;
-    }
-
-    .btn-save[disabled] {
-        background-color: #777 !important;
-        cursor: not-allowed !important;
-    }
-
-    .btn-cancel {
-        background-color: #0ccb3a;
-        padding: 12px;
-        border-radius: 10px;
-        text-align: center;
-        display: block;
-        font-weight: bold;
-        color: white;
-        font-size: 16px;
-        text-decoration: none;
-    }
-
-    .btn-cancel:hover {
-        background-color: #0aa330;
-    }
-
-
-    .form-container input,
-    .form-container select {
+    .btn-save,
+    .btn-cancel{
         width: 100%;
-        padding: 12px;
-        margin-top: 5px;
-        border: none;
-        border-radius: 8px;
-        background-color: #444;
-        color: #fff;
-        font-size: 14px;
-        box-sizing: border-box;
     }
-
-
-    .form-container input::placeholder {
-        color: #aaa;
-    }
-
-
-    .form-container input:focus,
-    .form-container select:focus {
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(12, 203, 58, 0.35);
-    }
-
-
-    .form-container input[type="number"]{
-    color-scheme: dark;
-    }
-
+}
 </style>
 
+<div class="content-wrapper">
+    <div class="form-card">
 
-<div class="form-container">
-
-    <div class="barra"></div>
-
-    <h3>Agregar Vehículo</h3>
-
-    <form action="/guardarvehiculo/" method="post">
-        {% csrf_token %}
-
-        <label>Usuario:</label>
-        <select name="usuario" required>
-            <option value="{{ usuario.id_usuario }}">{{ usuario.correo_usuario }}</option>
-        </select>
-
-        <label>Tipo de Vehículo:</label>
-        <select name="txt_tipo_vehiculo" required>
-            <option value="AUTOMOVIL">AUTOMOVIL</option>
-            <option value="TAXI">TAXI</option>
-            <option value="MOTOCICLETA">MOTOCICLETA</option>
-            <option value="CAMION">CAMION</option>
-            <option value="CAMIONETA">CAMIONETA</option>
-        </select>
-
-        <label>Tipo de Combustible:</label>
-        <select name="txt_tipo_combustible" required>
-            <option value="EXTRA">EXTRA</option>
-            <option value="DIESEL">DIESEL</option>
-            <option value="SUPER">SUPER</option>
-            <option value="ECOPAIS">ECOPAIS</option>
-        </select>
-
-        <label>Placa:</label>
-        <input type="text" name="txt_matricula" required>
-
-        <label>Modelo:</label>
-        <input type="text" name="txt_modelo">
-
-        <label>Número de Cédula (Propietario):</label>
-        <input type="text" name="txt_numero_cedula" required>
-
-        <label>Número de Motor:</label>
-        <input type="text" name="txt_numero_motor" required>
-
-        <label>Número de Chasis:</label>
-        <input type="text" name="txt_numero_chasis" required>
-
-        <label>Peso (t):</label>
-        <input type="text" name="txt_peso_auto" >
-
-        <label>Cilindraje:</label>
-        <input type="text" name="txt_cilindraje" >
-
-        <div class="btn-container">
-            <button type="submit" class="btn-save"
-                {% if tiene_vehiculo %}disabled{% endif %}>
-                Guardar
-            </button>
-            <a href="/inicio/" class="btn-cancel">Cancelar</a>
+        <div class="form-header">
+            <h3>Agregar Vehículo</h3>
+            <p>Registra la información del vehículo asignado al usuario seleccionado.</p>
         </div>
 
-        {% if tiene_vehiculo %}
-        <p style="color:#f55; font-size:14px; margin-top:10px;">
-            Ya tienes un vehículo registrado. Elimínalo para agregar uno nuevo.
-        </p>
-        {% endif %}
+        <div class="info-usuario">
+            <strong>Usuario asignado:</strong>
+            {{ usuario.nombre_usuario }} {{ usuario.apellido_usuario }} - {{ usuario.correo_usuario }}
+        </div>
 
-    </form>
+        <form action="/guardarvehiculo/" method="post">
+            {% csrf_token %}
+
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label>Usuario:</label>
+                    <select name="usuario" required>
+                        <option value="{{ usuario.id_usuario }}">{{ usuario.correo_usuario }}</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo de Vehículo:</label>
+                    <select name="txt_tipo_vehiculo" required>
+                        <option value="AUTOMOVIL">AUTOMOVIL</option>
+                        <option value="TAXI">TAXI</option>
+                        <option value="MOTOCICLETA">MOTOCICLETA</option>
+                        <option value="CAMION">CAMION</option>
+                        <option value="CAMIONETA">CAMIONETA</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo de Combustible:</label>
+                    <select name="txt_tipo_combustible" required>
+                        <option value="EXTRA">EXTRA</option>
+                        <option value="DIESEL">DIESEL</option>
+                        <option value="SUPER">SUPER</option>
+                        <option value="ECOPAIS">ECOPAIS</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Placa:</label>
+                    <input type="text" name="txt_matricula" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Modelo:</label>
+                    <input type="text" name="txt_modelo">
+                </div>
+
+                <div class="form-group">
+                    <label>Número de Cédula (Propietario):</label>
+                    <input type="text" name="txt_numero_cedula" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Número de Motor:</label>
+                    <input type="text" name="txt_numero_motor" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Número de Chasis:</label>
+                    <input type="text" name="txt_numero_chasis" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Peso (t):</label>
+                    <input type="text" name="txt_peso_auto">
+                </div>
+
+                <div class="form-group">
+                    <label>Cilindraje:</label>
+                    <input type="text" name="txt_cilindraje">
+                </div>
+            </div>
+
+            <div class="btn-container">
+                <button type="submit" class="btn-save" {% if tiene_vehiculo %}disabled{% endif %}>
+                    Guardar
+                </button>
+                <a href="/listadocarros/" class="btn-cancel">Cancelar</a>
+            </div>
+
+            {% if tiene_vehiculo %}
+            <div class="alerta-vehiculo">
+                Este usuario ya tiene un vehículo registrado. Elimínalo o edítalo para ingresar uno nuevo.
+            </div>
+            {% endif %}
+        </form>
+    </div>
 </div>
 
 {% endblock %}

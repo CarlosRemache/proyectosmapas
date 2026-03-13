@@ -283,11 +283,14 @@ tbody tr:hover {
                     </td>
 
                     <td>
-                        <a href="{% url 'nuevovehiculo' u.id_usuario %}" class="btn-crear">
-                            Agregar Vehículo
-                        </a>
+                        {% if u.tiporol == "ADMINISTRADOR" %}
+                            <span style="color:#6b7280; font-weight:600;">No aplica</span>
+                        {% else %}
+                            <a href="{% url 'nuevovehiculo' u.id_usuario %}" class="btn-crear">
+                                Agregar Vehículo
+                            </a>
+                        {% endif %}
                     </td>
-
                     
                 </tr>
                 {% empty %}
