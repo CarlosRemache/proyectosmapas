@@ -121,12 +121,6 @@ tbody tr:hover {
 
 
 
-
-
-
-
-
-
 @media (max-width:1200px){
     .content-wrapper{
         margin-left:0;
@@ -225,7 +219,7 @@ tbody tr:hover {
     </div>
 
     <div class="actions-bar">
-        {% if request.session.usuario_tiporol == "ADMINISTRADOR" %}
+        {% if es_admin %}
             <a href="/nuevousuario/" class="btn-crear">
                 + Crear usuario
             </a>
@@ -242,7 +236,7 @@ tbody tr:hover {
                     <th>Foto</th>
                     <th>Rol</th>
                     <th>Estado</th>  
-                    {% if request.session.usuario_tiporol == "ADMINISTRADOR" %}
+                    {% if es_admin %}
                     <th>Acciones</th>
                     {% endif %}                    
                 </tr>
@@ -264,7 +258,7 @@ tbody tr:hover {
                             -
                         {% endif %}
                     </td>
-
+                    
                     <td>
                         {% if u.tiporol == "ADMINISTRADOR" %}
                             <span class="rol-admin">{{ u.tiporol }}</span>
@@ -282,7 +276,7 @@ tbody tr:hover {
                         {% endif %}
                     </td>
 
-                    {% if request.session.usuario_tiporol == "ADMINISTRADOR" %}
+                    {% if es_admin %}
                     <td>
                         {% if u.tiporol != "ADMINISTRADOR" %}
                         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">

@@ -136,17 +136,24 @@ def admin_panel(request):
 
 
 
+
 def listadousuario(request):
     usuarios = Usuario.objects.all()
-    # Conteos por rol
     total_usuarios = Usuario.objects.filter(tiporol='USUARIO').count()
     total_admins = Usuario.objects.filter(tiporol='ADMINISTRADOR').count()
+
+    es_admin = request.session.get('usuario_tiporol') == 'ADMINISTRADOR'
 
     return render(request, 'administrador/listadousuario.html', {
         'usuarios': usuarios,
         'total_usuarios': total_usuarios,
-        'total_admins': total_admins
+        'total_admins': total_admins,
+        'es_admin': es_admin
     })
+
+
+
+
 
 
 def listadocarros(request):
