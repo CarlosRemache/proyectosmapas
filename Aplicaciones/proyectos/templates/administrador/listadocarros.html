@@ -334,7 +334,7 @@ tbody tr:hover {
                         {% if u.tiporol == "ADMINISTRADOR" %}
                             <span style="color:#6b7280; font-weight:600;">No aplica</span>
                         {% else %}
-                            <a href="{% url 'administrador/listadovista' u.id_usuario %}" class="btn-ver">
+                            <a href="{% url 'listadovista' u.id_usuario %}" class="btn-ver">
                                 Ver Vehículo
                             </a>
                         {% endif %}
@@ -344,7 +344,7 @@ tbody tr:hover {
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" style="text-align:center;">
+                    <td colspan="7" style="text-align:center;">
                         No existen usuarios registrados
                     </td>
                 </tr>
