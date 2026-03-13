@@ -138,11 +138,21 @@ tbody tr:hover {
 }
 
 
+.btn-eliminar{
+    display:inline-flex;
+    align-items:center;
+    padding:10px 14px;
+    border-radius:12px;
+    background:#dc2626;
+    color:#ffffff;
+    font-weight:700;
+    text-decoration:none;
+    box-shadow:0 8px 18px rgba(0,0,0,0.15);
+}
 
-
-
-
-
+.btn-eliminar:hover{
+    background:#b91c1c;
+}
 
 
 
@@ -254,6 +264,7 @@ tbody tr:hover {
                     <th>Foto</th>
                     <th>Rol</th>
                     <th>Vehículo asignado</th>
+                    <th>Acción vehículo</th>
                 </tr>
             </thead>
             <tbody>
@@ -291,6 +302,21 @@ tbody tr:hover {
                             </a>
                         {% endif %}
                     </td>
+
+                    <td>
+                        {% if u.tiporol == "ADMINISTRADOR" %}
+                            <span style="color:#6b7280; font-weight:600;">No aplica</span>
+                        {% else %}
+                            <a href="{% url 'eliminarvehiculo' u.vehiculo_asignado.id_vehiculo %}" 
+                            class="btn-eliminar">
+                                Eliminar
+                            </a>
+                        {% endif %}
+                    </td>
+
+
+
+
                     
                 </tr>
                 {% empty %}

@@ -661,11 +661,18 @@ def listadovehiculo(request):
 
 
 
+
 def eliminarvehiculo(request, id):
-    vehiculo = Vehiculo.objects.get(id_vehiculo=id)
-    vehiculo.delete()
-    messages.success(request, "Vehículo eliminado")
-    return redirect('/inicio')
+    vehiculo = Vehiculo.objects.filter(id_vehiculo=id).first()
+
+    if vehiculo:
+        vehiculo.delete()
+        messages.success(request, "Vehículo eliminado correctamente.")
+    else:
+        messages.error(request, "El vehículo no existe.")
+
+    return redirect('/listadocarros/')
+
 
 
 def editarvehiculo(request, id):
