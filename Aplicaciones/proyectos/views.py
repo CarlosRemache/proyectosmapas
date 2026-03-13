@@ -542,21 +542,29 @@ def creardocumento(request):
 
 # Vehiculo-------------------------------------------------------------
 
-def nuevovehiculo(request):
-    usuario_id = request.session.get('usuario_id')
-    if not usuario_id:
+def nuevovehiculo(request, id_usuario):
+    usuario_logueado_id = request.session.get('usuario_id')
+    if not usuario_logueado_id:
         messages.error(request, "Inicia sesión nuevamente.")
         return redirect('/login')
 
-    usuario = Usuario.objects.filter(id_usuario=usuario_id).first()
-    if not usuario:
+    usuario_logueado = Usuario.objects.filter(id_usuario=usuario_logueado_id).first()
+    if not usuario_logueado:
         request.session.flush()
         messages.error(request, "Tu sesión no es válida. Inicia sesión nuevamente.")
         return redirect('/login')
 
-    tiene_vehiculo = Vehiculo.objects.filter(usuario=usuario).exists()
-    return render(request, 'nuevovehiculo.html', {'usuario': usuario, 'tiene_vehiculo': tiene_vehiculo})
+    usuario = Usuario.objects.filter(id_usuario=id_usuario).first()
+    if not usuario:
+        messages.error(request, "El usuario seleccionado no existe.")
+        return redirect('/listadocarros/')
 
+    tiene_vehiculo = Vehiculo.objects.filter(usuario=usuario).exists()
+
+    return render(request, 'nuevovehiculo.html', {
+        'usuario': usuario,
+        'tiene_vehiculo': tiene_vehiculo
+    })
 
 
 def guardarvehiculo(request):

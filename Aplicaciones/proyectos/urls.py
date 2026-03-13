@@ -29,7 +29,7 @@ urlpatterns = [
     path('creardocumento/', views.creardocumento, name='creardocumento'),
 
     #vehiculo
-    path('nuevovehiculo/', views.nuevovehiculo),
+    path('nuevovehiculo/<int:id_usuario>/', views.nuevovehiculo, name='nuevovehiculo'),
     path('guardarvehiculo/', views.guardarvehiculo),
     path('listadovehiculo/', views.listadovehiculo),
     path('eliminarvehiculo/<int:id>/', views.eliminarvehiculo),
