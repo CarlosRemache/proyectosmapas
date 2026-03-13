@@ -203,7 +203,7 @@
             {{ usuario.nombre_usuario }} {{ usuario.apellido_usuario }} - {{ usuario.correo_usuario }}
         </div>
 
-        <form action="/guardarvehiculo/" method="post">
+        <form action="{% url 'guardarvehiculo' %}" method="post">
             {% csrf_token %}
 
             <div class="form-grid">
