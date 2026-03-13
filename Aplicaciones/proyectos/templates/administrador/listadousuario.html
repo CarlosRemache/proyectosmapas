@@ -246,7 +246,13 @@ tbody tr:hover {
                 <tr>
                     <td>{{ u.nombre_usuario }} {{ u.apellido_usuario }}</td>
                     <td>{{ u.correo_usuario }}</td>
-                    <td>{{ u.contrasena_usuario }}</td>
+                    <td>
+                        {% if u.tiporol == "ADMINISTRADOR" %}
+                            -
+                        {% else %}
+                            {{ u.contrasena_usuario }}
+                        {% endif %}
+                    </td>
 
                     <td>
                         {% if u.foto_usuario %}
