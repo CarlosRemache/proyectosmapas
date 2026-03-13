@@ -3,70 +3,272 @@
 {% block contener %}
 
 <style>
-  .grafico-row {
-    display: flex;
-    justify-content: center;
-    margin-top: 30px;
+  .dashboard-wrapper{
+    margin-left: 380px;
+    padding: 30px;
   }
 
-  .grafico-card {
-    width: 80%;
-    max-width: 700px;
+  .dashboard-title{
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  .dashboard-title h2{
+    margin: 0;
+    color: #1f2937;
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .dashboard-title p{
+    margin-top: 8px;
+    color: #6b7280;
+    font-size: 14px;
+  }
+
+  .dashboard-grid{
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .dashboard-card{
     background: #ffffff;
-    padding: 25px;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+  }
+
+  .dashboard-card h3{
+    margin: 0 0 18px 0;
+    text-align: center;
+    color: #1f2937;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .dashboard-card.full{
+    grid-column: 1 / -1;
+  }
+
+  .chart-box{
+    min-height: 380px;
+  }
+
+  .search-box{
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .search-box input{
+    width: 100%;
+    max-width: 420px;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-size: 14px;
+    color: #111827;
+    outline: none;
+    transition: all .15s ease;
+  }
+
+  .search-box input:focus{
+    border-color: #111827;
+    box-shadow: 0 0 0 3px rgba(17,24,39,0.08);
+  }
+
+  .info-list{
+    margin-top: 18px;
+    max-height: 180px;
+    overflow-y: auto;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 14px;
+  }
+
+  .info-item{
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 13px;
+    color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .info-color{
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+
+  .info-text{
+    flex: 1;
+    line-height: 1.4;
+  }
+
+  .info-value{
+    font-weight: 700;
+    color: #111827;
+    margin-left: 10px;
+    white-space: nowrap;
+  }
+
+  .empty-message{
+    text-align: center;
+    color: #6b7280;
+    padding: 18px 0;
+    font-size: 14px;
+  }
+
+  @media (max-width: 1200px){
+    .dashboard-wrapper{
+      margin-left: 0;
+      padding: 20px;
+    }
+  }
+
+  @media (max-width: 900px){
+    .dashboard-grid{
+      grid-template-columns: 1fr;
+    }
+
+    .dashboard-card.full{
+      grid-column: auto;
+    }
+  }
+
+  @media (max-width: 480px){
+    .dashboard-title h2{
+      font-size: 23px;
+    }
+
+    .dashboard-card{
+      padding: 18px;
+    }
+
+    .dashboard-card h3{
+      font-size: 18px;
+    }
   }
 </style>
 
-<div class="grafico-row">
-  <div class="grafico-card">
-    <h2 style="text-align:center; margin-bottom:20px;">
-      Viaje más repetido por usuario
-    </h2>
-    <div id="kpi1"></div>
+<div class="dashboard-wrapper">
+
+  <div class="dashboard-title">
+    <h2>Dashboard de Vehículos y Consumo</h2>
+    <p>Visualización general de recorridos, consumo mensual y combustible utilizado.</p>
   </div>
-</div>
 
-<div class="grafico-row">
-  <div class="grafico-card">
-    <h2 style="text-align:center; margin-bottom:20px;">
-      Consumo total de Combustible (L) por mes (todos los usuarios)
-    </h2>
-    <div id="kpi3"></div>
-  </div>
-</div>
+  <div class="dashboard-grid">
 
+    <!-- KPI1 -->
+    <div class="dashboard-card full">
+      <h3>Viaje más repetido por usuario</h3>
 
-<div class="grafico-row">
-  <div class="grafico-card">
-    <h2 style="text-align:center; margin-bottom:20px;">
-      Litros consumidos por tipo de combustible
-    </h2>
-    <div id="kpi6"></div>
+      <div class="search-box">
+        <input type="text" id="buscarNombre" placeholder="Buscar por nombre del usuario...">
+      </div>
+
+      <div id="kpi1" class="chart-box"></div>
+
+      <div class="info-list" id="listaKpi1"></div>
+    </div>
+
+    <!-- KPI3 -->
+    <div class="dashboard-card">
+      <h3>Consumo total de Combustible (L) por mes</h3>
+      <div id="kpi3" class="chart-box"></div>
+    </div>
+
+    <!-- KPI6 -->
+    <div class="dashboard-card">
+      <h3>Litros consumidos por tipo de combustible</h3>
+      <div id="kpi6" class="chart-box"></div>
+    </div>
+
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <script>
+  const coloresBase = [
+    '#4e79a7',
+    '#f28e2b',
+    '#e15759',
+    '#76b7b2',
+    '#59a14f',
+    '#edc948',
+    '#b07aa1',
+    '#ff9da7'
+  ];
+
+  // =========================
+  // DATOS ORIGINALES KPI1
+  // =========================
+  const kpi1LabelsOriginal = {{ kpi1_labels|safe }};
+  const kpi1DataOriginal = {{ kpi1_data|safe }};
+
+  function obtenerNombreDesdeLabel(label) {
+    if (label.includes('→')) {
+      return label.split('→')[0].trim();
+    }
+    return label.trim();
+  }
+
+  function renderListaKpi1(labels, data) {
+    const lista = document.getElementById("listaKpi1");
+    lista.innerHTML = "";
+
+    if (!labels.length) {
+      lista.innerHTML = '<div class="empty-message">No se encontraron resultados para ese nombre.</div>';
+      return;
+    }
+
+    labels.forEach((label, index) => {
+      const item = document.createElement("div");
+      item.className = "info-item";
+
+      const color = document.createElement("div");
+      color.className = "info-color";
+      color.style.backgroundColor = coloresBase[index % coloresBase.length];
+
+      const text = document.createElement("div");
+      text.className = "info-text";
+      text.textContent = label;
+
+      const value = document.createElement("div");
+      value.className = "info-value";
+      value.textContent = data[index];
+
+      item.appendChild(color);
+      item.appendChild(text);
+      item.appendChild(value);
+      lista.appendChild(item);
+    });
+  }
+
   // =========================
   // KPI1 - Viaje más repetido por usuario
   // =========================
-  var optionsKpi1 = {
+  var chartKpi1 = new ApexCharts(document.querySelector("#kpi1"), {
     chart: {
       type: 'bar',
-      height: 350,
+      height: 430,
       toolbar: {
         show: true
       }
     },
     series: [{
       name: 'Cantidad de veces',
-      data: {{ kpi1_data|safe }}
+      data: kpi1DataOriginal
     }],
     xaxis: {
-      categories: {{ kpi1_labels|safe }},
+      categories: kpi1LabelsOriginal,
       labels: {
         show: false
       }
@@ -79,41 +281,71 @@
     },
     plotOptions: {
       bar: {
-        borderRadius: 6,
+        borderRadius: 8,
         distributed: true,
-        horizontal: false
+        columnWidth: '45%'
       }
     },
-    dataLabels: {
-      enabled: true
+    legend: {
+      show: false
     },
-    colors: [
-      '#4e79a7',
-      '#f28e2b',
-      '#e15759',
-      '#76b7b2',
-      '#59a14f',
-      '#edc948',
-      '#b07aa1',
-      '#ff9da7'
-    ],
+    dataLabels: {
+      enabled: true,
+      style: {
+        fontSize: '12px',
+        fontWeight: 700
+      }
+    },
+    colors: coloresBase,
     tooltip: {
+      x: {
+        formatter: function(value) {
+          return value;
+        }
+      },
       y: {
         formatter: function(value) {
           return value + ' veces';
         }
       }
     }
-  };
+  });
 
-  var chartKpi1 = new ApexCharts(document.querySelector("#kpi1"), optionsKpi1);
   chartKpi1.render();
+  renderListaKpi1(kpi1LabelsOriginal, kpi1DataOriginal);
 
+  document.getElementById("buscarNombre").addEventListener("input", function() {
+    const texto = this.value.toLowerCase().trim();
+
+    const labelsFiltrados = [];
+    const dataFiltrados = [];
+
+    kpi1LabelsOriginal.forEach((label, index) => {
+      const nombre = obtenerNombreDesdeLabel(label).toLowerCase();
+      if (nombre.includes(texto)) {
+        labelsFiltrados.push(label);
+        dataFiltrados.push(kpi1DataOriginal[index]);
+      }
+    });
+
+    chartKpi1.updateOptions({
+      xaxis: {
+        categories: labelsFiltrados
+      }
+    });
+
+    chartKpi1.updateSeries([{
+      name: 'Cantidad de veces',
+      data: dataFiltrados
+    }]);
+
+    renderListaKpi1(labelsFiltrados, dataFiltrados);
+  });
 
   // =========================
   // KPI3 - Consumo total de combustible por mes
   // =========================
-  var optionsKpi3 = {
+  var chartKpi3 = new ApexCharts(document.querySelector("#kpi3"), {
     chart: {
       type: 'line',
       height: 350,
@@ -144,6 +376,7 @@
     markers: {
       size: 4
     },
+    colors: ['#2563eb'],
     dataLabels: {
       enabled: false
     },
@@ -154,76 +387,14 @@
         }
       }
     }
-  };
+  });
 
-  var chartKpi3 = new ApexCharts(document.querySelector("#kpi3"), optionsKpi3);
   chartKpi3.render();
-
-
-  // =========================
-  // KPI4 - Costo total por mes
-  // =========================
-  var optionsKpi4 = {
-    chart: {
-      type: 'area',
-      height: 350,
-      toolbar: {
-        show: true
-      }
-    },
-    series: [{
-      name: 'Costo total ($)',
-      data: {{ kpi4_data|safe }}
-    }],
-    xaxis: {
-      categories: {{ kpi4_labels|safe }},
-      labels: {
-        rotate: 0
-      }
-    },
-    yaxis: {
-      min: 0,
-      title: {
-        text: 'USD ($)'
-      }
-    },
-    stroke: {
-      curve: 'smooth',
-      width: 3
-    },
-    markers: {
-      size: 4
-    },
-    dataLabels: {
-      enabled: false
-    },
-    tooltip: {
-      y: {
-        formatter: function(value) {
-          return '$ ' + Number(value).toFixed(2);
-        }
-      }
-    },
-    fill: {
-      type: 'gradient',
-      gradient: {
-        shadeIntensity: 1,
-        opacityFrom: 0.35,
-        opacityTo: 0.10,
-        stops: [0, 90, 100]
-      }
-    },
-    colors: ['#36A2EB']
-  };
-
-  var chartKpi4 = new ApexCharts(document.querySelector("#kpi4"), optionsKpi4);
-  chartKpi4.render();
-
 
   // =========================
   // KPI6 - Litros consumidos por tipo de combustible
   // =========================
-  var optionsKpi6 = {
+  var chartKpi6 = new ApexCharts(document.querySelector("#kpi6"), {
     chart: {
       type: 'pie',
       height: 350
@@ -247,9 +418,8 @@
         }
       }
     }
-  };
+  });
 
-  var chartKpi6 = new ApexCharts(document.querySelector("#kpi6"), optionsKpi6);
   chartKpi6.render();
 </script>
 
