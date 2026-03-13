@@ -264,7 +264,7 @@ tbody tr:hover {
                     <th>Foto</th>
                     <th>Rol</th>
                     <th>Vehículo asignado</th>
-                    <th>Acción vehículo</th>
+                    <th>Eliminar vehículo</th>
                 </tr>
             </thead>
             <tbody>
@@ -307,14 +307,11 @@ tbody tr:hover {
                         {% if u.tiporol == "ADMINISTRADOR" %}
                             <span style="color:#6b7280; font-weight:600;">No aplica</span>
                         {% else %}
-                            <a href="{% url 'eliminarvehiculo' u.vehiculo_asignado.id_vehiculo %}" 
-                            class="btn-eliminar">
+                            <a href="/eliminarvehiculo/{{u.vehiculo.id_vehiculo}}/" class="btn-eliminar">
                                 Eliminar
                             </a>
                         {% endif %}
                     </td>
-
-
 
 
                     

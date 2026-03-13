@@ -155,6 +155,9 @@ def listadocarros(request):
     total_usuarios = Usuario.objects.filter(tiporol='USUARIO').count()
     total_admins = Usuario.objects.filter(tiporol='ADMINISTRADOR').count()
 
+    for u in usuarios:
+        u.vehiculo = Vehiculo.objects.filter(usuario=u).first()
+
     return render(request, 'administrador/listadocarros.html', {
         'usuarios': usuarios,
         'total_usuarios': total_usuarios,
