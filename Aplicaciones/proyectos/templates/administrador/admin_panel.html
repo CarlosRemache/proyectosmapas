@@ -24,213 +24,67 @@
     <h2 style="text-align:center; margin-bottom:20px;">
       Viaje más repetido por usuario
     </h2>
-    <canvas id="kpi1"></canvas>
+    <div id="kpi1"></div>
   </div>
 </div>
 
-
-<div class="grafico-row">
-  <div class="grafico-card">
-    <h2 style="text-align:center; margin-bottom:20px;">
-      Consumo total de Combustible (L) por mes (todos los usuarios)
-    </h2>
-    <canvas id="kpi3"></canvas>
-  </div>
-</div>
-
-<div class="grafico-row">
-  <div class="grafico-card">
-    <h2 style="text-align:center; margin-bottom:20px;">
-      Costo total ($) por mes (todos los usuarios)
-    </h2>
-    <canvas id="kpi4"></canvas>
-  </div>
-</div>
-
-
-<div class="grafico-row">
-  <div class="grafico-card">
-    <h2 style="text-align:center; margin-bottom:20px;">
-      Litros consumidos por tipo de combustible
-    </h2>
-    <canvas id="kpi6"></canvas>
-  </div>
-</div>
-
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <script>
-  //kpi1
-  const ctx1 = document.getElementById('kpi1');
-
-  new Chart(ctx1, {
-    type: 'bar',
-    data: {
-      labels: {{ kpi1_labels|safe }},
-      datasets: [{
-        label: 'Cantidad de veces',
-        data: {{ kpi1_data|safe }},
-        backgroundColor: [
-          '#4e79a7',
-          '#f28e2b',
-          '#e15759',
-          '#76b7b2',
-          '#59a14f',
-          '#edc948',
-          '#b07aa1',
-          '#ff9da7'
-        ],
-        borderWidth: 1
-      }]
+  var optionsKpi1 = {
+    chart: {
+      type: 'bar',
+      height: 350,
+      toolbar: {
+        show: true
+      }
     },
-    options: {
-      responsive: true,
-      scales: {
-        x: {
-          ticks: {
-            display: false
-          }
-        },
-        y: {
-          beginAtZero: true
+    series: [{
+      name: 'Cantidad de veces',
+      data: {{ kpi1_data|safe }}
+    }],
+    xaxis: {
+      categories: {{ kpi1_labels|safe }},
+      labels: {
+        show: false
+      }
+    },
+    yaxis: {
+      title: {
+        text: 'Cantidad'
+      }
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 6,
+        horizontal: false,
+        distributed: true
+      }
+    },
+    dataLabels: {
+      enabled: true
+    },
+    colors: [
+      '#4e79a7',
+      '#f28e2b',
+      '#e15759',
+      '#76b7b2',
+      '#59a14f',
+      '#edc948',
+      '#b07aa1',
+      '#ff9da7'
+    ],
+    tooltip: {
+      y: {
+        formatter: function(value) {
+          return value + ' veces';
         }
       }
     }
-  });
+  };
 
-
-  // KPI2 
-  const ctx2 = document.getElementById('kpi2');
-
-  const points = {{ kpi2_points|safe }}; 
-
-  new Chart(ctx2, {
-    type: 'scatter',
-    data: {
-      datasets: [{
-        label: 'Usuario (Velocidad vs Consumo)',
-        data: points
-      }]
-    },
-    options: {
-      responsive: true,
-      parsing: false, 
-      scales: {
-        x: {
-          title: { display: true, text: 'Velocidad (km/h)' }
-        },
-        y: {
-          title: { display: true, text: 'Consumo (L/100km)' },
-          beginAtZero: true
-        }
-      },
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              const p = context.raw;
-              return `${p.nombre}: Vel=${p.x} km/h | Cons=${p.y} L/100km`;
-            }
-          }
-        }
-      }
-    }
-  });
-  //kpi3
-  const ctx3 = document.getElementById('kpi3');
-
-  new Chart(ctx3, {
-    type: 'line',
-    data: {
-      labels: {{ kpi3_labels|safe }},
-      datasets: [{
-        label: 'Consumo total (L)',
-        data: {{ kpi3_data|safe }},
-        tension: 0.3,
-        borderWidth: 2,
-        fill: false
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: {
-        x: {
-          ticks: { autoSkip: true, maxRotation: 0 }
-        },
-        y: {
-          beginAtZero: true,
-          title: { display: true, text: 'Litros (L)' }
-        }
-      }
-    }
-  });
-
-  //kpi4
-  const ctx4 = document.getElementById('kpi4');
-
-  new Chart(ctx4, {
-    type: 'line',
-    data: {
-      labels: {{ kpi4_labels|safe }},
-      datasets: [{
-        label: 'Costo total ($)',
-        data: {{ kpi4_data|safe }},
-        tension: 0.3,
-        borderWidth: 2,
-        fill: true,
-        backgroundColor: 'rgba(54, 162, 235, 0.25)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        pointRadius: 4,
-        pointHoverRadius: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: {
-        x: { ticks: { autoSkip: true, maxRotation: 0 } },
-        y: {
-          beginAtZero: true,
-          title: { display: true, text: 'USD ($)' }
-        }
-      },
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: (ctx) => `Costo total ($): ${Number(ctx.parsed.y).toFixed(2)}`
-          }
-        }
-      }
-    }
-  });
-
-  //kpi6
-  const ctx6 = document.getElementById('kpi6');
-
-  new Chart(ctx6, {
-    type: 'pie',
-    data: {
-      labels: {{ kpi6_labels|safe }},
-      datasets: [{
-        data: {{ kpi6_data|safe }},
-        backgroundColor: ['#4e79a7', '#f28e2b', '#59a14f', '#e15759']
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: (ctx) => `${ctx.label}: ${Number(ctx.parsed).toFixed(2)} L`
-          }
-        }
-      }
-    }
-  });
-
-
+  var chartKpi1 = new ApexCharts(document.querySelector("#kpi1"), optionsKpi1);
+  chartKpi1.render();
 </script>
-
-
 
 {% endblock %}
