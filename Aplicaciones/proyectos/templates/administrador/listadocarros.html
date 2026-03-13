@@ -93,6 +93,25 @@ tbody tr:hover {
     box-sizing:border-box;
 }
 
+.btn-crear{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 14px;
+    border-radius:12px;
+    background:#111827;
+    color:#ffffff;
+    font-weight:700;
+    text-decoration:none;
+    box-shadow:0 8px 18px rgba(0,0,0,0.15);
+    transition:transform .12s ease, opacity .12s ease;
+}
+
+.btn-crear:hover{
+    opacity:.92;
+    transform:translateY(-1px);
+}
+
 .btn-estado:hover{
     background:#f9fafb;
     text-decoration:none;
@@ -233,7 +252,8 @@ tbody tr:hover {
                     <th>Correo</th>
                     <th>Contraseña</th>
                     <th>Foto</th>
-                    <th>Rol</th>                    
+                    <th>Rol</th>
+                    <th>Vehículo asignado</th>
                 </tr>
             </thead>
             <tbody>
@@ -261,6 +281,14 @@ tbody tr:hover {
                             <span class="rol-user">{{ u.tiporol }}</span>
                         {% endif %}
                     </td>
+
+                    <td>
+                        <a href="{% url 'nuevovehiculo' u.id_usuario %}" class="btn-crear">
+                            Agregar Vehículo
+                        </a>
+                    </td>
+
+                    
                 </tr>
                 {% empty %}
                 <tr>
