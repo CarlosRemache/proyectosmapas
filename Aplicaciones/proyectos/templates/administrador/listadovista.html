@@ -1,0 +1,243 @@
+{% extends "./plantilla.html" %}
+{% load static %}
+{% block contenido %}
+
+<style>
+.content-wrapper{
+    margin-left:380px;
+    padding:30px;
+}
+
+.detalle-card{
+    max-width: 850px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.detalle-header{
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.detalle-header h3{
+    margin: 0;
+    font-size: 26px;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.detalle-header p{
+    margin-top: 8px;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.info-usuario{
+    margin-bottom: 24px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+    color: #111827;
+    font-size: 15px;
+}
+
+.info-usuario strong{
+    color: #111827;
+}
+
+.detalle-grid{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px 20px;
+}
+
+.detalle-item{
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 16px;
+    min-height: 88px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.detalle-item.full-width{
+    grid-column: 1 / -1;
+}
+
+.detalle-label{
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b7280;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.detalle-valor{
+    font-size: 16px;
+    color: #111827;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.btn-container{
+    margin-top: 28px;
+    display: flex;
+    justify-content: center;
+}
+
+.btn-menu{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    background: #111827;
+    color: #ffffff;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+    transition: transform .12s ease, opacity .12s ease;
+}
+
+.btn-menu:hover{
+    opacity: .92;
+    transform: translateY(-1px);
+}
+
+.alerta-sin-vehiculo{
+    max-width: 700px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    text-align: center;
+}
+
+.alerta-sin-vehiculo h3{
+    margin: 0 0 12px 0;
+    color: #1f2937;
+    font-size: 24px;
+}
+
+.alerta-sin-vehiculo p{
+    color: #6b7280;
+    font-size: 15px;
+    margin-bottom: 20px;
+}
+
+@media (max-width:1200px){
+    .content-wrapper{
+        margin-left:0;
+        padding:20px;
+    }
+}
+
+@media (max-width: 768px){
+    .detalle-grid{
+        grid-template-columns: 1fr;
+    }
+
+    .detalle-card,
+    .alerta-sin-vehiculo{
+        padding: 20px;
+    }
+
+    .detalle-header h3{
+        font-size: 22px;
+    }
+}
+</style>
+
+<div class="content-wrapper">
+
+    {% if vehiculo %}
+    <div class="detalle-card">
+
+        <div class="detalle-header">
+            <h3>Vehículo Registrado</h3>
+            <p>Información detallada del vehículo asignado al usuario seleccionado.</p>
+        </div>
+
+        <div class="info-usuario">
+            <strong>Usuario asignado:</strong>
+            {{ vehiculo.usuario.nombre_usuario }} {{ vehiculo.usuario.apellido_usuario }} - {{ vehiculo.usuario.correo_usuario }}
+        </div>
+
+        <div class="detalle-grid">
+            <div class="detalle-item full-width">
+                <div class="detalle-label">Usuario</div>
+                <div class="detalle-valor">{{ vehiculo.usuario.correo_usuario }}</div>
+            </div>
+
+            <div class="detalle-item">
+                <div class="detalle-label">Tipo de Vehículo</div>
+                <div class="detalle-valor">{{ vehiculo.tipovehiculo_vehiculo }}</div>
+            </div>
+
+            <div class="detalle-item">
+                <div class="detalle-label">Tipo de Combustible</div>
+                <div class="detalle-valor">{{ vehiculo.tipocombustible_vehiculo }}</div>
+            </div>
+
+            <div class="detalle-item">
+                <div class="detalle-label">Placa</div>
+                <div class="detalle-valor">{{ vehiculo.matricula_vehiculo }}</div>
+            </div>
+
+            <div class="detalle-item">
+                <div class="detalle-label">Modelo</div>
+                <div class="detalle-valor">{{ vehiculo.modelo_vehiculo }}</div>
+            </div>
+
+            <div class="detalle-item">
+                <div class="detalle-label">Número de Cédula</div>
+                <div class="detalle-valor">{{ vehiculo.numero_cedula }}</div>
+            </div>
+
+            <div class="detalle-item">
+                <div class="detalle-label">Número de Motor</div>
+                <div class="detalle-valor">{{ vehiculo.numero_motor }}</div>
+            </div>
+
+            <div class="detalle-item">
+                <div class="detalle-label">Número de Chasis</div>
+                <div class="detalle-valor">{{ vehiculo.numero_chasis }}</div>
+            </div>
+
+            <div class="detalle-item">
+                <div class="detalle-label">Peso (t)</div>
+                <div class="detalle-valor">{{ vehiculo.peso_auto }}</div>
+            </div>
+
+            <div class="detalle-item">
+                <div class="detalle-label">Cilindraje</div>
+                <div class="detalle-valor">{{ vehiculo.cilindraje }}</div>
+            </div>
+        </div>
+
+        <div class="btn-container">
+            <a class="btn-menu" href="/listadocarros/">Volver</a>
+        </div>
+
+    </div>
+    {% else %}
+    <div class="alerta-sin-vehiculo">
+        <h3>Sin vehículo registrado</h3>
+        <p>El usuario seleccionado no tiene un vehículo asignado actualmente.</p>
+        <a class="btn-menu" href="/listadocarros/">Volver</a>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

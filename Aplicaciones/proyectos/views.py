@@ -664,6 +664,21 @@ def listadovehiculo(request):
 
 
 
+def listadovista(request, id_usuario):
+    usuario = Usuario.objects.filter(id_usuario=id_usuario).first()
+
+    if not usuario:
+        messages.error(request, "El usuario no existe.")
+        return redirect('/listadocarros/')
+
+    vehiculo = Vehiculo.objects.filter(usuario=usuario).first()
+
+    return render(request, 'administrador/listadovista.html', {
+        'vehiculo': vehiculo,
+        'usuario': usuario
+    })
+
+
 
 def eliminarvehiculo(request, id):
     vehiculo = Vehiculo.objects.filter(id_vehiculo=id).first()
