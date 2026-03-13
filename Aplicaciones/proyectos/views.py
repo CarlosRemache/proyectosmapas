@@ -639,7 +639,7 @@ def guardarvehiculo(request):
     )
 
     messages.success(request, "Vehículo guardado")
-    return redirect('/listadovehiculo')
+    return redirect('/listadocarros')
 
 
 
