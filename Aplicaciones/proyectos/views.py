@@ -3211,6 +3211,7 @@ def tab_bloqueada(request):
 
 
 #dashboard para historail de rutas----------------------------------------------
+
 def historial_rutas(request):
     usuario_id = request.session.get('usuario_id')
     if not usuario_id:
@@ -3242,4 +3243,4 @@ def historial_rutas(request):
         ])
     }
 
-    return render(request, 'historial.html', context)
+    return render(request, 'historial_rutas.html', context)

@@ -5,7 +5,7 @@
 <style>
   body { 
     background-color:#000;
-   }
+  }
 
   .buscar-container{
     max-width: 1100px;           
@@ -28,9 +28,9 @@
 
   h3{ 
     font-size:22px;
-     margin-bottom:18px; 
-     color:#fff; 
-    }
+    margin-bottom:18px; 
+    color:#fff; 
+  }
 
   .acciones-rutas{
     margin-top:10px;
@@ -63,7 +63,6 @@
     background:#191919; 
   }
 
-
   .table-responsive{
     width:100%;
     margin-top: 14px;
@@ -85,7 +84,7 @@
   #tbl_rutas thead th{
     background:#111;
     color:#F3F4F6;
-    border-bottom:1px solid #333 ;
+    border-bottom:1px solid #333;
     padding:10px;
     white-space:nowrap;
   }
@@ -101,7 +100,6 @@
   #tbl_rutas tbody tr:hover td{
     background:#141414;
   }
-
 
   .dt-buttons{
     text-align:right;
@@ -146,10 +144,10 @@
     padding:6px 10px;
   }
 
-
   .dataTables_paginate{
     margin-top:10px;
   }
+
   .dataTables_paginate .paginate_button{
     padding:8px 12px;
     border-radius:10px;
@@ -158,15 +156,16 @@
     color:#fff;
     margin-left:6px;
   }
+
   .dataTables_paginate .paginate_button:hover{
     background:#191919;
   }
+
   .dataTables_paginate .paginate_button.current{
     background:#00e53a;
     color:#000;
     border-color:#00e53a;
   }
-
 
   .btn-eliminar{
     padding:7px 10px;
@@ -178,6 +177,7 @@
     font-weight:800;
     font-size:13px;
   }
+
   .btn-eliminar:hover{ 
     background:#cc0000; 
   }
@@ -203,7 +203,6 @@
     min-height: 380px;
   }
 
-  
   @media (max-width: 768px){
     .buscar-container{ padding:16px; }
     .table-responsive{ overflow-x:auto; }
@@ -285,15 +284,12 @@
     <p style="color:#fff; margin-top:15px;">Todavía no tienes rutas guardadas.</p>
   {% endif %}
 
-
+  {% if rutas %}
   <div class="dashboard-card">
     <h4>Resumen general del historial de rutas</h4>
     <div id="graficoResumenRutas" class="chart-box"></div>
   </div>
-
-
-
-
+  {% endif %}
 </div>
 
 <script>
@@ -321,91 +317,96 @@ $(document).ready(function () {
 });
 </script>
 
-
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <script>
-  var opcionesResumenRutas = {
-    chart: {
-      type: 'bar',
-      height: 380,
-      toolbar: {
-        show: true
-      }
-    },
-    series: [{
-      name: 'Total',
-      data: {{ chart_data|safe }}
-    }],
-    xaxis: {
-      categories: {{ chart_labels|safe }},
-      labels: {
-        style: {
-          colors: ['#F3F4F6', '#F3F4F6', '#F3F4F6', '#F3F4F6'],
-          fontSize: '13px'
-        }
-      }
-    },
-    yaxis: {
-      title: {
-        text: 'Valores acumulados',
-        style: {
-          color: '#F3F4F6'
-        }
-      },
-      labels: {
-        style: {
-          colors: ['#F3F4F6']
-        }
-      }
-    },
-    plotOptions: {
-      bar: {
-        borderRadius: 8,
-        distributed: true,
-        columnWidth: '50%'
-      }
-    },
-    dataLabels: {
-      enabled: true,
-      style: {
-        fontSize: '13px',
-        fontWeight: 'bold',
-        colors: ['#ffffff']
-      },
-      formatter: function(value) {
-        return Number(value).toFixed(2);
-      }
-    },
-    colors: ['#4e79a7', '#f28e2b', '#59a14f', '#e15759'],
-    grid: {
-      borderColor: '#333'
-    },
-    legend: {
-      show: false
-    },
-    tooltip: {
-      y: {
-        formatter: function(value, { dataPointIndex }) {
-          if (dataPointIndex === 0) return Number(value).toFixed(2) + ' km';
-          if (dataPointIndex === 1) return Number(value).toFixed(2) + ' min';
-          if (dataPointIndex === 2) return Number(value).toFixed(2) + ' L';
-          if (dataPointIndex === 3) return '$ ' + Number(value).toFixed(2);
-          return value;
-        }
-      }
-    },
-    theme: {
-      mode: 'dark'
-    }
-  };
+document.addEventListener("DOMContentLoaded", function () {
+  const labels = {{ chart_labels|safe }};
+  const data = {{ chart_data|safe }};
 
-  var chartResumenRutas = new ApexCharts(
-    document.querySelector("#graficoResumenRutas"),
-    opcionesResumenRutas
-  );
-  chartResumenRutas.render();
+  if (document.querySelector("#graficoResumenRutas")) {
+    var opcionesResumenRutas = {
+      chart: {
+        type: 'bar',
+        height: 380,
+        toolbar: {
+          show: true
+        }
+      },
+      series: [{
+        name: 'Total',
+        data: data
+      }],
+      xaxis: {
+        categories: labels,
+        labels: {
+          style: {
+            colors: ['#F3F4F6', '#F3F4F6', '#F3F4F6', '#F3F4F6'],
+            fontSize: '13px'
+          }
+        }
+      },
+      yaxis: {
+        title: {
+          text: 'Valores acumulados',
+          style: {
+            color: '#F3F4F6'
+          }
+        },
+        labels: {
+          style: {
+            colors: ['#F3F4F6']
+          }
+        }
+      },
+      plotOptions: {
+        bar: {
+          borderRadius: 8,
+          distributed: true,
+          columnWidth: '50%'
+        }
+      },
+      dataLabels: {
+        enabled: true,
+        style: {
+          fontSize: '13px',
+          fontWeight: 'bold',
+          colors: ['#ffffff']
+        },
+        formatter: function(value) {
+          return Number(value).toFixed(2);
+        }
+      },
+      colors: ['#4e79a7', '#f28e2b', '#59a14f', '#e15759'],
+      grid: {
+        borderColor: '#333'
+      },
+      legend: {
+        show: false
+      },
+      tooltip: {
+        y: {
+          formatter: function(value, { dataPointIndex }) {
+            if (dataPointIndex === 0) return Number(value).toFixed(2) + ' km';
+            if (dataPointIndex === 1) return Number(value).toFixed(2) + ' min';
+            if (dataPointIndex === 2) return Number(value).toFixed(2) + ' L';
+            if (dataPointIndex === 3) return '$ ' + Number(value).toFixed(2);
+            return value;
+          }
+        }
+      },
+      theme: {
+        mode: 'dark'
+      }
+    };
+
+    var chartResumenRutas = new ApexCharts(
+      document.querySelector("#graficoResumenRutas"),
+      opcionesResumenRutas
+    );
+    chartResumenRutas.render();
+  }
+});
 </script>
-
 
 {% endblock %}
