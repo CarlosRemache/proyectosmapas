@@ -3242,4 +3242,4 @@ def historial_rutas(request):
         ])
     }
 
-    return render(request, 'tu_template.html', context)
+    return render(request, 'historial.html', context)
