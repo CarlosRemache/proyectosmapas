@@ -182,6 +182,27 @@
     background:#cc0000; 
   }
 
+  .dashboard-card{
+    margin-top: 24px;
+    background:#1b1b1b;
+    border:1px solid #333;
+    border-radius:14px;
+    padding:20px;
+    box-shadow:0 4px 20px rgba(0,0,0,.35);
+  }
+
+  .dashboard-card h4{
+    margin:0 0 18px 0;
+    text-align:center;
+    color:#fff;
+    font-size:22px;
+    font-weight:700;
+  }
+
+  .chart-box{
+    min-height: 380px;
+  }
+
   
   @media (max-width: 768px){
     .buscar-container{ padding:16px; }
@@ -263,6 +284,16 @@
   {% else %}
     <p style="color:#fff; margin-top:15px;">Todavía no tienes rutas guardadas.</p>
   {% endif %}
+
+
+  <div class="dashboard-card">
+    <h4>Resumen general del historial de rutas</h4>
+    <div id="graficoResumenRutas" class="chart-box"></div>
+  </div>
+
+
+
+
 </div>
 
 <script>
@@ -289,5 +320,92 @@ $(document).ready(function () {
   });
 });
 </script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<script>
+  var opcionesResumenRutas = {
+    chart: {
+      type: 'bar',
+      height: 380,
+      toolbar: {
+        show: true
+      }
+    },
+    series: [{
+      name: 'Total',
+      data: {{ chart_data|safe }}
+    }],
+    xaxis: {
+      categories: {{ chart_labels|safe }},
+      labels: {
+        style: {
+          colors: ['#F3F4F6', '#F3F4F6', '#F3F4F6', '#F3F4F6'],
+          fontSize: '13px'
+        }
+      }
+    },
+    yaxis: {
+      title: {
+        text: 'Valores acumulados',
+        style: {
+          color: '#F3F4F6'
+        }
+      },
+      labels: {
+        style: {
+          colors: ['#F3F4F6']
+        }
+      }
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 8,
+        distributed: true,
+        columnWidth: '50%'
+      }
+    },
+    dataLabels: {
+      enabled: true,
+      style: {
+        fontSize: '13px',
+        fontWeight: 'bold',
+        colors: ['#ffffff']
+      },
+      formatter: function(value) {
+        return Number(value).toFixed(2);
+      }
+    },
+    colors: ['#4e79a7', '#f28e2b', '#59a14f', '#e15759'],
+    grid: {
+      borderColor: '#333'
+    },
+    legend: {
+      show: false
+    },
+    tooltip: {
+      y: {
+        formatter: function(value, { dataPointIndex }) {
+          if (dataPointIndex === 0) return Number(value).toFixed(2) + ' km';
+          if (dataPointIndex === 1) return Number(value).toFixed(2) + ' min';
+          if (dataPointIndex === 2) return Number(value).toFixed(2) + ' L';
+          if (dataPointIndex === 3) return '$ ' + Number(value).toFixed(2);
+          return value;
+        }
+      }
+    },
+    theme: {
+      mode: 'dark'
+    }
+  };
+
+  var chartResumenRutas = new ApexCharts(
+    document.querySelector("#graficoResumenRutas"),
+    opcionesResumenRutas
+  );
+  chartResumenRutas.render();
+</script>
+
 
 {% endblock %}

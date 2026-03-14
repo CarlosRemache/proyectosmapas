@@ -3208,3 +3208,38 @@ from django.contrib.auth.decorators import login_required
 def tab_bloqueada(request):
     return render(request, "tab_bloqueada.html")
 
+
+
+#dashboard para historail de rutas----------------------------------------------
+def historial_rutas(request):
+    usuario_id = request.session.get('usuario_id')
+    if not usuario_id:
+        messages.error(request, "Inicia sesión nuevamente.")
+        return redirect('/login')
+
+    rutas = RutaOpcion.objects.filter(
+        viaje__usuario_id=usuario_id
+    ).select_related('viaje').order_by('-id_ruta_opcion')
+
+    total_distancia = rutas.aggregate(total=Sum('distancia_km'))['total'] or 0
+    total_tiempo = rutas.aggregate(total=Sum('tiempo_min'))['total'] or 0
+    total_combustible = rutas.aggregate(total=Sum('consumo_litros'))['total'] or 0
+    total_costo = rutas.aggregate(total=Sum('costo_estimado'))['total'] or 0
+
+    context = {
+        'rutas': rutas,
+        'chart_labels': json.dumps([
+            'Distancia total (km)',
+            'Tiempo total (min)',
+            'Combustible total (L)',
+            'Costo total ($)'
+        ]),
+        'chart_data': json.dumps([
+            round(float(total_distancia), 2),
+            round(float(total_tiempo), 2),
+            round(float(total_combustible), 2),
+            round(float(total_costo), 2),
+        ])
+    }
+
+    return render(request, 'tu_template.html', context)
