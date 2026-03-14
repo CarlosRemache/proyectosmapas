@@ -1,19 +1,12 @@
 {% load static %}
-const CACHE_NAME = "districc-pwa-v1";
+const CACHE_NAME = "districc-pwa-v2";
 
 const URLS_TO_CACHE = [
   "/",              
   "/login/",
   "/inicio/",
   "/offline/",
-  "/adminpanel/",
-  "/listadousuario/",
-  "/listadocarros/",
-  "/listadovista/",
-  "/nuevovehiculo/",
-  "/reporteviaje/",
-  "/reportehistorial/",
-  "{% url 'manifest' %}",
+  "/manifest.webmanifest",
 
   "{% static 'plantilla/assets/css/main.css' %}",
   "{% static 'plantilla/assets/js/main.js' %}",
