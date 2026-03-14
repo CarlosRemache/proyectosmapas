@@ -245,18 +245,18 @@
               <td><strong>#{{ r.id_ruta_opcion }}</strong></td> 
               <td>{{ r.get_tipo_display }}</td>
               <td>{{ r.viaje.id_viaje }}</td>
-              <td>{{ r.distancia_km|floatformat:2 }}</td>
-              <td>{{ r.tiempo_min|floatformat:1 }}</td>
+              <td>{{ r.distancia_km|floatformat:3 }}</td>
+              <td>{{ r.tiempo_min|floatformat:3 }}</td>
               <td>
                 {% if r.consumo_litros %}
-                  {{ r.consumo_litros|floatformat:2 }}
+                  {{ r.consumo_litros|floatformat:3 }}
                 {% else %}
                   -
                 {% endif %}
               </td>
               <td>
                 {% if r.costo_estimado %}
-                  {{ r.costo_estimado|floatformat:2 }}
+                  {{ r.costo_estimado|floatformat:3 }}
                 {% else %}
                   -
                 {% endif %}
