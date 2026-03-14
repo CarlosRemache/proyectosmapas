@@ -196,7 +196,7 @@ class Viaje(models.Model):
 class RutaOpcion(models.Model):
     id_ruta_opcion = models.AutoField(primary_key=True)
     viaje = models.ForeignKey(Viaje, on_delete=models.CASCADE, related_name="opciones")
-    tipo  = models.CharField(max_length=20, choices=[('OPTIMA', 'OPTIMA'), ('LARGA', 'LARGA'), ('SEGURA', 'SEGURA')])
+    tipo  = models.CharField(max_length=20, choices=[('OPTIMA', 'OPTIMA'), ('ALTERNATIVA', 'ALTERNATIVA')])
     tiempo_min = models.FloatField()
     distancia_km = models.FloatField()
     consumo_litros = models.FloatField(null=True, blank=True)
@@ -212,6 +212,11 @@ class RutaOpcion(models.Model):
 
     def __str__(self):
         return f"Viaje {self.viaje.id_viaje} "
+
+
+
+
+
 
 
 
