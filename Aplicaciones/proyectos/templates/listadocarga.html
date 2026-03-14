@@ -259,7 +259,7 @@
             <th>ID</th>
             <th>Vehículo</th>
             <th>Producto / Carga</th>
-            <th>Peso adicional (kg)</th>
+            <th>Peso adicional (lb)</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -275,7 +275,7 @@
                 </span>
               </td>
               <td><b>{{ c.nombre_producto }}</b></td>
-              <td>{{ c.peso_adicional }}</td>
+              <td>{{ c.peso_adicional|floatformat:2 }} kg</td>
               <td style="white-space:nowrap;">
                 <a href="/editarcarga/{{ c.id_carga }}/" class="btn-accion btn-editar">
                   Editar

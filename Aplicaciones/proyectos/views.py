@@ -824,16 +824,20 @@ def guardarcarga(request):
     nombre_producto = request.POST['txt_nombre_producto']
     peso_adicional = request.POST['txt_peso_adicional']
 
+    #convertir
+    peso_kg = peso_adicional * 0.453592
     vehiculo = Vehiculo.objects.get(id_vehiculo=id_vehiculo)
 
     CargaVehiculo.objects.create(
         vehiculo=vehiculo,
         nombre_producto=nombre_producto,
-        peso_adicional=peso_adicional
+        peso_adicional=peso_kg
     )
 
     messages.success(request, "Carga guardada correctamente.")
     return redirect('/listadocarga')
+
+
 
 
 def editarcarga(request, id):
@@ -871,12 +875,16 @@ def procesareditarcarga(request):
         messages.error(request, "No puedes editar esta carga.")
         return redirect('/listadocarga')
 
+    peso_adicional = float(request.POST['txt_peso_adicional'])
+    peso_kg = peso_adicional * 0.453592
+
     carga.nombre_producto = request.POST['txt_nombre_producto']
-    carga.peso_adicional = request.POST['txt_peso_adicional']
+    carga.peso_adicional = peso_kg
     carga.save()
 
     messages.success(request, "Carga actualizada exitosamente.")
     return redirect('/listadocarga')
+
 
 
 
