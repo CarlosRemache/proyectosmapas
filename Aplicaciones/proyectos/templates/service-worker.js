@@ -1,33 +1,18 @@
 {% load static %}
-const CACHE_NAME = "distric-pwa-v7";
+const CACHE_NAME = "districc-pwa-v1";
 
 const URLS_TO_CACHE = [
   "/",              
   "/login/",
   "/inicio/",
   "/offline/",
-  "/historial/",
-  "/perfilusuario/",
+  "/adminpanel/",
+  "/listadousuario/",
+  "/listadocarros/",
+  "/listadovista/",
+  "/nuevovehiculo/",
   "/reporteviaje/",
   "/reportehistorial/",
-  "/nuevopedido/",
-  "/nuevoproveedor/",
-  "/buscarlugares/",
-  "/rutas/",
-  "/recorrido/",
-  "/creardocumento/",
-  "/nuevovehiculo/",
-  "/listadovehiculo/",
-  "/pedidosusuario/",
-  "/adminpanel/",
-  "/panel/calendario/",
-  "/panel/calendario/lista/",
-  "/lista_asignaciones/",
-  "/listadoproveedor/",
-  "/listadopedido/",
-  "/listadofacturas/",
-  "/pagos/",
-  "/salvoconductos/",
   "{% url 'manifest' %}",
 
   "{% static 'plantilla/assets/css/main.css' %}",
@@ -36,6 +21,7 @@ const URLS_TO_CACHE = [
   "{% static 'icons/icon-512x512.png' %}",
 
 ];
+
 
 
 
