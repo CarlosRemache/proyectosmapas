@@ -1404,7 +1404,7 @@ def recorrido(request):
 
     # Color y tipo (para BD usamos OPTIMA/LARGA)
     color_ruta = COLORES_RUTAS[indice % len(COLORES_RUTAS)]
-    tipo_bd = "OPTIMA" if indice == 0 else "LARGA"
+    tipo_bd = "OPTIMA" if indice == 0 else "ALTERNATIVA"
 
     # ---------------- COORDENADAS PARA EL MAPA ----------------
     nodos_dict = NodoMapa.objects.in_bulk(set(ruta_seleccionada_ids), field_name="id_nodo")
