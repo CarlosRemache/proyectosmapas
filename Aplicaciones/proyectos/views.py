@@ -3243,4 +3243,4 @@ def historial_rutas(request):
         ])
     }
 
-    return render(request, 'historial_rutas.html', context)
+    return render(request, 'historial.html', context)
