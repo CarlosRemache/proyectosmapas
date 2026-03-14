@@ -822,7 +822,7 @@ def listadocarga(request):
 def guardarcarga(request):
     id_vehiculo = request.POST['vehiculo']
     nombre_producto = request.POST['txt_nombre_producto']
-    peso_adicional = request.POST['txt_peso_adicional']
+    peso_adicional = float(request.POST['txt_peso_adicional'])
 
     #convertir
     peso_kg = peso_adicional * 0.453592
